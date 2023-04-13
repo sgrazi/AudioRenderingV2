@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<SCENE>
+<MODEL>assets/models/Amphitheatre8m.obj</MODEL>
+<SIZE>10</SIZE>	<!-->Model's scale<!-->
+<MAX_REFLEXIONS>30</MAX_REFLEXIONS>
+<ABSORBTION>0.1</ABSORBTION>
+<NUM_RAYS>1000000</NUM_RAYS>
+<SOURCE>
+	<POWER>31.62</POWER>	<!-->Sound level of the source: Lw<!-->
+	<POS_X>0.0</POS_X>
+	<POS_Y>0.0</POS_Y>
+	<POS_Z>0.0</POS_Z>
+</SOURCE>
+<LISTENER>
+	<SIZE>0.5</SIZE>	<!-->Radius of the sphere representing the listener. Meters.<!-->
+	<POS_X>2.5</POS_X>
+	<POS_Y>9.90</POS_Y>
+	<POS_Z>0.0</POS_Z>
+</LISTENER>
+<OUT_SAMPLERATE>16000</OUT_SAMPLERATE>	<!-->Only used in auralization mode. Measured in Hz<!-->
+<SOUND_SAMPLE>assets/sound_samples/guitar_sample_16k_short.wav</SOUND_SAMPLE>
+</SCENE>
