@@ -8,25 +8,14 @@
 class Scene {
 public:
 	RTCScene rtc_scene;
+	std::vector<SceneObject*> objects;
+	int app_mode;
 
 public:
 	Scene() {};
-	Scene(RTCDevice device);
+	Scene(RTCDevice device, int app_mode);
 	virtual void addObjectFromOBJ(std::string file_name, glm::vec3 pos, float size, RTCDevice * device);
 	void commitScene();
 	RTCScene getRTCScene();
 	~Scene();
-};
-
-class AuralizationScene : public Scene{
-public:
-	//std::vector<Mesh*> meshes;
-	std::vector<SceneObject*> objects;
-
-public:
-	AuralizationScene() {};
-	AuralizationScene(RTCDevice device);
-	//Scene(std::string file_name, RTCDevice device);
-	void addObjectFromOBJ(std::string file_name, glm::vec3 pos, float size, RTCDevice * device);
-	~AuralizationScene();
 };

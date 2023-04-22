@@ -224,6 +224,10 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 
 	//Set up stream parameters they need to be in heap since audio api will use them in separate thread
 	this->streamParams = new streamParameters();
+	this->streamParams->iParams = new RtAudio::StreamParameters();
+	this->streamParams->iParams->deviceId = this->audioApi->getDefaultInputDevice();
+	this->streamParams->iParams->nChannels = input_channles;
+	this->streamParams->iParams->firstChannel = 0;
 	this->streamParams->oParams = new RtAudio::StreamParameters();
 	this->streamParams->oParams->deviceId = this->audioApi->getDefaultOutputDevice();
 	this->streamParams->oParams->nChannels = output_channels;
@@ -249,6 +253,26 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 	this->audioData->paths->size = 0;
 	this->audioData->paths->mutex = new std::mutex();
 	this->audioData->volume = 30.0f;
+
+	printf("ACA");
+	std::cout << this->audioApi->getVersion();
+
+	try {
+		this->audioApi->openStream(this->streamParams->oParams, this->streamParams->iParams, SAMPLE_FORMAT, this->sample_rate,
+			this->streamParams->bufferFrames, &processAudio, (void *)this->audioData, this->streamParams->options);
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+		exit(0);
+	}
+
+	try {
+		this->audioApi->startStream();
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+		exit(0);
+	}
 
 	this->currentPaths = new audioPaths();
 	this->currentPaths->ptr = NULL;
@@ -276,6 +300,8 @@ void AudioRenderer::resetStream() {
 	this->audioData->samplesRecordBuffer->tail = 0;
 	this->audioData->samplesRecordBuffer->insertSampleElements((SAMPLE_TYPE*)&this->audio_sample_file.samples[0][0], this->sample_rate, this->audio_sample_file.samples[0].size());
 	this->audioData->samplesRecordBuffer->tail = this->sample_rate - 1;
+
+
 
 	try {
 		this->audioApi->openStream(this->streamParams->oParams, NULL, SAMPLE_FORMAT, this->sample_rate,
@@ -315,16 +341,17 @@ void AudioRenderer::render(Scene * scene, Camera * camera, Source * source) {
 		}
 	}
 
+	
 	// codigo que estaba comentado y fallaba - SG 13/04
-	std::ofstream rs_file("rs.txt");
-	rs_file << std::setprecision(7);
-	float received_energy = 0;
-	for (int i = 0; i < this->audioData->samplesRecordBufferSize; i++) {
-		rs_file << (*this->audioData->Rs)[i] << ",";
-		received_energy += (*this->audioData->Rs)[i];
-	}
-	rs_file << std::endl << received_energy;
-	rs_file.close();
+	// std::ofstream rs_file("rs.txt");
+	// rs_file << std::setprecision(7);
+	// float received_energy = 0;
+	// for (int i = 0; i < this->audioData->samplesRecordBufferSize; i++) {
+	// 	rs_file << (*this->audioData->Rs)[i] << ",";
+	// 	received_energy += (*this->audioData->Rs)[i];
+	// }
+	// rs_file << std::endl << received_energy;
+	// rs_file.close();
 }
 
 void AudioRenderer::updateVolume(float value) {

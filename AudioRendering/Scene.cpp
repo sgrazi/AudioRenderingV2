@@ -1,13 +1,11 @@
 #include "Scene.h"
 #include "OBJLoader.h"
+#include "AppModes.h"
 #include <functional>
 
-Scene::Scene(RTCDevice device) {
+Scene::Scene(RTCDevice device, int app_mode) {
 	this->rtc_scene = rtcNewScene(device);
-}
-
-AuralizationScene::AuralizationScene(RTCDevice device) {
-	this->rtc_scene = rtcNewScene(device);
+	this->app_mode = app_mode;
 }
 
 static void createEmbreeGeometry(RTCDevice * device, OBJProperites props, RTCScene rtc_scene) {
@@ -42,6 +40,11 @@ void Scene::addObjectFromOBJ(std::string file_name, glm::vec3 pos, float size, R
 	//Create mesh in scene
 	OBJProperites props = loadOBJ(file_name);
 
+	if (app_mode == AURALIZE){
+		SceneObject * object = new SceneObject(pos, size, props);
+		this->objects.push_back(object);
+	}
+
 	for (int i = 0; i < props.vertices.size(); i = i + 3) {
 		props.vertices[i] *= size;
 		props.vertices[i + 1] *= size;
@@ -56,38 +59,10 @@ void Scene::addObjectFromOBJ(std::string file_name, glm::vec3 pos, float size, R
 	}
 }
 
-void AuralizationScene::addObjectFromOBJ(std::string file_name, glm::vec3 pos, float size, RTCDevice * device) {
-	//Create mesh in scene
-	OBJProperites props = loadOBJ(file_name);
-
-	SceneObject * object = new SceneObject(pos,size, props);
-	this->objects.push_back(object);
-	//delete[](props.normals);
-
-	//Scale and translate vertices for embree
-	for (int i = 0; i < props.vertices.size(); i = i + 3) {
-		props.vertices[i] *= size;
-		props.vertices[i+1] *= size;
-		props.vertices[i+2] *= size;
-		props.vertices[i] += pos.x;
-		props.vertices[i + 1] += pos.y;
-		props.vertices[i + 2] += pos.z;
-	}
-
-	if (device) {
-		createEmbreeGeometry(device, props, this->rtc_scene);
-	}
-}
 
 void Scene::commitScene() {
 	rtcCommitScene(this->rtc_scene);
 }
-
-//void Scene::draw() {
-//	for (int i = 0; i < this->meshes.size(); ++i) {
-//		this->meshes[i]->draw();
-//	}
-//}
 
 RTCScene Scene::getRTCScene() {
 	return this->rtc_scene;
@@ -95,9 +70,6 @@ RTCScene Scene::getRTCScene() {
 
 Scene::~Scene() {
 	rtcReleaseScene(this->rtc_scene);
-}
-
-AuralizationScene::~AuralizationScene() {
 	for (int i = 0; i < this->objects.size(); ++i) {
 		delete(this->objects[i]);
 	}

@@ -29,6 +29,8 @@
 
 using namespace std;
 
+#include "AppModes.h"
+
 void init();
 void initGL();
 void draw();
@@ -174,10 +176,12 @@ void close() {
 	SDL_Quit();
 }
 
-void auralize(char* file_path) {
-	init();
+void getFileImpulseResponse(char* file_path, int mode) {
+	if (mode == AURALIZE) {
+		init();
+	}
 	RTCDevice device = initializeDevice();
-	AuralizationScene * scene = new AuralizationScene(device);
+	Scene * scene = new Scene(device, mode);
 
 	tinyxml2::XMLDocument scene_doc;
 
@@ -207,195 +211,166 @@ void auralize(char* file_path) {
 	);
 
 	int sample_rate;
-	if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("OUT_SAMPLERATE")) {
-		sample_rate = scene_doc.FirstChildElement("SCENE")->FirstChildElement("OUT_SAMPLERATE")->IntText();
-	}
-	else {
-		sample_rate = SAMPLE_RATE;
-	}
+    if (mode == AURALIZE){
+        if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("OUT_SAMPLERATE")) {
+            sample_rate = scene_doc.FirstChildElement("SCENE")->FirstChildElement("OUT_SAMPLERATE")->IntText();
+        }
+        else {
+            sample_rate = SAMPLE_RATE;
+        }
+    }
 
 	scene->addObjectFromOBJ(model_file_path, glm::vec3(0.0f, 0.0f, 0.0f), scene_size, &device);
 	scene->commitScene();
+	
+    if (mode == SIMULATE){
+        const char* measurement_file_path = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MEASUREMENT")->FirstChildElement("FILE")->GetText();
+        unsigned int measurement_length = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MEASUREMENT")->FirstChildElement("LENGTH")->UnsignedText();
 
-	const char * sound_sample = NULL;
-	AudioRenderer audio;
-	if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOUND_SAMPLE")) {
-		sound_sample = scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOUND_SAMPLE")->GetText();
-		audio = AudioRenderer(max_reflexions, absorbtion_coef, num_rays, source_power, listener_size, sample_rate, sound_sample);
-	}
-	else {
-		audio = AudioRenderer(max_reflexions, absorbtion_coef, num_rays, source_power, listener_size, sample_rate);
-	}
-	Camera cam = Camera(listener_pos, WIDTH, HEIGHT, 45, window);
-	Source * source = new Source(glm::vec3(0.0f, 0.0f, 0.0f), 0.25, "assets/models/sphere.obj");
-	audio.render(scene, &cam, source);
-	ShaderProgram* pass = new ShaderProgram("assets/shaders/pass.vert", "assets/shaders/pass.frag");
-	bool exit = false;
+        timeInterval interval;
+        
+        if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")) {
+            unsigned int begin = scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")->FirstChildElement("BEGIN")->IntText();
+            unsigned int end = scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")->FirstChildElement("END")->IntText();
+            interval = { begin, end };
+        }
+        else {
+            interval = { 0, 0 };
+        }
 
-	bool wireframe = false;
-	bool active_rendering = false;
+        renderAudioFile(scene, listener_pos, listener_size, source_pos, source_power, measurement_file_path, measurement_length, max_reflexions, absorbtion_coef, num_rays, interval);
+    } else if (mode == AURALIZE) {
+        const char * sound_sample = NULL;
+		AudioRenderer audio;
+		if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOUND_SAMPLE")) {
+			sound_sample = scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOUND_SAMPLE")->GetText();
+			audio = AudioRenderer(max_reflexions, absorbtion_coef, num_rays, source_power, listener_size, sample_rate, sound_sample);
+		}
+		else {
+			audio = AudioRenderer(max_reflexions, absorbtion_coef, num_rays, source_power, listener_size, sample_rate);
+		}
+		Camera cam = Camera(listener_pos, WIDTH, HEIGHT, 45, window);
+		Source * source = new Source(glm::vec3(0.0f, 0.0f, 0.0f), 0.25, "assets/models/sphere.obj");
+		audio.render(scene, &cam, source);
+		ShaderProgram* pass = new ShaderProgram("assets/shaders/pass.vert", "assets/shaders/pass.frag");
+		bool exit = false;
 
-	SDL_Event event;
+		bool wireframe = false;
+		bool active_rendering = false;
 
-	double frameTime = 1000.0f / 65.0f;
+		SDL_Event event;
 
-	std::clock_t start;
-	while (!exit) {
-		start = clock();
-		while (SDL_PollEvent(&event) != 0) {
-			switch (event.type) {
-			case SDL_QUIT:
-				exit = true;
-				break;
-			case SDL_KEYDOWN: {
-				if (event.key.keysym.sym == SDLK_ESCAPE) {
+		double frameTime = 1000.0f / 65.0f;
+
+		std::clock_t start;
+		while (!exit) {
+			start = clock();
+			while (SDL_PollEvent(&event) != 0) {
+				switch (event.type) {
+				case SDL_QUIT:
 					exit = true;
 					break;
-				}
-				else if (event.key.keysym.sym == SDLK_m) {
-					cam.moveCam();
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_e) {
-					source->pos = cam.pos;
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_r) {
-					audio.render(scene, &cam, source);
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_t) {
-					active_rendering = true;
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_j) {
-					audio.updateVolume(-1.0);
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_k) {
-					audio.updateVolume(1.0);
-					break;
-				}
-				else if (event.key.keysym.sym == SDLK_SPACE) {
-					audio.resetStream();
-					break;
-				}
+				case SDL_KEYDOWN: {
+					if (event.key.keysym.sym == SDLK_ESCAPE) {
+						exit = true;
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_m) {
+						cam.moveCam();
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_e) {
+						source->pos = cam.pos;
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_r) {
+						audio.render(scene, &cam, source);
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_t) {
+						active_rendering = true;
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_j) {
+						audio.updateVolume(-1.0);
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_k) {
+						audio.updateVolume(1.0);
+						break;
+					}
+					else if (event.key.keysym.sym == SDLK_SPACE) {
+						audio.resetStream();
+						break;
+					}
 
+				}
+								break;
+				case SDL_MOUSEBUTTONDOWN: {
+				}
+										break;
+				}
 			}
-							  break;
-			case SDL_MOUSEBUTTONDOWN: {
+
+			cam.update();
+			if (active_rendering) {
+				audio.render(scene, &cam, source);
 			}
-									  break;
+			draw();
+			pass->bind();
+			GLuint colorID = glGetUniformLocation(pass->getId(), "in_color");
+			glUniform4fv(colorID, 1, &(glm::vec4(1, 1, 1, 1)[0]));
+			//ViewProjectionMatrix
+			GLuint worldTransformID = glGetUniformLocation(pass->getId(), "worldTransform");
+			glUniformMatrix4fv(worldTransformID, 1, GL_FALSE, &cam.modelViewProjectionMatrix[0][0]);
+			GLuint modelMatrixID = glGetUniformLocation(pass->getId(), "modelMatrix");
+			GLuint vistaID = glGetUniformLocation(pass->getId(), "vista");
+			glUniform3fv(vistaID, 1, &((cam.ref - cam.pos)[0]));
+			//Directional light. To do a point light more shader code is needed.
+			GLuint lightDirID = glGetUniformLocation(pass->getId(), "lightDir");
+			glUniform3fv(lightDirID, 1, &(glm::vec3(1, -1, 1)[0]));
+			for (int i = 0; i < scene->objects.size(); ++i) {
+				glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &scene->objects[i]->getModelMatrix()[0][0]);
+				scene->objects[i]->draw();
 			}
+			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &source->getModelMatrix()[0][0]);
+			glUniform4fv(colorID, 1, &(glm::vec4(1,0,0,1)[0]));
+			source->draw();
+			pass->unbind();
+
+			double dif = frameTime - ((clock() - start) * (1000.0 / double(CLOCKS_PER_SEC)));
+			if (dif > 0) {
+				Sleep(int(dif));
+			}
+			SDL_GL_SwapWindow(window);
 		}
 
-		cam.update();
-		if (active_rendering) {
-			audio.render(scene, &cam, source);
-		}
-		draw();
-		pass->bind();
-		GLuint colorID = glGetUniformLocation(pass->getId(), "in_color");
-		glUniform4fv(colorID, 1, &(glm::vec4(1, 1, 1, 1)[0]));
-		//ViewProjectionMatrix
-		GLuint worldTransformID = glGetUniformLocation(pass->getId(), "worldTransform");
-		glUniformMatrix4fv(worldTransformID, 1, GL_FALSE, &cam.modelViewProjectionMatrix[0][0]);
-		GLuint modelMatrixID = glGetUniformLocation(pass->getId(), "modelMatrix");
-		GLuint vistaID = glGetUniformLocation(pass->getId(), "vista");
-		glUniform3fv(vistaID, 1, &((cam.ref - cam.pos)[0]));
-		//Directional light. To do a point light more shader code is needed.
-		GLuint lightDirID = glGetUniformLocation(pass->getId(), "lightDir");
-		glUniform3fv(lightDirID, 1, &(glm::vec3(1, -1, 1)[0]));
-		for (int i = 0; i < scene->objects.size(); ++i) {
-			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &scene->objects[i]->getModelMatrix()[0][0]);
-			scene->objects[i]->draw();
-		}
-		glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &source->getModelMatrix()[0][0]);
-		glUniform4fv(colorID, 1, &(glm::vec4(1,0,0,1)[0]));
-		source->draw();
-		pass->unbind();
+		delete(scene);
+		/* Though not strictly necessary in this example, you should
+		/* always make sure to release resources allocated through Embree. */
+		rtcReleaseDevice(device);
+		/* wait for user input under Windows when opened in separate window */
+		waitForKeyPressedUnderWindows();
 
-		double dif = frameTime - ((clock() - start) * (1000.0 / double(CLOCKS_PER_SEC)));
-		if (dif > 0) {
-			Sleep(int(dif));
-		}
-		SDL_GL_SwapWindow(window);
-	}
-
-	delete(scene);
-	/* Though not strictly necessary in this example, you should
-	/* always make sure to release resources allocated through Embree. */
-	rtcReleaseDevice(device);
-	/* wait for user input under Windows when opened in separate window */
-	waitForKeyPressedUnderWindows();
-
-	close();
-}
-
-void getFileImpulseResponse(char* file_path) {
-	tinyxml2::XMLDocument scene_doc;
-
-	if (scene_doc.LoadFile(file_path)) {
-		cout << "Error loading file" << endl;
-		return;
-	}
-
-	const char* model_file_path = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MODEL")->GetText();
-	float scene_size = scene_doc.FirstChildElement("SCENE")->FirstChildElement("SIZE")->FloatText();
-	int max_reflexions = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MAX_REFLEXIONS")->IntText();
-	float absorbtion_coef = scene_doc.FirstChildElement("SCENE")->FirstChildElement("ABSORBTION")->FloatText();
-	int num_rays = scene_doc.FirstChildElement("SCENE")->FirstChildElement("NUM_RAYS")->IntText();
-
-	float source_power = scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOURCE")->FirstChildElement("POWER")->FloatText();
-	glm::vec3 source_pos = glm::vec3(
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOURCE")->FirstChildElement("POS_X")->FloatText(),
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOURCE")->FirstChildElement("POS_Y")->FloatText(),
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("SOURCE")->FirstChildElement("POS_Z")->FloatText()
-	);
-
-	float listener_size = scene_doc.FirstChildElement("SCENE")->FirstChildElement("LISTENER")->FirstChildElement("SIZE")->FloatText();
-	glm::vec3 listener_pos = glm::vec3(
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("LISTENER")->FirstChildElement("POS_X")->FloatText(),
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("LISTENER")->FirstChildElement("POS_Y")->FloatText(),
-		scene_doc.FirstChildElement("SCENE")->FirstChildElement("LISTENER")->FirstChildElement("POS_Z")->FloatText()
-	);
-
-	RTCDevice device = initializeDevice();
-	Scene * scene = new Scene(device);
-	scene->addObjectFromOBJ(model_file_path, glm::vec3(0.0f, 0.0f, 0.0f), scene_size, &device);
-	scene->commitScene();
-
-	const char* measurement_file_path = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MEASUREMENT")->FirstChildElement("FILE")->GetText();
-	unsigned int measurement_length = scene_doc.FirstChildElement("SCENE")->FirstChildElement("MEASUREMENT")->FirstChildElement("LENGTH")->UnsignedText();
-
-	timeInterval interval;
-	if (scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")) {
-		unsigned int begin = scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")->FirstChildElement("BEGIN")->IntText();
-		unsigned int end = scene_doc.FirstChildElement("SCENE")->FirstChildElement("ANALYZE")->FirstChildElement("END")->IntText();
-		interval = { begin, end };
-	}
-	else {
-		interval = { 0, 0 };
-	}
-
-	renderAudioFile(scene, listener_pos, listener_size, source_pos, source_power, measurement_file_path, measurement_length, max_reflexions, absorbtion_coef, num_rays, interval);
-
+		close();
+    }
 }
 
 int main(int argc, char* argv[]) {
-	char* mode = argv[1];
-	if (!strcmp(mode, "simulate")) {
+	char* mode_str = argv[1];
+    int mode;
+	if (!strcmp(mode_str, "simulate")) {
+        mode = SIMULATE;
 		cout << "Simulating audio" << endl;
-		char* file_path = argv[2];
-		getFileImpulseResponse(file_path);
 	}
-	else if (!strcmp(mode, "auralize")) {
+	else if (!strcmp(mode_str, "auralize")) {
+        mode = AURALIZE;
 		cout << "Auralizing audio" << endl;
-		char* file_path = argv[2];
-		auralize(file_path);
 	}
 	else {
 		cout << "Invalid mode" << endl;
 	}
+    char* file_path = argv[2];
+    getFileImpulseResponse(file_path, mode);
 	return 0;
 }
