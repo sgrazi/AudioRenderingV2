@@ -1,11 +1,8 @@
 #include "SceneObject.h"
 
 SceneObject::SceneObject(glm::vec3 pos, float size, OBJProperites props) {
-	printf("1111111111111111111");
 	this->mesh = new Mesh(props.vertices, props.indices, props.normals);
-	printf("1111111111111111111");
 	this->pos = pos;
-	printf("1111111111111111111");
 	this->size = size;
 }
 

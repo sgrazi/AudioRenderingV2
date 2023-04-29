@@ -210,7 +210,7 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 	this->num_rays = num_rays;
 	this->source_power = source_power;
 	this->listener_size = listener_size;
-	this->sample_rate = sample_rate;
+	this->sample_rate = 256;
 
 	//Init audio stream
 	this->audioApi = new RtAudio();
@@ -220,7 +220,7 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 		exit(0);
 	}
 
-	unsigned int bufferBytes, bufferFrames = 512, input_channles = 1, output_channels = 2;
+	unsigned int bufferBytes, bufferFrames = 256, input_channles = 1, output_channels = 2;
 
 	//Set up stream parameters they need to be in heap since audio api will use them in separate thread
 	this->streamParams = new streamParameters();
@@ -254,9 +254,7 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 	this->audioData->paths->mutex = new std::mutex();
 	this->audioData->volume = 30.0f;
 
-	printf("ACA");
-	std::cout << this->audioApi->getVersion();
-
+	double data[2] = {0, 0};
 	try {
 		this->audioApi->openStream(this->streamParams->oParams, this->streamParams->iParams, SAMPLE_FORMAT, this->sample_rate,
 			this->streamParams->bufferFrames, &processAudio, (void *)this->audioData, this->streamParams->options);
