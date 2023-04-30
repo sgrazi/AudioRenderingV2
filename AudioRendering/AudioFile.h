@@ -483,6 +483,7 @@ bool AudioFile<T>::load (std::string filePath)
     
     if (audioFileFormat == AudioFileFormat::Wave)
     {
+        //return true;
         return decodeWaveFile (fileData);
     }
     else if (audioFileFormat == AudioFileFormat::Aiff)

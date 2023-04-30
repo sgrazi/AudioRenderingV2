@@ -3,6 +3,7 @@
 
 #include "pch.h"
 #include <iostream>
+#include <io.h>
 
 #include <ctime>
 #include <windows.h>
@@ -70,6 +71,30 @@ int HEIGHT = 600;
 #if defined(RTC_NAMESPACE_USE)
 RTC_NAMESPACE_USE
 #endif
+
+// Two-channel sawtooth wave generator.
+int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
+	double streamTime, RtAudioStreamStatus status, void* userData)
+{
+	unsigned int i, j;
+	double* buffer = (double*)outputBuffer;
+	double* lastValues = (double*)userData;
+	if (status)
+		std::cout << "Stream underflow detected!" << std::endl;
+	// Write interleaved audio data.
+	AudioFile<float> audio;
+	const char* file_path = "assets/sound_samples/experimento_entrada_16KHz.wav";
+	//if (_access(file_path, 0) == 0) {
+	//	// file exists
+	//	printf("existe la mierda esta\n");
+	//}
+	audio.load("assets/sound_samples/experimento_entrada_16KHz.wav");
+	
+	for (i = 0; i < nBufferFrames; i++) {
+		*buffer++ = (double) audio.samples.at(0).at(i);
+	}
+	return 0;
+}
 
 /*
  * We will register this error handler with the device in initializeDevice(),
@@ -251,7 +276,7 @@ void getFileImpulseResponse(char* file_path, int mode) {
 		}
 		Camera cam = Camera(listener_pos, WIDTH, HEIGHT, 45, window);
 		Source * source = new Source(glm::vec3(0.0f, 0.0f, 0.0f), 0.25, "assets/models/sphere.obj");
-		audio.render(scene, &cam, source);
+		//audio.render(scene, &cam, source);
 		ShaderProgram* pass = new ShaderProgram("assets/shaders/pass.vert", "assets/shaders/pass.frag");
 		bool exit = false;
 
@@ -312,37 +337,37 @@ void getFileImpulseResponse(char* file_path, int mode) {
 				}
 			}
 
-			cam.update();
+			//cam.update();
 			if (active_rendering) {
 				audio.render(scene, &cam, source);
 			}
-			draw();
-			pass->bind();
-			GLuint colorID = glGetUniformLocation(pass->getId(), "in_color");
-			glUniform4fv(colorID, 1, &(glm::vec4(1, 1, 1, 1)[0]));
-			//ViewProjectionMatrix
-			GLuint worldTransformID = glGetUniformLocation(pass->getId(), "worldTransform");
-			glUniformMatrix4fv(worldTransformID, 1, GL_FALSE, &cam.modelViewProjectionMatrix[0][0]);
-			GLuint modelMatrixID = glGetUniformLocation(pass->getId(), "modelMatrix");
-			GLuint vistaID = glGetUniformLocation(pass->getId(), "vista");
-			glUniform3fv(vistaID, 1, &((cam.ref - cam.pos)[0]));
-			//Directional light. To do a point light more shader code is needed.
-			GLuint lightDirID = glGetUniformLocation(pass->getId(), "lightDir");
-			glUniform3fv(lightDirID, 1, &(glm::vec3(1, -1, 1)[0]));
-			for (int i = 0; i < scene->objects.size(); ++i) {
-				glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &scene->objects[i]->getModelMatrix()[0][0]);
-				scene->objects[i]->draw();
-			}
-			glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &source->getModelMatrix()[0][0]);
-			glUniform4fv(colorID, 1, &(glm::vec4(1,0,0,1)[0]));
-			source->draw();
-			pass->unbind();
+			//draw();
+			//pass->bind();
+			//GLuint colorID = glGetUniformLocation(pass->getId(), "in_color");
+			//glUniform4fv(colorID, 1, &(glm::vec4(1, 1, 1, 1)[0]));
+			////ViewProjectionMatrix
+			//GLuint worldTransformID = glGetUniformLocation(pass->getId(), "worldTransform");
+			//glUniformMatrix4fv(worldTransformID, 1, GL_FALSE, &cam.modelViewProjectionMatrix[0][0]);
+			//GLuint modelMatrixID = glGetUniformLocation(pass->getId(), "modelMatrix");
+			//GLuint vistaID = glGetUniformLocation(pass->getId(), "vista");
+			//glUniform3fv(vistaID, 1, &((cam.ref - cam.pos)[0]));
+			////Directional light. To do a point light more shader code is needed.
+			//GLuint lightDirID = glGetUniformLocation(pass->getId(), "lightDir");
+			//glUniform3fv(lightDirID, 1, &(glm::vec3(1, -1, 1)[0]));
+			//for (int i = 0; i < scene->objects.size(); ++i) {
+			//	glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &scene->objects[i]->getModelMatrix()[0][0]);
+			//	scene->objects[i]->draw();
+			//}
+			//glUniformMatrix4fv(modelMatrixID, 1, GL_FALSE, &source->getModelMatrix()[0][0]);
+			//glUniform4fv(colorID, 1, &(glm::vec4(1,0,0,1)[0]));
+			//source->draw();
+			//pass->unbind();
 
-			double dif = frameTime - ((clock() - start) * (1000.0 / double(CLOCKS_PER_SEC)));
-			if (dif > 0) {
-				Sleep(int(dif));
-			}
-			SDL_GL_SwapWindow(window);
+			//double dif = frameTime - ((clock() - start) * (1000.0 / double(CLOCKS_PER_SEC)));
+			//if (dif > 0) {
+			//	Sleep(int(dif));
+			//}
+			//SDL_GL_SwapWindow(window);
 		}
 
 		delete(scene);
@@ -357,7 +382,47 @@ void getFileImpulseResponse(char* file_path, int mode) {
 }
 
 int main(int argc, char* argv[]) {
-	char* mode_str = argv[1];
+	RtAudio dac;
+	if (dac.getDeviceCount() < 1) {
+		std::cout << "\nNo audio devices found!\n";
+		exit(0);
+	}
+	RtAudio::StreamParameters parameters;
+	parameters.deviceId = dac.getDefaultOutputDevice();
+	parameters.nChannels = 1; // tienq ue machear con los channels del audio
+	parameters.firstChannel = 0;
+	
+
+	AudioFile<float> audio;
+	const char* file_path = "assets/sound_samples/experimento_entrada_16KHz.wav";
+	audio.load(file_path);
+	unsigned int sampleRate = audio.getSampleRate() / audio.samples.size();
+	unsigned int bufferFrames = audio.samples.at(0).size(); // 256 sample frames
+	const int length = audio.samples.at(0).size();
+	double data[1];
+	try {
+		dac.openStream(&parameters, NULL, RTAUDIO_FLOAT64,
+			sampleRate, &bufferFrames, &saw, (void*)&data);
+		dac.startStream();
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+		exit(0);
+	}
+
+	char input;
+	std::cout << "\nPlaying ... press <enter> to quit.\n";
+	std::cin.get(input);
+	try {
+		// Stop the stream
+		dac.stopStream();
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+	}
+	if (dac.isStreamOpen()) dac.closeStream();
+	return 0;
+	/*char* mode_str = argv[1];
     int mode;
 	if (!strcmp(mode_str, "simulate")) {
         mode = SIMULATE;
@@ -372,5 +437,5 @@ int main(int argc, char* argv[]) {
 	}
     char* file_path = argv[2];
     getFileImpulseResponse(file_path, mode);
-	return 0;
+	return 0;*/
 }
