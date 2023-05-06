@@ -1,0 +1,90 @@
+﻿  AudioRenderer.cpp
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.h(46): warning C4091: 'typedef ': se ha omitido a la izquierda de 'intersectionData' cuando no hay ninguna variable declarada
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(44): warning C4018: '<': no coinciden signed/unsigned
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(46): warning C4018: '<': no coinciden signed/unsigned
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(87): warning C4018: '<': no coinciden signed/unsigned
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(99): warning C4018: '<': no coinciden signed/unsigned
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(148): warning C4101: 'bufferBytes': variable local sin referencia
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(244): warning C4244: 'inicializando': conversión de 'double' a 'int'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(223): warning C4101: 'bufferBytes': variable local sin referencia
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(311): warning C4244: 'inicializando': conversión de 'float' a 'unsigned int'; posible pérdida de datos
+c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2903): warning C4244: '=': conversión de 'const _Ty' a 'float'; posible pérdida de datos
+          with
+          [
+              _Ty=double
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2917): note: vea la referencia a la creación de instancias de plantilla de función 'void std::_Fill_unchecked1<_FwdIt,_Ty>(_FwdIt,_FwdIt,const _Ty &,std::false_type)' que se está compilando
+          with
+          [
+              _FwdIt=float *,
+              _Ty=double
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2925): note: vea la referencia a la creación de instancias de plantilla de función 'void std::_Fill_unchecked<float*,_Ty>(_FwdIt,_FwdIt,const _Ty &)' que se está compilando
+          with
+          [
+              _Ty=double,
+              _FwdIt=float *
+          ]
+  c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderer.cpp(302): note: vea la referencia a la creación de instancias de plantilla de función 'void std::fill<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,double>(_FwdIt,_FwdIt,const double &)' que se está compilando
+          with
+          [
+              _Ty=float,
+              _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<float>>>
+          ]
+  AudioRenderingUtils.cpp
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.h(46): warning C4091: 'typedef ': se ha omitido a la izquierda de 'intersectionData' cuando no hay ninguna variable declarada
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.cpp(43): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.cpp(44): warning C4244: 'inicializando': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.cpp(57): warning C4244: 'return': conversión de 'double' a 'float'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.cpp(181): warning C4244: 'inicializando': conversión de '_Rep' a 'unsigned int'; posible pérdida de datos
+          with
+          [
+              _Rep=std::chrono::system_clock::rep
+          ]
+  Camera.cpp
+  Halton.cpp
+  main.cpp
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiorenderingutils.h(46): warning C4091: 'typedef ': se ha omitido a la izquierda de 'intersectionData' cuando no hay ninguna variable declarada
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiofilerenderer.h(49): warning C4244: '=': conversión de 'float' a 'size_t'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiofilerenderer.h(53): warning C4244: '=': conversión de 'double' a 'size_t'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiofilerenderer.h(71): warning C4244: 'argumento': conversión de 'float' a 'const unsigned __int64'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiofilerenderer.h(76): warning C4244: 'inicializando': conversión de 'float' a 'unsigned int'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\main.cpp(229): warning C4244: 'argumento': conversión de 'int' a 'float'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\main.cpp(272): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\main.cpp(276): warning C4305: 'argumento': truncamiento de 'double' a 'float'
+c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2903): warning C4244: '=': conversión de 'const _Ty' a 'float'; posible pérdida de datos
+          with
+          [
+              _Ty=double
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2917): note: vea la referencia a la creación de instancias de plantilla de función 'void std::_Fill_unchecked1<_FwdIt,_Ty>(_FwdIt,_FwdIt,const _Ty &,std::false_type)' que se está compilando
+          with
+          [
+              _FwdIt=float *,
+              _Ty=double
+          ]
+  c:\program files (x86)\microsoft visual studio\2017\community\vc\tools\msvc\14.16.27023\include\xutility(2925): note: vea la referencia a la creación de instancias de plantilla de función 'void std::_Fill_unchecked<float*,_Ty>(_FwdIt,_FwdIt,const _Ty &)' que se está compilando
+          with
+          [
+              _Ty=double,
+              _FwdIt=float *
+          ]
+  c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\audiofilerenderer.h(59): note: vea la referencia a la creación de instancias de plantilla de función 'void std::fill<std::_Vector_iterator<std::_Vector_val<std::_Simple_types<_Ty>>>,double>(_FwdIt,_FwdIt,const double &)' que se está compilando
+          with
+          [
+              _Ty=float,
+              _FwdIt=std::_Vector_iterator<std::_Vector_val<std::_Simple_types<float>>>
+          ]
+  Mesh.cpp
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\mesh.cpp(46): warning C4267: '=': conversión de 'size_t' a 'unsigned int'; posible pérdida de datos
+c:\users\cjsat\onedrive\documents\fing\proyecto de grado\audiorendering\audiorendering\mesh.cpp(52): warning C4267: '=': conversión de 'size_t' a 'unsigned int'; posible pérdida de datos
+  OBJLoader.cpp
+  pch.cpp
+  Scene.cpp
+  SceneObject.cpp
+  ShaderProgram.cpp
+  Source.cpp
+  tinyxml2.cpp
+  tiny_obj_loader.cc
+  Generando código...
+  AudioRendering.vcxproj -> C:\Users\cjsat\OneDrive\Documents\FING\Proyecto de Grado\AudioRendering\x64\Debug\AudioRendering.exe

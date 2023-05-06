@@ -80,25 +80,25 @@ void renderAudioFile(
 	}
 	std::ofstream rs_file("rs.txt");
 	rs_file << std::setprecision(7);
-	float received_energy = 0;
+	/*float received_energy = 0;*/
 	for (int i = 0; i < size; i++) {
 		rs_file << (*rs)[i] << ",";
-		received_energy += (*rs)[i];
+		/*received_energy += (*rs)[i];*/
 	}
 	rs_file << std::endl;
-	for (int i = 0; i < size; i++) {
+	/*for (int i = 0; i < size; i++) {
 		rs_file << measurement_file.samples[0][i] << ",";
 	}
-	rs_file << std::endl << received_energy;
+	rs_file << std::endl << received_energy;*/
 
-	rs_file << std::endl;
-	int direct_paths = 0;
-	for (int i = 0; i < paths->size; i++) {
-		if (paths->ptr[i].is_direct_path) {
-			direct_paths++;
-			rs_file << paths->ptr[i].remaining_energy_factor << ",";
-		}
-	}
+	//rs_file << std::endl;
+	//int direct_paths = 0;
+	//for (int i = 0; i < paths->size; i++) {
+	//	if (paths->ptr[i].is_direct_path) {
+	//		direct_paths++;
+	//		rs_file << paths->ptr[i].remaining_energy_factor << ",";
+	//	}
+	//}
 
 	rs_file << std::endl;
 	for (int i = 0; i < rays_in_interval.size(); i++) {

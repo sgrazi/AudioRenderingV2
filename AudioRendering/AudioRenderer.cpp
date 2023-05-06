@@ -256,8 +256,7 @@ AudioRenderer::AudioRenderer(int max_reflexions, float absorbtion_coef, int num_
 	this->currentPaths->mutex = new std::mutex;
 
 	//Create Rs vector
-	// aca agregamos (audio_length + 1) - SG 13/04
-	this->audioData->Rs = new std::vector<float>((audio_length + 1) * this->sample_rate);
+	this->audioData->Rs = new std::vector<float>(this->sample_rate);
 }
 
 void AudioRenderer::resetStream() {
@@ -314,17 +313,15 @@ void AudioRenderer::render(Scene * scene, Camera * camera, Source * source) {
 			(*this->audioData->Rs)[array_pos] += remaining_factor;
 		}
 	}
-
-	// codigo que estaba comentado y fallaba - SG 13/04
-	std::ofstream rs_file("rs.txt");
-	rs_file << std::setprecision(7);
-	float received_energy = 0;
-	for (int i = 0; i < this->audioData->samplesRecordBufferSize; i++) {
-		rs_file << (*this->audioData->Rs)[i] << ",";
-		received_energy += (*this->audioData->Rs)[i];
-	}
-	rs_file << std::endl << received_energy;
-	rs_file.close();
+	//std::ofstream rs_file("rs.txt");
+	//rs_file << std::setprecision(7);
+	//float received_energy = 0;
+	//for (int i = 0; i < this->audioData->samplesRecordBufferSize; i++) {
+	//	rs_file << (*this->audioData->Rs)[i] << ",";
+	//	received_energy += (*this->audioData->Rs)[i];
+	//}
+	//rs_file << std::endl << received_energy;
+	//rs_file.close();
 }
 
 void AudioRenderer::updateVolume(float value) {
