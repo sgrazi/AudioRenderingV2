@@ -4,7 +4,7 @@
 #include<glm/glm.hpp>
 #include<glm/gtc/matrix_transform.hpp>
 #include<glm/gtc/type_ptr.hpp>
-
+#include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
 #include "EBO.h"
@@ -22,25 +22,54 @@ int main() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLfloat vertices[] =
-	{ // COORDINATES           // COLORS
-		-0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,
-		-0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,
-		 0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,
-		 0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,
-		 0.0f, 0.8f,  0.0f,     0.92f, 0.86f, 0.76f
-	};
-
-	// Indices for vertices order
-	GLuint indices[] =
+	// Load obj && initialize Loader
+	objl::Loader loader;
+	bool load_res = loader.LoadFile("sphere.obj");
+	GLfloat* vertices;
+	GLuint* indices;
+	unsigned int vertices_sz;
+	unsigned int indices_sz;
+	if (load_res)
 	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 1, 4,
-		1, 2, 4,
-		2, 3, 4,
-		3, 0, 4
-	};
+		vertices_sz = loader.LoadedVertices.size() * 3; // 3 coordinates per vertex
+		indices_sz = loader.LoadedIndices.size();
+		vertices = new GLfloat[vertices_sz];
+		for (int i = 0; i < loader.LoadedVertices.size(); i++) {
+			vertices[3 * i] = loader.LoadedVertices.at(i).Position.X;
+			vertices[3 * i + 1] = loader.LoadedVertices.at(i).Position.Y;
+			vertices[3 * i + 2] = loader.LoadedVertices.at(i).Position.Z;
+			//cout << vertices[3 * i] << " " << vertices[3 * i + 1] << " " << vertices[3 * i + 2] << endl;
+		}
+
+		indices = new GLuint[indices_sz];
+		for (int i = 0; i < indices_sz; i++) {
+			indices[i] = loader.LoadedIndices.at(i);
+			//cout << indices[i] << endl;
+		}
+	} else { // error
+		cout << "Failed to load OBJ" << endl;
+		return -1;
+	}
+
+	//GLfloat vertices[] =
+	//{ // COORDINATES           // COLORS
+	//	-0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,
+	//	-0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,
+	//	 0.5f, 0.0f, -0.5f,     0.83f, 0.70f, 0.44f,
+	//	 0.5f, 0.0f,  0.5f,     0.83f, 0.70f, 0.44f,
+	//	 0.0f, 0.8f,  0.0f,     0.92f, 0.86f, 0.76f
+	//};
+
+	//// Indices for vertices order
+	//GLuint indices[] =
+	//{
+	//	0, 1, 2,
+	//	0, 2, 3,
+	//	0, 1, 4,
+	//	1, 2, 4,
+	//	2, 3, 4,
+	//	3, 0, 4
+	//};
 
 	
 
@@ -61,11 +90,11 @@ int main() {
 	VAO VAO1;
 	VAO1.Bind();
 
-	VBO VBO1(vertices, sizeof(vertices));
-	EBO EBO1(indices, sizeof(indices));
+	VBO VBO1(vertices, sizeof(GLfloat) * vertices_sz);
+	EBO EBO1(indices, sizeof(GLuint) * indices_sz);
 
-	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 6 * sizeof(float), (void*)0);
-	VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	VAO1.LinkAttrib(VBO1, 0, 3, GL_FLOAT, 3 * sizeof(GLfloat), (void*)0);
+	//VAO1.LinkAttrib(VBO1, 1, 3, GL_FLOAT, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 
 	// Good practice to unbind all to prevent accidentally modifying them
 	VAO1.Unbind();
@@ -90,7 +119,7 @@ int main() {
 		clock_t time = clock();
 		glUniform1f(timeID, time);
 		VAO1.Bind();
-		glDrawElements(GL_TRIANGLES, sizeof(indices)/sizeof(int), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, sizeof(GLuint) * indices_sz /sizeof(int), GL_UNSIGNED_INT, 0);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}

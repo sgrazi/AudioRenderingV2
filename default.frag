@@ -1,17 +1,17 @@
 #version 330 core
 out vec4 FragColor;
-in vec3 color;
+in vec3 pos;
 
 uniform  float time;
 
 void main()
 {
-	float red = color.x;
-	float green = color.y;
-	float blue = color.z;
+	float x = pos.x;
+	float y = pos.y;
+	float z = pos.z;
 
-	red = abs(sin(red + time*0.001));
-	green = abs(sin(green + time*0.001));
-	blue = abs(sin(blue + time*0.001));
+	float red = abs(sin(0.34 + y + time*0.001));
+	float green = abs(cos(0.74 + y + time*0.001));
+	float blue = abs(tan(0.17 + y + time*0.001));
 	FragColor = vec4(red, green, blue, 1.0f);
 };
