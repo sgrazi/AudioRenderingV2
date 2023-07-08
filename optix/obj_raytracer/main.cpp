@@ -91,9 +91,9 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
-        Model *model = loadOBJ("../../models/conference.obj");
+        Model *model = loadOBJ("../models/conference.obj");
         Camera camera = {
-            vec3f(0.0f, 600.0f, 0.0f),                   // posicion // vec3f(-1293.07f, 154.681f, -0.7304f),
+            vec3f(0.0f, 600.0f, 0.0f),                 // posicion
             model->bounds.center() - vec3f(0, 400, 0), // direccion
             vec3f(0.f, 1.f, 0.f)                       // vertical
         };

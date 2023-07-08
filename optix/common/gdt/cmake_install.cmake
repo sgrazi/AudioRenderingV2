@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt
+# Install script for directory: C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/gdt
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/optix7course")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/optix")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 

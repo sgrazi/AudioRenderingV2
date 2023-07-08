@@ -1,8 +1,8 @@
-# Install script for directory: C:/Users/Fede/Documents/AudioRenderingV2/optix
+# Install script for directory: C:/Users/Stefano/Documents/AudioRenderingV2/optix
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
-  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/optix7course")
+  set(CMAKE_INSTALL_PREFIX "C:/Program Files (x86)/optix")
 endif()
 string(REGEX REPLACE "/$" "" CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}")
 
@@ -34,10 +34,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("C:/Users/Fede/Documents/AudioRenderingV2/optix/example01_helloOptix/cmake_install.cmake")
-  include("C:/Users/Fede/Documents/AudioRenderingV2/optix/example02_pipelineAndRayGen/cmake_install.cmake")
-  include("C:/Users/Fede/Documents/AudioRenderingV2/optix/example07_firstRealModel/cmake_install.cmake")
-  include("C:/Users/Fede/Documents/AudioRenderingV2/optix/example99/cmake_install.cmake")
+  include("C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/cmake_install.cmake")
 
 endif()
 
@@ -49,5 +46,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "C:/Users/Fede/Documents/AudioRenderingV2/optix/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "C:/Users/Stefano/Documents/AudioRenderingV2/optix/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
