@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CUDABuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\CMakeFiles\1aa77c4bccc4d0357f34aa04c298a8ed\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{17724F9F-B981-3F75-8D43-C632930A345B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{49162DB8-214E-3B03-9482-2CBA2E0D8BD3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A63F6416-7BF4-3DF9-A247-59C0FA515BE0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

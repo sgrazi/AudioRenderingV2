@@ -1,0 +1,54 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\example07_firstRealModel\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\SampleRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\optix7.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\CUDABuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\LaunchParams.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\SampleRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\devicePrograms.cu">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\CMakeFiles\0c49362221f9e9da2339c2a2a9b19a59\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\example07_firstRealModel\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{17724F9F-B981-3F75-8D43-C632930A345B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{49162DB8-214E-3B03-9482-2CBA2E0D8BD3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{A63F6416-7BF4-3DF9-A247-59C0FA515BE0}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

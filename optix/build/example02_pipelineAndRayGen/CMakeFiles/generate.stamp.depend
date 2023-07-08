@@ -1,0 +1,5 @@
+# CMake generation dependency list for this directory.
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/example02_pipelineAndRayGen/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cmake.pre-gen
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/example02_pipelineAndRayGen/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend
+C:/Users/Fede/Documents/AudioRenderingV2/optix/example02_pipelineAndRayGen/CMakeLists.txt
+C:/Users/Fede/Downloads/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindCUDA/run_nvcc.cmake

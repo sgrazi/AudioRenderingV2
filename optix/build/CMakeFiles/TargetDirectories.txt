@@ -1,0 +1,15 @@
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/CMakeFiles/INSTALL.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/CMakeFiles/ALL_BUILD.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/CMakeFiles/ZERO_CHECK.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/gdt.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/INSTALL.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/ALL_BUILD.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/3rdParty/glfw/CMakeFiles/uninstall.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/3rdParty/glfw/CMakeFiles/INSTALL.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/3rdParty/glfw/CMakeFiles/ALL_BUILD.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/3rdParty/glfw/src/CMakeFiles/glfw.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/3rdParty/glfw/src/CMakeFiles/INSTALL.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/glfWindow/CMakeFiles/glfWindow.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/common/glfWindow/CMakeFiles/INSTALL.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/obj_raytracer.dir
+C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/INSTALL.dir

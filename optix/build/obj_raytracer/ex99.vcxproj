@@ -1,0 +1,280 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <PreferredToolArchitecture>x64</PreferredToolArchitecture>
+  </PropertyGroup>
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{717D72C2-6BF4-395A-9063-2CF21C625534}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
+    <Platform>x64</Platform>
+    <ProjectName>obj_raytracer</ProjectName>
+    <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">obj_raytracer.dir\Debug\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">obj_raytracer</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">obj_raytracer.dir\Release\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">obj_raytracer</TargetName>
+    <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
+    <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
+      <Optimization>Disabled</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\Debug\gdt.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cudart_static.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cuda.lib;..\Debug\glfWindow.lib;..\Debug\glfw3.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/Fede/Documents/AudioRenderingV2/optix/build/Debug/obj_raytracer.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/Fede/Documents/AudioRenderingV2/optix/build/Debug/obj_raytracer.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <UseFullPaths>false</UseFullPaths>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
+      <ObjectFileName>$(IntDir)</ObjectFileName>
+      <DebugInformationFormat>
+      </DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Midl>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
+      <HeaderFileName>%(Filename).h</HeaderFileName>
+      <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
+      <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>%(Filename)_p.c</ProxyFileName>
+    </Midl>
+    <Link>
+      <AdditionalDependencies>..\Release\gdt.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cudart_static.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cuda.lib;..\Release\glfWindow.lib;..\Release\glfw3.lib;opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImportLibrary>C:/Users/Fede/Documents/AudioRenderingV2/optix/build/Release/obj_raytracer.lib</ImportLibrary>
+      <ProgramDataBaseFile>C:/Users/Fede/Documents/AudioRenderingV2/optix/build/Release/obj_raytracer.pdb</ProgramDataBaseFile>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <ProjectReference>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building NVCC ptx file obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+cd C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -E make_directory C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -D verbose:BOOL=OFF -D "CCBIN:PATH=$(VCInstallDir)Tools/MSVC/$(VCToolsVersion)/bin/Host$(Platform)/$(PlatformTarget)" -D build_configuration:STRING=$(ConfigurationName) -D generated_file:STRING=C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx -D generated_cubin_file:STRING=C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cubin.txt -P C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.Debug.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend;C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.Debug.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building NVCC ptx file obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+cd C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir
+if %errorlevel% neq 0 goto :cmEnd
+C:
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -E make_directory C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer
+if %errorlevel% neq 0 goto :cmEnd
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -D verbose:BOOL=OFF -D "CCBIN:PATH=$(VCInstallDir)Tools/MSVC/$(VCToolsVersion)/bin/Host$(Platform)/$(PlatformTarget)" -D build_configuration:STRING=$(ConfigurationName) -D generated_file:STRING=C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx -D generated_cubin_file:STRING=C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cubin.txt -P C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.Release.cmake
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend;C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.Release.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\CMakeFiles\1aa77c4bccc4d0357f34aa04c298a8ed\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">compiling (and embedding ptx from) devicePrograms.cu</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\bin2c.exe" -c --padd 0 --type char --name embedded_ptx_code C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx &gt; C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">compiling (and embedding ptx from) devicePrograms.cu</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\bin\bin2c.exe" -c --padd 0 --type char --name embedded_ptx_code C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx &gt; C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CMakeLists.txt">
+      <UseUtf8Encoding>Always</UseUtf8Encoding>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix/build --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cmake.pre-gen;C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindCUDA\run_nvcc.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindOpenGL.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageMessage.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeLists.txt</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix/build --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cmake.pre-gen;C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\cuda_compile_ptx_1.dir\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindCUDA\run_nvcc.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindOpenGL.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageMessage.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\CMakeFiles\generate.stamp</Outputs>
+      <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c" />
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h" />
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CUDABuffer.h" />
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h" />
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.h" />
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.cpp" />
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h" />
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp" />
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\ZERO_CHECK.vcxproj">
+      <Project>{2C8DD921-31CD-3C4D-9BB8-47FC092F1BB1}</Project>
+      <Name>ZERO_CHECK</Name>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\common\gdt\gdt.vcxproj">
+      <Project>{84BC3906-120D-3F5E-A21B-F3E494626243}</Project>
+      <Name>gdt</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\common\glfWindow\glfWindow.vcxproj">
+      <Project>{894087D5-24D4-3F4F-8C34-DD1FB0F7F4F4}</Project>
+      <Name>glfWindow</Name>
+    </ProjectReference>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\build\common\3rdParty\glfw\src\glfw.vcxproj">
+      <Project>{AA0683B5-55B7-38B2-AE00-4BCEA528548D}</Project>
+      <Name>glfw</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
