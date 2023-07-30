@@ -8,11 +8,11 @@ in vec3 color;
 uniform  float time;
 
 uniform vec4 lightColor;
-
 uniform vec3 lightPos;
 
 void main()
 {
+	float ambient = 0.17f;
 	vec3 normal = normalize(Normal);
 	vec3 lightDirection = normalize(lightPos - crntPos);
 
@@ -22,5 +22,5 @@ void main()
 	float y = pos.y;
 	float z = pos.z;
 
-	FragColor = vec4(color, 1.0f) * lightColor * diffuse;
+	FragColor = vec4(color, 1.0f) * lightColor * (diffuse + ambient);
 };
