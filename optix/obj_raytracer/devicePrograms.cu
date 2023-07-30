@@ -89,6 +89,7 @@ extern "C" __global__ void __raygen__renderFrame()
     vec3f pixelColorPRD = vec3f(0.f);
 
     // the values we store the PRD pointer in:
+    // Nota: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
     uint32_t u0, u1;
     packPointer(&pixelColorPRD, u0, u1);
 

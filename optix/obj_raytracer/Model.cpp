@@ -102,10 +102,12 @@ Model *loadOBJ(const std::string &objFile)
     for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++)
     {
         tinyobj::shape_t &shape = shapes[shapeID];
-
+        
         std::set<int> materialIDs;
-        for (auto faceMatID : shape.mesh.material_ids)
+        for (auto faceMatID : shape.mesh.material_ids){
+            std::cout << shape.name << std::endl;
             materialIDs.insert(faceMatID);
+        }
 
         for (int materialID : materialIDs)
         {
@@ -126,6 +128,9 @@ Model *loadOBJ(const std::string &objFile)
                 mesh->index.push_back(idx);
                 mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
                 mesh->diffuse = gdt::randomColor(materialID);
+                if (materialID>= 0) { //TODO use a dict to load material ID, only a numeric ID
+                    mesh->materialID = materials[materialID].name.c_str();
+                }
             }
 
             if (mesh->vertex.empty())

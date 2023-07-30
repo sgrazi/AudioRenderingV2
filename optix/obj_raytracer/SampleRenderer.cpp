@@ -274,7 +274,7 @@ void SampleRenderer::createRaygenPrograms()
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module;
+    pgDesc.raygen.module = module; //Module holding single program
     pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
 
     char log[2048];

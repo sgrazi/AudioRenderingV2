@@ -1,0 +1,22 @@
+<materials>
+  <material>
+    <id>0</id>
+    <name>DEFAULT</name>
+    <ac_absorption>0.1</ac_absorption>
+  </material>
+  <material>
+    <id>1</id>
+    <name>PLASTIC</name>
+    <ac_absorption>0.15</ac_absorption>
+  </material>
+  <material>
+    <id>2</id>
+    <name>METAL</name>
+    <ac_absorption>0.05</ac_absorption>
+  </material>
+  <material>
+    <id>3</id>
+    <name>GLASS</name>
+    <ac_absorption>0.25</ac_absorption>
+  </material>
+</materials>

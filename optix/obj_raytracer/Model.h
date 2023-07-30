@@ -13,6 +13,8 @@ struct TriangleMesh
 
     // material data:
     vec3f diffuse;
+    //uint32_t materialID;
+    const char* materialID;
 };
 
 struct Model
