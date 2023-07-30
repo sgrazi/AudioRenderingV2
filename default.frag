@@ -2,10 +2,9 @@
 out vec4 FragColor;
 
 in vec3 pos;
-
 in vec3 Normal;
 in vec3 crntPos;
-
+in vec3 color;
 uniform  float time;
 
 uniform vec4 lightColor;
@@ -23,9 +22,5 @@ void main()
 	float y = pos.y;
 	float z = pos.z;
 
-	float red = 0.23f;
-	float green = 0.7f;
-	float blue = 0.22f;
-
-	FragColor = vec4(red, green, blue, 1.0f) * lightColor * diffuse;
+	FragColor = vec4(color, 1.0f) * lightColor * diffuse;
 };
