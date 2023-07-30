@@ -2,13 +2,7 @@
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "Model.h"
-
-struct Camera
-{
-    vec3f from;
-    vec3f at;
-    vec3f up;
-};
+#include "Camera.h"
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a

@@ -91,12 +91,13 @@ extern "C" int main(int ac, char **av)
 {
     try
     {
-        Model *model = loadOBJ("../models/conference.obj");
+        Model *model = loadOBJ("../models/scene.obj");
         Camera camera = {
-            vec3f(0.0f, 600.0f, 0.0f),                 // posicion
-            model->bounds.center() - vec3f(0, 400, 0), // direccion
-            vec3f(0.f, 1.f, 0.f)                       // vertical
+            vec3f(-10.0f, 0.0f, 0.0f),                  // posicion
+            model->bounds.center() - vec3f(0, 0, 0),    // direccion
+            vec3f(0.f, 1.f, 0.f)                        // vertical
         };
+        placeCamera(model, camera.from);
         const float worldScale = length(model->bounds.span());
 
         SampleWindow *window = new SampleWindow(model, camera, worldScale);

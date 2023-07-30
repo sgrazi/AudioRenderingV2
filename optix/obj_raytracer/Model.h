@@ -29,3 +29,5 @@ struct Model
 };
 
 Model *loadOBJ(const std::string &objFile);
+
+void placeCamera(Model *model, vec3f cameraPosition);

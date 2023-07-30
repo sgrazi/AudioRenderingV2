@@ -1,4 +1,5 @@
 #include "Model.h"
+#include "SampleRenderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
 // std
@@ -142,4 +143,56 @@ Model *loadOBJ(const std::string &objFile)
 
     std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
     return model;
+}
+
+void placeCamera(Model *model, vec3f cameraPosition)
+{ //this does not actually place the sphere in cameraPosition, TO DO
+    const std::string objFile = "../models/sphere.obj";
+
+    tinyobj::attrib_t attributes;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string err = "";
+    bool readOK = tinyobj::LoadObj(&attributes,
+                                   &shapes,
+                                   &materials,
+                                   &err,
+                                   &err,
+                                   objFile.c_str(),
+                                   nullptr,
+                                   /* triangulate */ true);
+
+    if (!readOK)
+    {
+        throw std::runtime_error("Could not read sphere OBJ model from " + objFile + " : " + err);
+    }
+
+    std::set<int> materialIDs;
+    for (auto faceMatID : shapes[0].mesh.material_ids)
+        materialIDs.insert(faceMatID);
+    for (int materialID : materialIDs)
+    {
+        std::map<tinyobj::index_t, int> knownVertices;
+        TriangleMesh* mesh = new TriangleMesh;
+
+        for (int faceID = 0; faceID < shapes[0].mesh.material_ids.size(); faceID++)
+        {
+            if (shapes[0].mesh.material_ids[faceID] != materialID)
+                continue;
+            tinyobj::index_t idx0 = shapes[0].mesh.indices[3 * faceID + 0];
+            tinyobj::index_t idx1 = shapes[0].mesh.indices[3 * faceID + 1];
+            tinyobj::index_t idx2 = shapes[0].mesh.indices[3 * faceID + 2];
+
+            vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
+                addVertex(mesh, attributes, idx1, knownVertices),
+                addVertex(mesh, attributes, idx2, knownVertices));
+            mesh->index.push_back(idx);
+            mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
+            mesh->diffuse = gdt::randomColor(materialID);
+        }
+        if (mesh->vertex.empty())
+            delete mesh;
+        else
+            model->meshes.push_back(mesh);
+    }
 }
