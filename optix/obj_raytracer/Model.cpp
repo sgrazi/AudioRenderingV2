@@ -2,8 +2,10 @@
 #include "SampleRenderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
+#include "tinyxml2.h"
 // std
 #include <set>
+#include <map>
 
 // se usa en xstddef
 namespace std
@@ -70,6 +72,28 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
+std::map<int, Material> loadMaterialMap() {
+    std::map<int, Material> materials;
+
+    // Load and parse the XML file
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS) {
+        throw std::runtime_error("Failed to load material XML file");
+    }
+
+    // Traverse the XML and populate the materials dictionary
+    tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
+    for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
+        Material material;
+        int id = std::stoi(materialNode->FirstChildElement("id")->GetText());
+        material.name = materialNode->FirstChildElement("name")->GetText();
+        material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
+        materials[id] = material;
+    }
+
+    return materials;
+}
+
 Model *loadOBJ(const std::string &objFile)
 {
     Model *model = new Model;
@@ -112,7 +136,7 @@ Model *loadOBJ(const std::string &objFile)
         for (int materialID : materialIDs)
         {
             std::map<tinyobj::index_t, int> knownVertices;
-            TriangleMesh *mesh = new TriangleMesh;
+            TriangleMesh *mesh = new TriangleMesh();
 
             for (int faceID = 0; faceID < shape.mesh.material_ids.size(); faceID++)
             {
@@ -128,8 +152,8 @@ Model *loadOBJ(const std::string &objFile)
                 mesh->index.push_back(idx);
                 mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
                 mesh->diffuse = gdt::randomColor(materialID);
-                if (materialID>= 0) { //TODO use a dict to load material ID, only a numeric ID
-                    mesh->materialID = materials[materialID].name.c_str();
+                if (materialID >= 0) {
+                    mesh->materialID = materialID;
                 }
             }
 

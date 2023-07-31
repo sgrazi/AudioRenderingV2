@@ -4,6 +4,12 @@
 
 using namespace gdt;
 
+struct Material
+{
+    const char* name;
+    float ac_absorption;
+};
+
 struct TriangleMesh
 {
     std::vector<vec3f> vertex;
@@ -13,8 +19,7 @@ struct TriangleMesh
 
     // material data:
     vec3f diffuse;
-    //uint32_t materialID;
-    const char* materialID;
+    uint32_t materialID;
 };
 
 struct Model

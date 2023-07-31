@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <optix_device.h>
 #include "LaunchParams.h"
 
@@ -61,6 +62,8 @@ extern "C" __global__ void __closesthit__radiance()
     const vec3f rayDir = optixGetWorldRayDirection();
     const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     vec3f &prd = *(vec3f *)getPRD<vec3f>();
+    printf("esta vivooooo");
+    printf("%d",sbtData.mat);
     prd = cosDN * sbtData.color;
 }
 

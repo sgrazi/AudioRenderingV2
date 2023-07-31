@@ -423,6 +423,7 @@ void SampleRenderer::buildSBT()
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
         rec.data.color = model->meshes[meshID]->diffuse;
+        rec.data.mat = model->meshes[meshID]->materialID;
         rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
