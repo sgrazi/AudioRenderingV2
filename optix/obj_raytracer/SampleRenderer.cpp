@@ -474,6 +474,17 @@ void SampleRenderer::setCamera(const Camera &camera)
                                                              launchParams.camera.direction));
 }
 
+void SampleRenderer::setPos(vec3f pos)
+{
+    launchParams.pos = pos;
+}
+
+void SampleRenderer::setThresholds(float dist, float energy)
+{
+    launchParams.dist_thres = dist
+    launchParams.energy_thres = energy
+}
+
 /*! resize frame buffer to given resolution */
 void SampleRenderer::resize(const vec2i &newSize)
 {

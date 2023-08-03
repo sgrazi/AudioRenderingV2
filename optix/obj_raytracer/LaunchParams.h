@@ -7,6 +7,7 @@ using namespace gdt;
 struct TriangleMeshSBTData
 {
     vec3f color;
+    vec3f pos;
     vec3f *vertex;
     vec3i *index;
     uint32_t mat;
@@ -29,5 +30,8 @@ struct LaunchParams
     } camera;
 
     OptixTraversableHandle traversable;
+    
+    vec3f pos;
+    float dist_thres, energy_thres;
 };
 

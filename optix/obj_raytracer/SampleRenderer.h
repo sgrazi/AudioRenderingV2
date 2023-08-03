@@ -30,6 +30,10 @@ public:
     /*! set camera to render with */
     void setCamera(const Camera &camera);
 
+    void setPos(vec3f pos);
+
+    void setThresholds(float dist, float energy);
+
 protected:
     // ------------------------------------------------------------------
     // internal helper functions
