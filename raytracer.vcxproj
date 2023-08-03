@@ -71,12 +71,12 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>C:\Users\etzio\Documents\GitHub\AudioRenderingV2\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\etzio\Documents\GitHub\AudioRenderingV2\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>C:\Users\etzio\Documents\GitHub\AudioRenderingV2\Libraries\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\etzio\Documents\GitHub\AudioRenderingV2\Libraries\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>.\Libraries\include;$(IncludePath)</IncludePath>
+    <LibraryPath>.\Libraries\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -113,11 +113,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>.\Libraries\include\gdt;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;gdt.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cudart_static.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
