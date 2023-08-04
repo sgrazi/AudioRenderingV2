@@ -13,6 +13,7 @@
 #include "Mesh.h"
 #include "AudioFile.h"
 #include "RtAudio.h"
+#include <thread>
 
 using namespace std;
 
@@ -37,16 +38,34 @@ int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
 		*buffer++ = (double) audio.samples.at(0).at(i);
 	}
 	return 0;
+	//unsigned int i, j;
+	//double* buffer = (double*)outputBuffer;
+	//double* lastValues = (double*)userData;
+
+	//if (status)
+	//	std::cout << "Stream underflow detected!" << std::endl;
+
+	//// Write interleaved audio data.
+	//for (i = 0; i < nBufferFrames; i++) {
+	//	for (j = 0; j < 2; j++) {
+	//		*buffer++ = lastValues[j];
+
+	//		lastValues[j] += 0.005;// *(j + 1 + (j * 0.1));
+	//		if (lastValues[j] >= 1.0) lastValues[j] -= 2.0;
+	//	}
+	//}
+
+	//return 0;
 }
 
-int audioPlay(RtAudio &dac)
+int audioPlay(RtAudio* dac)
 {
-	if (dac.getDeviceCount() < 1) {
+	if (dac->getDeviceCount() < 1) {
 		std::cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
 	RtAudio::StreamParameters parameters;
-	parameters.deviceId = dac.getDefaultOutputDevice();
+	parameters.deviceId = dac->getDefaultOutputDevice();
 	parameters.nChannels = 2; // tienq ue machear con los channels del audio
 	parameters.firstChannel = 0;
 
@@ -54,29 +73,24 @@ int audioPlay(RtAudio &dac)
 	AudioFile<float> audio;
 	const char* file_path = "guitar_sample_16k.wav";
 	audio.load(file_path);
-	cout << audio.getNumChannels() << endl;
+	//cout << audio.getNumChannels() << endl;
 	unsigned int sampleRate = audio.getSampleRate() / audio.samples.size();
 	unsigned int bufferFrames = audio.samples.at(0).size(); // 256 sample frames
-	const int length = audio.samples.at(0).size();
+	//const int length = audio.samples.at(0).size();
+
 	double data[2];
-	RtAudioErrorType checkError = dac.openStream(&parameters, NULL, RTAUDIO_FLOAT64,
+	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64,
 		sampleRate, &bufferFrames, &saw, (void*)&data);
-	checkError = dac.startStream();
+	checkError = dac->startStream();
 
 	return 0;
 }
 
-int main(int argc, char** argv) {
-	// Initialize context
-	string configJsonPath;
+void audio(RtAudio* dac) {
+	audioPlay(dac);
+}
 
-	if (argc < 2) {
-		configJsonPath = "config.json";
-	}
-	else {
-		configJsonPath = argv[1];
-	}
-	
+void screen() {
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -87,7 +101,7 @@ int main(int argc, char** argv) {
 	if (window == NULL) {
 		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
-		return -1;
+		throw new exception("A");
 	}
 	glfwMakeContextCurrent(window);
 
@@ -123,7 +137,7 @@ int main(int argc, char** argv) {
 	}
 	else { // error
 		cout << "Failed to load OBJ" << endl;
-		return -1;
+		throw new exception("B");
 	}
 
 	Shader shaderProgram("default.vert", "default.frag");
@@ -137,11 +151,8 @@ int main(int argc, char** argv) {
 
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
-	
+
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
-	
-	RtAudio dac;
-	audioPlay(dac);
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
@@ -166,11 +177,30 @@ int main(int argc, char** argv) {
 	shaderProgram.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
+}
 
+int main(int argc, char** argv) {
+	// Initialize context
+	string configJsonPath;
+
+	if (argc < 2) {
+		configJsonPath = "config.json";
+	}
+	else {
+		configJsonPath = argv[1];
+	}
+	RtAudio* dac = new RtAudio();
+
+	thread screen1(screen);
+	thread audio1(audio, dac);
+
+	screen1.join();
+	audio1.detach();
 	// Stop the stream
-	RtAudioErrorType checkError = dac.stopStream();
+	RtAudioErrorType checkError = dac->stopStream();
 	// if (dac.isStreamOpen()) 
-	dac.closeStream();
+	dac->closeStream();
+	delete dac;
 
 	return 0;
 }
