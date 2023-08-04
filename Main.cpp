@@ -59,15 +59,9 @@ int audioPlay(RtAudio &dac)
 	unsigned int bufferFrames = audio.samples.at(0).size(); // 256 sample frames
 	const int length = audio.samples.at(0).size();
 	double data[2];
-	try {
-		dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32,
-			sampleRate, &bufferFrames, &saw, (void*)&data);
-		dac.startStream();
-	}
-	catch (RtAudioError& e) {
-		e.printMessage();
-		exit(0);
-	}
+	RtAudioErrorType checkError = dac.openStream(&parameters, NULL, RTAUDIO_FLOAT64,
+		sampleRate, &bufferFrames, &saw, (void*)&data);
+	checkError = dac.startStream();
 
 	return 0;
 }
@@ -104,7 +98,7 @@ int main(int argc, char** argv) {
 	//Load obj && initialize Loader
 	objl::Loader loader;
 	bool load_res = loader.LoadFile("test.obj");
-	
+
 	vector<Mesh> objects;
 	vector<Mesh> lights;
 	if (load_res)
@@ -118,14 +112,14 @@ int main(int argc, char** argv) {
 				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X, mesh.Vertices.at(j).Position.Y, mesh.Vertices.at(j).Position.Z);
 				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
 				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
-				vertices.push_back(vertex);	
+				vertices.push_back(vertex);
 			}
 			for (int j = 0; j < mesh.Indices.size(); j++) {
 				indices.push_back(mesh.Indices.at(j));
 			}
 			Mesh object(vertices, indices);
 			objects.push_back(object);
-		}	
+		}
 	}
 	else { // error
 		cout << "Failed to load OBJ" << endl;
@@ -173,15 +167,10 @@ int main(int argc, char** argv) {
 	glfwDestroyWindow(window);
 	glfwTerminate();
 
-	try {
-		// Stop the stream
-		dac.stopStream();
-		// if (dac.isStreamOpen()) 
-		dac.closeStream();
-	}
-	catch (RtAudioError& e) {
-		e.printMessage();
-	}
+	// Stop the stream
+	RtAudioErrorType checkError = dac.stopStream();
+	// if (dac.isStreamOpen()) 
+	dac.closeStream();
 
 	return 0;
 }
