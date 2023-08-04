@@ -10,11 +10,67 @@
 #include "EBO.h"
 #include "shaderClass.h"
 #include "Camera.h"
-#include"Mesh.h"
+#include "Mesh.h"
+#include "AudioFile.h"
+#include "RtAudio.h"
+
 using namespace std;
 
 const unsigned int width = 1366;
 const unsigned int height = 768;
+
+int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
+	double streamTime, RtAudioStreamStatus status, void* userData)
+{
+	unsigned int i, j;
+	double* buffer = (double*)outputBuffer;
+	double* lastValues = (double*)userData;
+	if (status)
+		std::cout << "Stream underflow detected!" << std::endl;
+	// Write interleaved audio data.
+	AudioFile<float> audio;
+	const char* file_path = "guitar_sample_16k.wav";
+
+	audio.load("guitar_sample_16k.wav");
+
+	for (i = 0; i < nBufferFrames; i++) {
+		*buffer++ = (double) audio.samples.at(0).at(i);
+	}
+	return 0;
+}
+
+int audioPlay(RtAudio &dac)
+{
+	if (dac.getDeviceCount() < 1) {
+		std::cout << "\nNo audio devices found!\n";
+		exit(0);
+	}
+	RtAudio::StreamParameters parameters;
+	parameters.deviceId = dac.getDefaultOutputDevice();
+	parameters.nChannels = 2; // tienq ue machear con los channels del audio
+	parameters.firstChannel = 0;
+
+
+	AudioFile<float> audio;
+	const char* file_path = "guitar_sample_16k.wav";
+	audio.load(file_path);
+	cout << audio.getNumChannels() << endl;
+	unsigned int sampleRate = audio.getSampleRate() / audio.samples.size();
+	unsigned int bufferFrames = audio.samples.at(0).size(); // 256 sample frames
+	const int length = audio.samples.at(0).size();
+	double data[2];
+	try {
+		dac.openStream(&parameters, NULL, RTAUDIO_FLOAT32,
+			sampleRate, &bufferFrames, &saw, (void*)&data);
+		dac.startStream();
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+		exit(0);
+	}
+
+	return 0;
+}
 
 int main(int argc, char** argv) {
 	// Initialize context
@@ -47,7 +103,7 @@ int main(int argc, char** argv) {
 
 	//Load obj && initialize Loader
 	objl::Loader loader;
-	bool load_res = loader.LoadFile("conference.obj");
+	bool load_res = loader.LoadFile("test.obj");
 	
 	vector<Mesh> objects;
 	vector<Mesh> lights;
@@ -88,7 +144,10 @@ int main(int argc, char** argv) {
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
 	
-	Camera camera(width, height, glm::vec3(-170.0f, 518.0f, -465.0f));
+	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
+	
+	RtAudio dac;
+	audioPlay(dac);
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
@@ -109,9 +168,20 @@ int main(int argc, char** argv) {
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
-	
+
 	shaderProgram.Delete();
 	glfwDestroyWindow(window);
 	glfwTerminate();
+
+	try {
+		// Stop the stream
+		dac.stopStream();
+		// if (dac.isStreamOpen()) 
+		dac.closeStream();
+	}
+	catch (RtAudioError& e) {
+		e.printMessage();
+	}
+
 	return 0;
 }
