@@ -25,17 +25,17 @@ int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
 {
 	unsigned int i, j;
 	double* buffer = (double*)outputBuffer;
-	double* lastValues = (double*)userData;
+	//double* lastValues = (double*)userData;
 	if (status)
 		std::cout << "Stream underflow detected!" << std::endl;
 	// Write interleaved audio data.
-	AudioFile<float> audio;
-	const char* file_path = "guitar_sample_16k.wav";
+	AudioFile<float>* audio = (AudioFile<float>*)userData;
+	/*onst char* file_path = "guitar_sample_16k.wav";
 
-	audio.load("guitar_sample_16k.wav");
+	audio.load("guitar_sample_16k.wav");*/
 
 	for (i = 0; i < nBufferFrames; i++) {
-		*buffer++ = (double) audio.samples.at(0).at(i);
+		*buffer++ = (double) audio->samples.at(0).at(i);
 	}
 	return 0;
 	//unsigned int i, j;
@@ -70,17 +70,17 @@ int audioPlay(RtAudio* dac)
 	parameters.firstChannel = 0;
 
 
-	AudioFile<float> audio;
+	AudioFile<float>* audio = new AudioFile<float>;
 	const char* file_path = "guitar_sample_16k.wav";
-	audio.load(file_path);
+	audio->load(file_path);
 	//cout << audio.getNumChannels() << endl;
-	unsigned int sampleRate = audio.getSampleRate() / audio.samples.size();
-	unsigned int bufferFrames = audio.samples.at(0).size(); // 256 sample frames
+	unsigned int sampleRate = audio->getSampleRate() / audio->samples.size();
+	unsigned int bufferFrames = audio->samples.at(0).size(); // 256 sample frames
 	//const int length = audio.samples.at(0).size();
 
-	double data[2];
+	double data[2] = {0,0};
 	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64,
-		sampleRate, &bufferFrames, &saw, (void*)&data);
+		sampleRate, &bufferFrames, &saw, (void*)audio);
 	checkError = dac->startStream();
 
 	return 0;
