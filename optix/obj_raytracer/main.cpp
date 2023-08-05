@@ -15,6 +15,8 @@ struct SampleWindow : public GLFCameraWindow
         : GLFCameraWindow("Optix Renderer", camera.from, camera.at, camera.up, worldScale),
           sample(model)
     {
+        sample.setThresholds(100.0,0.1);
+        sample.setPos(vec3f(0.f));
         sample.setCamera(camera);
     }
 

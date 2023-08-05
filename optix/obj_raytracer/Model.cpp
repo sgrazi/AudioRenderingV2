@@ -129,7 +129,6 @@ Model *loadOBJ(const std::string &objFile)
         
         std::set<int> materialIDs;
         for (auto faceMatID : shape.mesh.material_ids){
-            std::cout << shape.name << std::endl;
             materialIDs.insert(faceMatID);
         }
 
@@ -177,18 +176,20 @@ Model *loadOBJ(const std::string &objFile)
 void placeCamera(Model *model, vec3f cameraPosition)
 { //this does not actually place the sphere in cameraPosition, TO DO
     const std::string objFile = "../models/sphere.obj";
-
+    const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
+    printf("%s",mtlDir.c_str());
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
     std::string err = "";
+
     bool readOK = tinyobj::LoadObj(&attributes,
                                    &shapes,
                                    &materials,
                                    &err,
                                    &err,
                                    objFile.c_str(),
-                                   nullptr,
+                                   mtlDir.c_str(),
                                    /* triangulate */ true);
 
     if (!readOK)
@@ -196,13 +197,19 @@ void placeCamera(Model *model, vec3f cameraPosition)
         throw std::runtime_error("Could not read sphere OBJ model from " + objFile + " : " + err);
     }
 
+    if (materials.empty())
+        throw std::runtime_error("could not parse materials ...");
+
     std::set<int> materialIDs;
     for (auto faceMatID : shapes[0].mesh.material_ids)
+    {
         materialIDs.insert(faceMatID);
+    }
+
     for (int materialID : materialIDs)
     {
         std::map<tinyobj::index_t, int> knownVertices;
-        TriangleMesh* mesh = new TriangleMesh;
+        TriangleMesh* mesh = new TriangleMesh();
 
         for (int faceID = 0; faceID < shapes[0].mesh.material_ids.size(); faceID++)
         {
@@ -213,11 +220,14 @@ void placeCamera(Model *model, vec3f cameraPosition)
             tinyobj::index_t idx2 = shapes[0].mesh.indices[3 * faceID + 2];
 
             vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
-                addVertex(mesh, attributes, idx1, knownVertices),
-                addVertex(mesh, attributes, idx2, knownVertices));
+                      addVertex(mesh, attributes, idx1, knownVertices),
+                      addVertex(mesh, attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
             mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
+            if (materialID >= 0) {
+                mesh->materialID = materialID;
+            }
         }
         if (mesh->vertex.empty())
             delete mesh;

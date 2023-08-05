@@ -64,20 +64,19 @@ extern "C" __global__ void __closesthit__radiance()
     const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     PRD &prd = *(PRD *)getPRD<PRD>();
 
-    prd = cosDN * sbtData.color;
-
     switch (sbtData.mat)
     {
-    case MAT.DEFAULT:
+    case 0:
         // receptor
-        printf("hit\n"); //para ver si lo de los mats funciona
         const vec3f dist_vec = sbtData.pos - prd.position;
         const float distance = fabs(dot(dist_vec, prd.direction));
 		prd.distance += distance;
-        float energy = 1;
-    default;
+        prd.energy = 1;
+        prd.color = cosDN * sbtData.color;
+        break;
+    default:
         // material
-        printf("hit mat, no deberia de llamarse\n");
+        prd.color = cosDN * sbtData.color;
         prd.energy = prd.energy * 0; // el int seria un acoustic absorption
     }
 }
@@ -109,6 +108,7 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.distance = 0;
     prd.position = optixLaunchParams.pos;
     prd.recursion_depth = 0;
+    prd.color = vec3f(0.f);
 
     // normalized screen plane position, in [0,1]^2
     const vec2f screen(vec2f(ix + .5f, iy + .5f) / vec2f(optixLaunchParams.frame.size));
@@ -116,7 +116,7 @@ extern "C" __global__ void __raygen__renderFrame()
     // generate ray direction
 
     prd.direction = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
-    i = 0;
+    int i = 0;
     // pack data into payload
     while (prd.distance < optixLaunchParams.dist_thres &&
            prd.energy > optixLaunchParams.energy_thres &&
@@ -138,9 +138,9 @@ extern "C" __global__ void __raygen__renderFrame()
                    u0, u1);
     }
 
-    const int r = int(255.99f * pixelColorPRD.x);
-    const int g = int(255.99f * pixelColorPRD.y);
-    const int b = int(255.99f * pixelColorPRD.z);
+    const int r = int(255.99f * prd.color.x);
+    const int g = int(255.99f * prd.color.y);
+    const int b = int(255.99f * prd.color.z);
 
     // convert to 32-bit rgba value (we explicitly set alpha to 0xff
     // to make stb_image_write happy ...

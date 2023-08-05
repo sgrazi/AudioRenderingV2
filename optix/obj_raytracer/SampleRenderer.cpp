@@ -481,8 +481,8 @@ void SampleRenderer::setPos(vec3f pos)
 
 void SampleRenderer::setThresholds(float dist, float energy)
 {
-    launchParams.dist_thres = dist
-    launchParams.energy_thres = energy
+    launchParams.dist_thres = dist;
+    launchParams.energy_thres = energy;
 }
 
 /*! resize frame buffer to given resolution */
