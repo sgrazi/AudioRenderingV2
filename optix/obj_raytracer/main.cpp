@@ -33,6 +33,8 @@ struct SampleWindow : public GLFCameraWindow
                 cameraFrame.modified = false;
         }
         sample.render();
+        printf("a ver, checkeand hit....\n");
+        sample.isHit();
     }
 
     virtual void draw() override

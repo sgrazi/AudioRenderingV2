@@ -70,8 +70,10 @@ extern "C" __global__ void __closesthit__radiance()
         // receptor
         const vec3f dist_vec = sbtData.pos - prd.position;
         const float distance = fabs(dot(dist_vec, prd.direction));
-		prd.distance += distance;
+        prd.distance += distance;
         prd.energy = 1;
+        bool * ptr = optixLaunchParams.hit;
+        *ptr = 1;
         prd.color = cosDN * sbtData.color;
         break;
     default:
@@ -121,7 +123,7 @@ extern "C" __global__ void __raygen__renderFrame()
     while (prd.distance < optixLaunchParams.dist_thres &&
            prd.energy > optixLaunchParams.energy_thres &&
            prd.recursion_depth >= 0 &&
-           i < 10000) //por las dudas le pongo un tope
+           i < 10000) // por las dudas le pongo un tope
     {
         i++;
         optixTrace(optixLaunchParams.traversable,

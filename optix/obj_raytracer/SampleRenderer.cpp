@@ -47,7 +47,7 @@ SampleRenderer::SampleRenderer(const Model *model)
     createHitgroupPrograms();
 
     launchParams.traversable = buildAccel();
-
+    cudaMalloc(&launchParams.hit, sizeof(bool));
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -501,4 +501,14 @@ void SampleRenderer::resize(const vec2i &newSize)
 void SampleRenderer::downloadPixels(uint32_t h_pixels[])
 {
     colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
+}
+
+void SampleRenderer::isHit(){
+    bool * ptr = new bool();
+    cudaMemcpy(launchParams.hit, ptr, sizeof(bool), cudaMemcpyDeviceToHost);
+    if (*ptr == true){
+        printf("URUGUAY NOMA\n");
+    } else {
+        printf("la tensa\n");
+    }
 }

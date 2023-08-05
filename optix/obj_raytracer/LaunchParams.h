@@ -33,5 +33,6 @@ struct LaunchParams
     
     vec3f pos;
     float dist_thres, energy_thres;
+    bool* hit;
 };
 
