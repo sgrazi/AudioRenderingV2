@@ -1,9 +1,9 @@
 #pragma once
 #include "CUDABuffer.h"
-// #include "kernels.cuh"
 #include "LaunchParams.h"
 #include "Model.h"
 #include "Camera.h"
+#include "kernels.cuh"
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a

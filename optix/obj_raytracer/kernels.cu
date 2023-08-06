@@ -1,18 +1,12 @@
 #include <cuda_runtime.h>
-#include "kernels.cuh"
+#include "./kernels.cuh"
 
-namespace kernels
+__global__ void fillZeros(float *buf)
 {
-    __global__ void fillZeros(float *buf)
-    {
-        *buf = 0.0f;
-    }
+    *buf = 0.0f;
+}
 
-    void fillWithZeroesKernel(float *buf)
-    {
-        #ifndef __INTELLISENSE__
-        #def __INTELLISENSE__
-        kernels::fillZeros< < <1, 1> > >(buf);
-        #endif
-    }
+void fillWithZeroesKernel(float *buf)
+{
+    fillZeros<<<1, 1>>>(buf);
 }
