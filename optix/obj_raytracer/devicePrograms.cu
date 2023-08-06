@@ -2,6 +2,18 @@
 #include <optix_device.h>
 #include "LaunchParams.h"
 #include "PRD.h"
+#include <cuda_runtime.h>
+#include <cuda.h>
+
+__global__ void fillZeros(float *buf)
+{
+    *buf = 0.0f;
+}
+
+void fillWithZeroesKernel(float *buf)
+{
+    //fillZeros<<<1, 1>>>(buf);
+}
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
@@ -72,8 +84,9 @@ extern "C" __global__ void __closesthit__radiance()
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
         prd.energy = 1;
-        bool * ptr = optixLaunchParams.hit;
-        *ptr = 1;
+        float *other = optixLaunchParams.other;
+        atomicAdd(other, 1.f);
+        // optixLaunchParams.hit = 's';
         prd.color = cosDN * sbtData.color;
         break;
     default:

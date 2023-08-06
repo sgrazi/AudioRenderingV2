@@ -1,5 +1,6 @@
 #pragma once
 #include "CUDABuffer.h"
+// #include "kernels.cuh"
 #include "LaunchParams.h"
 #include "Model.h"
 #include "Camera.h"
@@ -33,6 +34,8 @@ public:
     void setPos(vec3f pos);
 
     void setThresholds(float dist, float energy);
+    
+    void isHit();
 
 protected:
     // ------------------------------------------------------------------

@@ -1,6 +1,8 @@
 #include "SampleRenderer.h"
 #include <optix_function_table_definition.h>
 
+void fillWithZeroesKernel(float* buf);
+
 extern "C" char embedded_ptx_code[];
 
 /*! SBT record for a raygen program */
@@ -47,7 +49,10 @@ SampleRenderer::SampleRenderer(const Model *model)
     createHitgroupPrograms();
 
     launchParams.traversable = buildAccel();
-    cudaMalloc(&launchParams.hit, sizeof(bool));
+
+    cudaMalloc(&launchParams.other, sizeof(float));
+    fillWithZeroesKernel(launchParams.other);
+
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -64,9 +69,6 @@ SampleRenderer::SampleRenderer(const Model *model)
 
 OptixTraversableHandle SampleRenderer::buildAccel()
 {
-    PING;
-    PRINT(model->meshes.size());
-
     vertexBuffer.resize(model->meshes.size());
     indexBuffer.resize(model->meshes.size());
 
@@ -504,9 +506,11 @@ void SampleRenderer::downloadPixels(uint32_t h_pixels[])
 }
 
 void SampleRenderer::isHit(){
-    bool * ptr = new bool();
-    cudaMemcpy(launchParams.hit, ptr, sizeof(bool), cudaMemcpyDeviceToHost);
-    if (*ptr == true){
+    float* device_c = launchParams.other;
+    float* host_c = new float();
+    cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
+    printf("--------> %d <-------",*host_c);
+    if (*device_c > 1.f){
         printf("URUGUAY NOMA\n");
     } else {
         printf("la tensa\n");
