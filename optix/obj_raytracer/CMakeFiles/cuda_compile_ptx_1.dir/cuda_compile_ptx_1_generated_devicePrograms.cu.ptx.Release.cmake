@@ -57,25 +57,25 @@ if(NOT generated_file)
 endif()
 
 # Set these up as variables to make reading the generated file easier
-set(CMAKE_COMMAND "C:/Program Files/CMake/bin/cmake.exe") # path
-set(source_file "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/devicePrograms.cu") # path
-set(NVCC_generated_dependency_file "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.NVCC-depend") # path
-set(cmake_dependency_file "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend") # path
-set(CUDA_make2cmake "C:/Program Files/CMake/share/cmake-3.26/Modules/FindCUDA/make2cmake.cmake") # path
-set(CUDA_parse_cubin "C:/Program Files/CMake/share/cmake-3.26/Modules/FindCUDA/parse_cubin.cmake") # path
+set(CMAKE_COMMAND "C:/Users/Fede/Downloads/cmake-3.26.1-windows-x86_64/bin/cmake.exe") # path
+set(source_file "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/devicePrograms.cu") # path
+set(NVCC_generated_dependency_file "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.NVCC-depend") # path
+set(cmake_dependency_file "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir//cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend") # path
+set(CUDA_make2cmake "C:/Users/Fede/Downloads/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindCUDA/make2cmake.cmake") # path
+set(CUDA_parse_cubin "C:/Users/Fede/Downloads/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindCUDA/parse_cubin.cmake") # path
 set(build_cubin OFF) # bool
 set(CUDA_HOST_COMPILER "$(VCInstallDir)Tools/MSVC/$(VCToolsVersion)/bin/Host$(Platform)/$(PlatformTarget)") # path
 # We won't actually use these variables for now, but we need to set this, in
 # order to force this file to be run again if it changes.
-set(generated_file_path "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer") # path
-set(generated_file_internal "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx") # path
-set(generated_cubin_file_internal "C:/Users/Stefano/Documents/AudioRenderingV2/optix/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cubin.txt") # path
+set(generated_file_path "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer") # path
+set(generated_file_internal "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx") # path
+set(generated_cubin_file_internal "C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cubin.txt") # path
 
-set(CUDA_NVCC_EXECUTABLE "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/bin/nvcc.exe") # path
+set(CUDA_NVCC_EXECUTABLE "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.1/bin/nvcc.exe") # path
 set(CUDA_NVCC_FLAGS  ;; --generate-line-info;-use_fast_math;--keep;--relocatable-device-code=true) # list
 
 set(nvcc_flags -m64) # list
-set(CUDA_NVCC_INCLUDE_DIRS [==[C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.2/include;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include;C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/gdt;C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/include;C:/Users/Stefano/Documents/AudioRenderingV2/optix/common;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include]==]) # list (needs to be in lua quotes to address backslashes)
+set(CUDA_NVCC_INCLUDE_DIRS [==[C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.1/include;C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v12.1/include;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include;C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt;C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/include;C:/Users/Fede/Documents/AudioRenderingV2/optix/common;C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include]==]) # list (needs to be in lua quotes to address backslashes)
 string(REPLACE "\\" "/" CUDA_NVCC_INCLUDE_DIRS "${CUDA_NVCC_INCLUDE_DIRS}")
 set(CUDA_NVCC_COMPILE_DEFINITIONS [==[NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1]==]) # list (needs to be in lua quotes see #16510 ).
 set(format_flag "-ptx") # string
@@ -180,7 +180,7 @@ cuda_execute_process(
 # For CUDA 2.3 and below, -G -M doesn't work, so remove the -G flag
 # for dependency generation and hope for the best.
 set(depends_CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS}")
-set(CUDA_VERSION 12.2)
+set(CUDA_VERSION 12.1)
 if(CUDA_VERSION VERSION_LESS "3.0")
   # Note that this will remove all occurrences of -G.
   list(REMOVE_ITEM depends_CUDA_NVCC_FLAGS "-G")

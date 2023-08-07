@@ -1,54 +1,64 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.cpp">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\CUDABuffer.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CUDABuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\CMakeFiles\3b69d5b1188f2bf26e8b875da2608107\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\CMakeFiles\aee6950d706d397604c587bab7005e9f\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\obj_raytracer\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{1C84C54F-94EC-3041-8AE4-9E8BC0D23786}</UniqueIdentifier>
+      <UniqueIdentifier>{081D1C7B-2DB0-3119-88C5-1734260B6D9A}</UniqueIdentifier>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{9B804B9A-E945-37A2-A619-89E58CAF0CAC}</UniqueIdentifier>
+      <UniqueIdentifier>{5F57E1F9-EF62-3B37-A485-90151687BEC5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{9B276996-EF4C-39A8-B140-5E3E10DA4BCC}</UniqueIdentifier>
+      <UniqueIdentifier>{B86206B3-9CA2-3B65-B021-016E9DE0390F}</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="kernels.cuh">
+      <Filter>Header Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="kernels.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\CMakeFiles\a65c86190250085919c3d6c8a505fa75\uninstall.rule">
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\CMakeFiles\93801df84de5c2851ca846d097503181\uninstall.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\uninstall" />
+    <None Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\uninstall" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">
-      <UniqueIdentifier>{1C84C54F-94EC-3041-8AE4-9E8BC0D23786}</UniqueIdentifier>
+      <UniqueIdentifier>{081D1C7B-2DB0-3119-88C5-1734260B6D9A}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

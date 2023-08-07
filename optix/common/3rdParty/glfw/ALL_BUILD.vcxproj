@@ -17,7 +17,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{8995DF7A-82F3-393E-96C7-1B1C273FE87C}</ProjectGuid>
+    <ProjectGuid>{5355EBBB-7E28-3768-985F-CB79A7AE6190}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -49,7 +49,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -59,7 +59,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.2\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -68,11 +68,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Stefano/Documents/AudioRenderingV2/optix -BC:/Users/Stefano/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeFiles/generate.stamp
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -80,12 +80,12 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Program Files\CMake\share\cmake-3.26\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.26\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\WriteBasicConfigVersionFile.cmake;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\cmake_uninstall.cmake.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3.pc.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3Config.cmake.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw_config.h.in;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\cmake_uninstall.cmake.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3.pc.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3Config.cmake.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw_config.h.in;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CMakeDependentOption.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CMakePackageConfigHelpers.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckCSourceCompiles.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckIncludeFile.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckLibraryExists.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindDoxygen.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageMessage.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindThreads.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\GNUInstallDirs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\Internal\CheckSourceCompiles.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\WriteBasicConfigVersionFile.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Stefano/Documents/AudioRenderingV2/optix -BC:/Users/Stefano/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Stefano/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeFiles/generate.stamp
+C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -93,22 +93,22 @@ endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
 exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Program Files\CMake\share\cmake-3.26\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Program Files\CMake\share\cmake-3.26\Modules\CMakeDependentOption.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CMakePackageConfigHelpers.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckCSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckIncludeFile.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\CheckLibraryExists.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindDoxygen.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindPackageMessage.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\FindThreads.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\GNUInstallDirs.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\Internal\CheckSourceCompiles.cmake;C:\Program Files\CMake\share\cmake-3.26\Modules\WriteBasicConfigVersionFile.cmake;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\cmake_uninstall.cmake.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3.pc.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3Config.cmake.in;C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw_config.h.in;%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\generate.stamp</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\cmake_uninstall.cmake.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3.pc.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw3Config.cmake.in;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw_config.h.in;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\BasicConfigVersion-SameMajorVersion.cmake.in;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CMakeDependentOption.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CMakePackageConfigHelpers.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckCSourceCompiles.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckIncludeFile.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\CheckLibraryExists.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindDoxygen.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageHandleStandardArgs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindPackageMessage.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\FindThreads.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\GNUInstallDirs.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\Internal\CheckSourceCompiles.cmake;C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\share\cmake-3.26\Modules\WriteBasicConfigVersionFile.cmake;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\ZERO_CHECK.vcxproj">
-      <Project>{AE9E5CCC-8293-3BF4-85C7-436A09B59442}</Project>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\ZERO_CHECK.vcxproj">
+      <Project>{200CCB95-840E-3944-B1EC-C59505C70465}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Stefano\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw.vcxproj">
-      <Project>{215D8CBD-113D-32B1-BC6E-51B523EC6449}</Project>
+    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\3rdParty\glfw\src\glfw.vcxproj">
+      <Project>{0EFCFEB9-18E1-3571-9131-C3C5B458C4AA}</Project>
       <Name>glfw</Name>
     </ProjectReference>
   </ItemGroup>

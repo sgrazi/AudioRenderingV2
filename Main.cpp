@@ -13,6 +13,7 @@
 #include "Mesh.h"
 #include "AudioFile.h"
 #include "RtAudio.h"
+#include "OptixModel.h"
 #include <thread>
 
 using namespace std;
@@ -38,24 +39,6 @@ int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
 		*buffer++ = (double) audio->samples.at(0).at(i);
 	}
 	return 0;
-	//unsigned int i, j;
-	//double* buffer = (double*)outputBuffer;
-	//double* lastValues = (double*)userData;
-
-	//if (status)
-	//	std::cout << "Stream underflow detected!" << std::endl;
-
-	//// Write interleaved audio data.
-	//for (i = 0; i < nBufferFrames; i++) {
-	//	for (j = 0; j < 2; j++) {
-	//		*buffer++ = lastValues[j];
-
-	//		lastValues[j] += 0.005;// *(j + 1 + (j * 0.1));
-	//		if (lastValues[j] >= 1.0) lastValues[j] -= 2.0;
-	//	}
-	//}
-
-	//return 0;
 }
 
 int audioPlay(RtAudio* dac)
@@ -153,6 +136,11 @@ void screen() {
 	glEnable(GL_DEPTH_TEST);
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    // Load OBJs
+    OptixModel * scene = OptixModel.loadObj("../models/scene.obj");
+
+    // AudioRenderer
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
