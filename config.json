@@ -1,0 +1,25 @@
+{
+  "scenePath": "conference.obj",
+  "camera": {
+    "startPosition": {
+      "x": -170,
+      "y": 518,
+      "z": -465
+    },
+    "nearPlane": 0.1,
+    "farPlane": 10000,
+    "fov": 90
+  },
+  "light": {
+    "color": {
+      "r": 1.0,
+      "g": 1.0,
+      "b": 1.0
+    },
+    "position": {
+      "x": 100,
+      "y": 1000,
+      "z": 300
+    }
+  }
+}
