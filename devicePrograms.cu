@@ -70,7 +70,7 @@ extern "C" __global__ void __closesthit__radiance()
     {
     case 0:
         // receptor
-        const vec3f dist_vec = sbtData.pos - prd.position;
+        const vec3f dist_vec = sbtData.pos - prd.curr_position;
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
         prd.energy = 1;
@@ -111,7 +111,7 @@ extern "C" __global__ void __raygen__renderFrame()
     packPointer(&prd, u0, u1);
     prd.energy = 1.0f;
     prd.distance = 0;
-    prd.position = optixLaunchParams.pos;
+    prd.curr_position = optixLaunchParams.origin_pos;
     prd.recursion_depth = 0;
     prd.color = vec3f(0.f);
 

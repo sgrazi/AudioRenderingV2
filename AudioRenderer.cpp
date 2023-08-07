@@ -466,8 +466,8 @@ void AudioRenderer::render()
 void AudioRenderer::setCamera(const Camera &camera)
 {
     lastSetCamera = camera;
-    launchParams.camera.position = camera.from;
-    launchParams.camera.direction = normalize(camera.at - camera.from);
+    launchParams.camera.position = camera.Position;
+    launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
     const float cosFovy = 0.66f;
     const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
     launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
@@ -477,7 +477,7 @@ void AudioRenderer::setCamera(const Camera &camera)
 
 void AudioRenderer::setPos(vec3f pos)
 {
-    launchParams.pos = pos;
+    launchParams.origin_pos = pos;
 }
 
 void AudioRenderer::setThresholds(float dist, float energy)

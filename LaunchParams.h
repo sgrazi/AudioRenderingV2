@@ -21,17 +21,9 @@ struct LaunchParams
         vec2i size;
     } frame;
 
-    struct
-    {
-        vec3f position;
-        vec3f direction;
-        vec3f horizontal;
-        vec3f vertical;
-    } camera;
-
     OptixTraversableHandle traversable;
     
-    vec3f pos;
+    vec3f origin_pos;
     float dist_thres, energy_thres;
     float* other;
 };

@@ -14,6 +14,7 @@
 #include "AudioFile.h"
 #include "RtAudio.h"
 #include "OptixModel.h"
+#include "AudioRenderer.h"
 #include <thread>
 
 using namespace std;
@@ -138,9 +139,13 @@ void screen() {
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // Load OBJs
-    OptixModel * scene = OptixModel.loadObj("../models/scene.obj");
+    OptixModel * scene = loadObj("../models/scene.obj");
 
     // AudioRenderer
+    AudioRenderer * renderer = new AudioRenderer(scene);
+    renderer->setThresholds(100.0,0.1);
+    renderer->setPos(vec3f(0.f));
+    renderer->setCamera(camera);
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
