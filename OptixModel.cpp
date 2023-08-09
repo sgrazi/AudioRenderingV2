@@ -1,7 +1,7 @@
-#include "Model.h"
+#include "OptixModel.h"
 #include "AudioRenderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "3rdParty/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 //#include "tinyxml2.h"
 // std
 #include <set>
@@ -43,9 +43,9 @@ int addVertex(TriangleMesh *mesh,
     if (knownVertices.find(idx) != knownVertices.end())
         return knownVertices[idx];
 
-    const vec3f *vertex_array = (const vec3f *)attributes.vertices.data();
-    const vec3f *normal_array = (const vec3f *)attributes.normals.data();
-    const vec2f *texcoord_array = (const vec2f *)attributes.texcoords.data();
+    const glm::vec3 *vertex_array = (const glm::vec3 *)attributes.vertices.data();
+    const glm::vec3 *normal_array = (const glm::vec3 *)attributes.normals.data();
+    const glm::vec2 *texcoord_array = (const glm::vec2*)attributes.texcoords.data();
 
     int newID = mesh->vertex.size();
     knownVertices[idx] = newID;
@@ -99,7 +99,7 @@ OptixModel *loadOBJ(const std::string &objFile)
     OptixModel *model = new OptixModel;
 
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    PRINT(mtlDir);
+    printf("%s", mtlDir.c_str());
 
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
@@ -145,12 +145,12 @@ OptixModel *loadOBJ(const std::string &objFile)
                 tinyobj::index_t idx1 = shape.mesh.indices[3 * faceID + 1];
                 tinyobj::index_t idx2 = shape.mesh.indices[3 * faceID + 2];
 
-                vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
+                glm::ivec3 idx(addVertex(mesh, attributes, idx0, knownVertices),
                           addVertex(mesh, attributes, idx1, knownVertices),
                           addVertex(mesh, attributes, idx2, knownVertices));
                 mesh->index.push_back(idx);
-                mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
-                mesh->diffuse = gdt::randomColor(materialID);
+                mesh->diffuse = (const glm::vec3 &)materials[materialID].diffuse;
+                mesh->diffuse = glm::vec3(0.f,0.5f,0.99f);
                 if (materialID >= 0) {
                     mesh->materialID = materialID;
                 }
@@ -166,15 +166,17 @@ OptixModel *loadOBJ(const std::string &objFile)
     // of course, you should be using tbb::parallel_for for stuff
     // like this:
     for (auto mesh : model->meshes)
-        for (auto vtx : mesh->vertex)
-            model->bounds.extend(vtx);
+        for (auto vtx : mesh->vertex){
+            gdt::vec3f gdt_vec(vtx.x, vtx.y, vtx.z);
+            model->bounds.extend(gdt_vec);
+        }
 
     std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
     return model;
 }
 
-void placeCamera(OptixModel *model, vec3f cameraPosition)
-{ //this does not actually place the sphere in cameraPosition, TO DO
+void placeReceiverInScene(OptixModel *model, glm::vec3 targetPosition)
+{ //this does not actually place the sphere in targetPosition, TO DO
     const std::string objFile = "../models/sphere.obj";
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
     printf("%s",mtlDir.c_str());
@@ -219,12 +221,12 @@ void placeCamera(OptixModel *model, vec3f cameraPosition)
             tinyobj::index_t idx1 = shapes[0].mesh.indices[3 * faceID + 1];
             tinyobj::index_t idx2 = shapes[0].mesh.indices[3 * faceID + 2];
 
-            vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
+            glm::ivec3 idx(addVertex(mesh, attributes, idx0, knownVertices),
                       addVertex(mesh, attributes, idx1, knownVertices),
                       addVertex(mesh, attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
-            mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
-            mesh->diffuse = gdt::randomColor(materialID);
+            mesh->diffuse = (const glm::vec3&)materials[materialID].diffuse;
+            mesh->diffuse = glm::vec3(0.4f, 0.52f, 0.6f);
             if (materialID >= 0) {
                 mesh->materialID = materialID;
             }

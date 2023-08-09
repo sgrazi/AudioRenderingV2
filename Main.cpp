@@ -75,6 +75,8 @@ void audio(RtAudio* dac) {
 }
 
 void screen() {
+    std::string filePath = "test.obj";
+
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -95,7 +97,7 @@ void screen() {
 
 	//Load obj && initialize Loader
 	objl::Loader loader;
-	bool load_res = loader.LoadFile("test.obj");
+	bool load_res = loader.LoadFile(filePath);
 
 	vector<Mesh> objects;
 	vector<Mesh> lights;
@@ -138,14 +140,17 @@ void screen() {
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
-    // Load OBJs
-    OptixModel * scene = loadObj("../models/scene.obj");
+    // Create Optix mesh of same .obj
+    OptixModel * scene = loadObj(filePath);
 
     // AudioRenderer
     AudioRenderer * renderer = new AudioRenderer(scene);
+    glm::ivec2 frameSize(width, height);
+	renderer->resize(frameSize);
     renderer->setThresholds(100.0,0.1);
-    renderer->setPos(vec3f(0.f));
+    renderer->setPos(glm::vec3(0.f));
     renderer->setCamera(camera);
+    renderer->render();
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);

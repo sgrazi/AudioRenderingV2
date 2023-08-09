@@ -3,6 +3,8 @@
 #include <vector>
 #include <assert.h>
 
+// TODO: change to cuda equivalent functions (Memcpy, Malloc)
+
 /*! simple wrapper for creating, and managing a device-side CUDA
     buffer */
 struct CUDABuffer

@@ -1,24 +1,26 @@
 #pragma once
-#include "gdt/math/AffineSpace.h"
+#include <glm/glm.hpp>
+#include "gdt/math/box.h"
 #include <vector>
 
 using namespace gdt;
 
 struct Material
 {
+    const uint32_t id;
     const char* name;
     float ac_absorption;
 };
 
 struct TriangleMesh
 {
-    std::vector<vec3f> vertex;
-    std::vector<vec3f> normal;
-    std::vector<vec2f> texcoord;
-    std::vector<vec3i> index;
+    std::vector<glm::vec3> vertex;
+    std::vector<glm::vec3> normal;
+    std::vector<glm::vec2> texcoord;
+    std::vector<glm::ivec3> index;
 
     // material data:
-    vec3f diffuse;
+    glm::vec3 diffuse;
     uint32_t materialID;
 };
 
@@ -37,4 +39,4 @@ struct OptixModel
 
 OptixModel *loadOBJ(const std::string &objFile);
 
-void placeCamera(OptixModel *model, vec3f cameraPosition);
+void placeReceiverInScene(OptixModel *model, glm::vec3 targetPosition);

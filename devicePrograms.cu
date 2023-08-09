@@ -57,12 +57,12 @@ extern "C" __global__ void __closesthit__radiance()
     // compute normal:
     const int primID = optixGetPrimitiveIndex();
     const vec3i index = sbtData.index[primID];
-    const vec3f &A = sbtData.vertex[index.x];
-    const vec3f &B = sbtData.vertex[index.y];
-    const vec3f &C = sbtData.vertex[index.z];
-    const vec3f Ng = normalize(cross(B - A, C - A));
+    const glm::vec3 &A = sbtData.vertex[index.x];
+    const glm::vec3 &B = sbtData.vertex[index.y];
+    const glm::vec3 &C = sbtData.vertex[index.z];
+    const glm::vec3 Ng = normalize(cross(B - A, C - A));
 
-    const vec3f rayDir = optixGetWorldRayDirection();
+    const glm::vec3 rayDir = optixGetWorldRayDirection();
     const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     PRD &prd = *(PRD *)getPRD<PRD>();
 
@@ -70,7 +70,7 @@ extern "C" __global__ void __closesthit__radiance()
     {
     case 0:
         // receptor
-        const vec3f dist_vec = sbtData.pos - prd.curr_position;
+        const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
         prd.energy = 1;
@@ -113,7 +113,7 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.distance = 0;
     prd.curr_position = optixLaunchParams.origin_pos;
     prd.recursion_depth = 0;
-    prd.color = vec3f(0.f);
+    prd.color = glm::vec3(0.f);
 
     // normalized screen plane position, in [0,1]^2
     const vec2f screen(vec2f(ix + .5f, iy + .5f) / vec2f(optixLaunchParams.frame.size));

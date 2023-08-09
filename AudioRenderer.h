@@ -1,9 +1,10 @@
 #pragma once
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
-#include "Model.h"
+#include "OptixModel.h"
 #include "Camera.h"
 #include "kernels.cuh"
+#include <glm/glm.hpp>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -22,20 +23,21 @@ public:
     /*! render one frame */
     void render();
 
+    void setPos(glm::vec3 pos);
+
+    void setThresholds(float dist, float energy);
+    
+    void isHit();
+
+    // TODO: delete these temporal functions once we move to a pathtracer
     /*! resize frame buffer to given resolution */
-    void resize(const vec2i &newSize);
+    void resize(const glm::ivec2 &newSize);
 
     /*! download the rendered color buffer */
     void downloadPixels(uint32_t h_pixels[]);
 
     /*! set camera to render with */
     void setCamera(const Camera &camera);
-
-    void setPos(vec3f pos);
-
-    void setThresholds(float dist, float energy);
-    
-    void isHit();
 
 protected:
     // ------------------------------------------------------------------

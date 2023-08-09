@@ -1,15 +1,13 @@
 #pragma once
-#include "gdt/math/vec.h"
 #include "optix7.h"
-
-using namespace gdt;
+#include <glm/glm.hpp>
 
 struct TriangleMeshSBTData
 {
-    vec3f color;
-    vec3f pos;
-    vec3f *vertex;
-    vec3i *index;
+    glm::vec3 color;
+    glm::vec3 pos;
+    glm::vec3*vertex;
+    glm::ivec3*index;
     uint32_t mat;
 };
 
@@ -18,12 +16,20 @@ struct LaunchParams
     struct
     {
         uint32_t *colorBuffer;
-        vec2i size;
+        glm::ivec2 size;
     } frame;
 
+    struct
+    {
+        glm::vec3 position;
+        glm::vec3 direction;
+        glm::vec3 horizontal;
+        glm::vec3 vertical;
+    } camera;
+    
     OptixTraversableHandle traversable;
     
-    vec3f origin_pos;
+    glm::vec3 origin_pos;
     float dist_thres, energy_thres;
     float* other;
 };

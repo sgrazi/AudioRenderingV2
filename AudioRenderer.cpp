@@ -1,5 +1,7 @@
 #include "AudioRenderer.h"
+#include "CUDABuffer.h"
 #include "./kernels.cuh"
+#include <glm/glm.hpp>
 #include <optix_function_table_definition.h>
 
 extern "C" char embedded_ptx_code[];
@@ -60,10 +62,7 @@ AudioRenderer::AudioRenderer(const OptixModel *model)
 
     launchParamsBuffer.alloc(sizeof(launchParams));
     std::cout << " context, module, pipeline, etc, all set up ..." << std::endl;
-
-    std::cout << GDT_TERMINAL_GREEN;
-    std::cout << " Optix 7 Sample fully set up" << std::endl;
-    std::cout << GDT_TERMINAL_DEFAULT;
+ 
 }
 
 OptixTraversableHandle AudioRenderer::buildAccel()
@@ -94,12 +93,12 @@ OptixTraversableHandle AudioRenderer::buildAccel()
         d_indices[meshID] = indexBuffer[meshID].d_pointer();
 
         triangleInput[meshID].triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-        triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(vec3f);
+        triangleInput[meshID].triangleArray.vertexStrideInBytes = sizeof(glm::vec3);
         triangleInput[meshID].triangleArray.numVertices = (int)mesh.vertex.size();
         triangleInput[meshID].triangleArray.vertexBuffers = &d_vertices[meshID];
 
         triangleInput[meshID].triangleArray.indexFormat = OPTIX_INDICES_FORMAT_UNSIGNED_INT3;
-        triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(vec3i);
+        triangleInput[meshID].triangleArray.indexStrideInBytes = sizeof(glm::ivec3);
         triangleInput[meshID].triangleArray.numIndexTriplets = (int)mesh.index.size();
         triangleInput[meshID].triangleArray.indexBuffer = d_indices[meshID];
 
@@ -114,7 +113,7 @@ OptixTraversableHandle AudioRenderer::buildAccel()
         triangleInput[meshID].triangleArray.sbtIndexOffsetStrideInBytes = 0;
     }
     // ==================================================================
-    // BLAS setup
+    // BLAS (Bottom-Level Acceleration Structure) setup
     // ==================================================================
 
     OptixAccelBuildOptions accelOptions = {};
@@ -204,9 +203,7 @@ void AudioRenderer::initOptix()
     std::cout << " found " << numDevices << " CUDA devices" << std::endl;
 
     OPTIX_CHECK(optixInit());
-    std::cout << GDT_TERMINAL_GREEN
-              << " successfully initialized optix... yay!"
-              << GDT_TERMINAL_DEFAULT << std::endl;
+    std::cout << " successfully initialized optix... yay!" << std::endl;
 }
 
 static void context_log_cb(unsigned int level,
@@ -263,7 +260,7 @@ void AudioRenderer::createModule()
                                   log, &sizeof_log,
                                   &module));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s",log);
 }
 
 /*! does all setup for the raygen program(s) we are going to use */
@@ -287,7 +284,7 @@ void AudioRenderer::createRaygenPrograms()
                                         log, &sizeof_log,
                                         &raygenPGs[0]));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s", log);
 }
 
 /*! does all setup for the miss program(s) we are going to use */
@@ -311,7 +308,7 @@ void AudioRenderer::createMissPrograms()
                                         log, &sizeof_log,
                                         &missPGs[0]));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s", log);
 }
 
 /*! does all setup for the hitgroup program(s) we are going to use */
@@ -337,7 +334,7 @@ void AudioRenderer::createHitgroupPrograms()
                                         log, &sizeof_log,
                                         &hitgroupPGs[0]));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s", log);
 }
 
 /*! assembles the full pipeline of all programs */
@@ -361,7 +358,7 @@ void AudioRenderer::createPipeline()
                                     log, &sizeof_log,
                                     &pipeline));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s", log);
 
     OPTIX_CHECK(optixPipelineSetStackSize(/* [in] The pipeline to configure the stack size for */
                                           pipeline,
@@ -377,7 +374,7 @@ void AudioRenderer::createPipeline()
                                              passed to trace. */
                                           1));
     if (sizeof_log > 1)
-        PRINT(log);
+        printf("%s", log);
 }
 
 /*! constructs the shader binding table */
@@ -425,8 +422,8 @@ void AudioRenderer::buildSBT()
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
         rec.data.color = model->meshes[meshID]->diffuse;
         rec.data.mat = model->meshes[meshID]->materialID;
-        rec.data.vertex = (vec3f *)vertexBuffer[meshID].d_pointer();
-        rec.data.index = (vec3i *)indexBuffer[meshID].d_pointer();
+        rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
+        rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
     }
     hitgroupRecordsBuffer.alloc_and_upload(hitgroupRecords);
@@ -470,12 +467,12 @@ void AudioRenderer::setCamera(const Camera &camera)
     launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
     const float cosFovy = 0.66f;
     const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
-    launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.up));
+    launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.Up));
     launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
                                                              launchParams.camera.direction));
 }
 
-void AudioRenderer::setPos(vec3f pos)
+void AudioRenderer::setPos(glm::vec3 pos)
 {
     launchParams.origin_pos = pos;
 }
@@ -487,7 +484,7 @@ void AudioRenderer::setThresholds(float dist, float energy)
 }
 
 /*! resize frame buffer to given resolution */
-void AudioRenderer::resize(const vec2i &newSize)
+void AudioRenderer::resize(const glm::ivec2 &newSize)
 {
     // if window minimized
     if (newSize.x == 0 || newSize.y == 0)
@@ -508,10 +505,9 @@ void AudioRenderer::isHit(){
     float* device_c = launchParams.other;
     float* host_c = new float();
     cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
-    printf("--------> %f <-------",*host_c);
     if (*host_c > 1.f){
-        printf("URUGUAY NOMA\n");
+        printf("Result: A RAY HAS HIT\n");
     } else {
-        printf("la tensa\n");
+        printf("Result: NO RAY HAS HIT\n");
     }
 }
