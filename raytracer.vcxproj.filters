@@ -59,15 +59,6 @@
     <None Include="light.frag">
       <Filter>Resource Files\Shaders</Filter>
     </None>
-    <None Include="kernels.cuh">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="devicePrograms.cu">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="kernels.cu">
-      <Filter>Source Files</Filter>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shaderClass.h">
@@ -118,10 +109,21 @@
     <ClInclude Include="tiny_obj_loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="kernels.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Text Include="light.vert">
       <Filter>Resource Files\Shaders</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="devicePrograms.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="kernels.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

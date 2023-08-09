@@ -114,9 +114,6 @@ protected:
 
     CUDABuffer colorBuffer;
 
-    /*! the camera we are to render with. */
-    Camera lastSetCamera;
-
     /*! the model we are going to trace rays against */
     const OptixModel *model;
 

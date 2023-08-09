@@ -1,9 +1,10 @@
 #include <stdio.h>
 #include <optix_device.h>
-#include "LaunchParams.h"
-#include "PRD.h"
 #include <cuda_runtime.h>
 #include <cuda.h>
+#include "gdt/math/vec.h"
+#include "LaunchParams.h"
+#include "PRD.h"
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
@@ -56,13 +57,14 @@ extern "C" __global__ void __closesthit__radiance()
 
     // compute normal:
     const int primID = optixGetPrimitiveIndex();
-    const vec3i index = sbtData.index[primID];
+    const glm::ivec3 index = sbtData.index[primID];
     const glm::vec3 &A = sbtData.vertex[index.x];
     const glm::vec3 &B = sbtData.vertex[index.y];
     const glm::vec3 &C = sbtData.vertex[index.z];
     const glm::vec3 Ng = normalize(cross(B - A, C - A));
 
-    const glm::vec3 rayDir = optixGetWorldRayDirection();
+    const float3 wrd = optixGetWorldRayDirection();
+    const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
     const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     PRD &prd = *(PRD *)getPRD<PRD>();
 
@@ -116,7 +118,7 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.color = glm::vec3(0.f);
 
     // normalized screen plane position, in [0,1]^2
-    const vec2f screen(vec2f(ix + .5f, iy + .5f) / vec2f(optixLaunchParams.frame.size));
+    const glm::vec2 screen(glm::vec2(ix + .5f, iy + .5f) / glm::vec2(optixLaunchParams.frame.size));
 
     // generate ray direction
 
@@ -129,9 +131,11 @@ extern "C" __global__ void __raygen__renderFrame()
            i < 10000) // por las dudas le pongo un tope
     {
         i++;
+        gdt::vec3f rayOrigin(camera.position.x, camera.position.y, camera.position.z);
+        gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
         optixTrace(optixLaunchParams.traversable,
-                   camera.position,
-                   prd.direction,
+                   rayOrigin,
+                   rayDir,
                    0.f,   // tmin
                    1e20f, // tmax
                    0.0f,  // rayTime

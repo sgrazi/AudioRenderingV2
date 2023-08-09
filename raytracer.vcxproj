@@ -54,6 +54,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.1.props" />
   </ImportGroup>
   <ImportGroup Label="Shared">
   </ImportGroup>
@@ -120,6 +121,9 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalDependencies>glfw3.lib;opengl32.lib;gdt.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cudart_static.lib;C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\lib\x64\cuda.lib;rtaudio.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <CudaCompile>
+      <AdditionalDeps>C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;%(AdditionalDeps)</AdditionalDeps>
+    </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -152,9 +156,13 @@
   <ItemGroup>
     <None Include="default.frag" />
     <None Include="default.vert" />
-    <None Include="devicePrograms.cu" />
-    <None Include="kernels.cu" />
-    <None Include="kernels.cuh" />
+    <CudaCompile Include="devicePrograms.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+    <CudaCompile Include="kernels.cu">
+      <FileType>Document</FileType>
+    </CudaCompile>
+    <ClInclude Include="kernels.cuh" />
     <None Include="light.frag" />
   </ItemGroup>
   <ItemGroup>
@@ -180,5 +188,6 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 12.1.targets" />
   </ImportGroup>
 </Project>

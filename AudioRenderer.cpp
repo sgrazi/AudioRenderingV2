@@ -462,7 +462,6 @@ void AudioRenderer::render()
 /*! set camera to render with */
 void AudioRenderer::setCamera(const Camera &camera)
 {
-    lastSetCamera = camera;
     launchParams.camera.position = camera.Position;
     launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
     const float cosFovy = 0.66f;
@@ -493,7 +492,6 @@ void AudioRenderer::resize(const glm::ivec2 &newSize)
     colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
     launchParams.frame.size = newSize;
     launchParams.frame.colorBuffer = (uint32_t *)colorBuffer.d_pointer();
-    setCamera(lastSetCamera);
 }
 
 void AudioRenderer::downloadPixels(uint32_t h_pixels[])

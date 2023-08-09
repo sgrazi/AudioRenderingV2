@@ -141,7 +141,7 @@ void screen() {
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
     // Create Optix mesh of same .obj
-    OptixModel * scene = loadObj(filePath);
+    OptixModel * scene = loadOBJ(filePath);
 
     // AudioRenderer
     AudioRenderer * renderer = new AudioRenderer(scene);
