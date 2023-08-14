@@ -510,8 +510,8 @@ void SampleRenderer::isHit(){
     cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
     printf("--------> %f <-------",*host_c);
     if (*host_c > 1.f){
-        printf("URUGUAY NOMA\n");
+        printf("detected hit in rendered frame\n");
     } else {
-        printf("la tensa\n");
+        printf("no hit was detected in rendered frame\n");
     }
 }
