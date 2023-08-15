@@ -4,7 +4,7 @@
     <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.cpp">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp">
@@ -24,7 +24,7 @@
     <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\SampleRenderer.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h">
@@ -50,15 +50,5 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{B86206B3-9CA2-3B65-B021-016E9DE0390F}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="kernels.cuh">
-      <Filter>Header Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="kernels.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
   </ItemGroup>
 </Project>

@@ -25,8 +25,8 @@ add_executable(obj_raytracer
   optix7.h
   CUDABuffer.h
   LaunchParams.h
-  SampleRenderer.h
-  SampleRenderer.cpp
+  AudioRenderer.h
+  AudioRenderer.cpp
   Model.h
   Model.cpp
   main.cpp

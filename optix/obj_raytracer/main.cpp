@@ -1,116 +1,204 @@
+#include<iostream>
+#include<glad/glad.h>
+#include<GLFW/glfw3.h>
+#include<glm/glm.hpp>
+#include<glm/gtc/matrix_transform.hpp>
+#include<glm/gtc/type_ptr.hpp>
+#include "OBJ_Loader.h"
+#include "VAO.h"
+#include "VBO.h"
+#include "EBO.h"
+#include "shaderClass.h"
+#include "Camera.h"
+#include "Mesh.h"
+#include "AudioFile.h"
+#include "RtAudio.h"
+#include "OptixModel.h"
+#include "AudioRenderer.h"
+#include <thread>
 
-#include "SampleRenderer.h"
-#include "glfWindow/GLFWindow.h"
-#include <GL/gl.h>
+using namespace std;
 
-struct SampleWindow : public GLFCameraWindow
+const unsigned int width = 1366;
+const unsigned int height = 768;
+
+int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
+	double streamTime, RtAudioStreamStatus status, void* userData)
 {
-    vec2i fbSize;
-    GLuint fbTexture{0};
-    SampleRenderer sample;
-    std::vector<uint32_t> pixels;
-    SampleWindow(const Model *model,
-                 const Camera &camera,
-                 const float worldScale)
-        : GLFCameraWindow("Optix Renderer", camera.from, camera.at, camera.up, worldScale),
-          sample(model)
-    {
-        sample.setThresholds(100.0,0.1);
-        sample.setPos(vec3f(0.f));
-        sample.setCamera(camera);
-    }
+	unsigned int i, j;
+	double* buffer = (double*)outputBuffer;
+	//double* lastValues = (double*)userData;
+	if (status)
+		std::cout << "Stream underflow detected!" << std::endl;
+	// Write interleaved audio data.
+	AudioFile<float>* audio = (AudioFile<float>*)userData;
+	/*onst char* file_path = "guitar_sample_16k.wav";
 
-    virtual void render() override
-    {
-        if (cameraFrame.modified)
-        {
-            sample.setCamera(
-                Camera{
-                    cameraFrame.get_from(),
-                    cameraFrame.get_at(),
-                    cameraFrame.get_up(),
-                });
-                cameraFrame.modified = false;
-        }
-        sample.render();
-        printf("a ver, checkeand hit....\n");
-        sample.isHit();
-    }
+	audio.load("guitar_sample_16k.wav");*/
 
-    virtual void draw() override
-    {
-        sample.downloadPixels(pixels.data());
-        if (fbTexture == 0)
-            glGenTextures(1, &fbTexture);
-        glBindTexture(GL_TEXTURE_2D, fbTexture);
-        GLenum texFormat = GL_RGBA;
-        GLenum texelType = GL_UNSIGNED_BYTE;
-        glTexImage2D(GL_TEXTURE_2D, 0, texFormat, fbSize.x, fbSize.y, 0, GL_RGBA, texelType, pixels.data());
+	for (i = 0; i < nBufferFrames; i++) {
+		*buffer++ = (double) audio->samples.at(0).at(i);
+	}
+	return 0;
+}
 
-        glDisable(GL_LIGHTING);
-        glColor3f(1, 1, 1);
-
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, fbTexture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        glDisable(GL_DEPTH_TEST);
-
-        glViewport(0, 0, fbSize.x, fbSize.y);
-
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(0.f, (float)fbSize.x, 0.f, (float)fbSize.y, -1.f, 1.f);
-
-        glBegin(GL_QUADS);
-        {
-            glTexCoord2f(0.f, 0.f);
-            glVertex3f(0.f, 0.f, 0.f);
-
-            glTexCoord2f(0.f, 1.f);
-            glVertex3f(0.f, (float)fbSize.y, 0.f);
-
-            glTexCoord2f(1.f, 1.f);
-            glVertex3f((float)fbSize.x, (float)fbSize.y, 0.f);
-
-            glTexCoord2f(1.f, 0.f);
-            glVertex3f((float)fbSize.x, 0.f, 0.f);
-        }
-        glEnd();
-    }
-
-    virtual void resize(const vec2i &newSize)
-    {
-        fbSize = newSize;
-        sample.resize(newSize);
-        pixels.resize(newSize.x * newSize.y);
-    }
-};
-
-extern "C" int main(int ac, char **av)
+int audioPlay(RtAudio* dac)
 {
-    try
-    {
-        Model *model = loadOBJ("../models/scene.obj");
-        Camera camera = {
-            vec3f(-10.0f, 0.0f, 0.0f),                  // posicion
-            model->bounds.center() - vec3f(0, 0, 0),    // direccion
-            vec3f(0.f, 1.f, 0.f)                        // vertical
-        };
-        placeCamera(model, camera.from);
-        const float worldScale = length(model->bounds.span());
+	if (dac->getDeviceCount() < 1) {
+		std::cout << "\nNo audio devices found!\n";
+		exit(0);
+	}
+	RtAudio::StreamParameters parameters;
+	parameters.deviceId = dac->getDefaultOutputDevice();
+	parameters.nChannels = 2; // tienq ue machear con los channels del audio
+	parameters.firstChannel = 0;
 
-        SampleWindow *window = new SampleWindow(model, camera, worldScale);
-        window->run();
-    }
-    catch (std::runtime_error &e)
-    {
-        std::cout << "ERROR: " << e.what() << std::endl;
-        exit(1);
-    }
-    return 0;
+
+	AudioFile<float>* audio = new AudioFile<float>;
+	const char* file_path = "guitar_sample_16k.wav";
+	audio->load(file_path);
+	//cout << audio.getNumChannels() << endl;
+	unsigned int sampleRate = audio->getSampleRate() / audio->samples.size();
+	unsigned int bufferFrames = audio->samples.at(0).size(); // 256 sample frames
+	//const int length = audio.samples.at(0).size();
+
+	double data[2] = {0,0};
+	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64,
+		sampleRate, &bufferFrames, &saw, (void*)audio);
+	checkError = dac->startStream();
+
+	return 0;
+}
+
+void audio(RtAudio* dac) {
+	audioPlay(dac);
+}
+
+void screen() {
+    std::string filePath = "test.obj";
+
+	glfwInit();
+
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+	GLFWwindow* window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
+	if (window == NULL) {
+		cout << "Failed to create GLFW window" << endl;
+		glfwTerminate();
+		throw new exception("A");
+	}
+	glfwMakeContextCurrent(window);
+
+	gladLoadGL();
+
+	glViewport(0, 0, width, height);
+
+	//Load obj && initialize Loader
+	objl::Loader loader;
+	bool load_res = loader.LoadFile(filePath);
+
+	vector<Mesh> objects;
+	vector<Mesh> lights;
+	if (load_res)
+	{
+		for (int i = 0; i < loader.LoadedMeshes.size(); i++) {
+			objl::Mesh mesh = loader.LoadedMeshes.at(i);
+			vector<Vertex> vertices;
+			vector<unsigned int> indices;
+			for (int j = 0; j < mesh.Vertices.size(); j++) {
+				Vertex vertex;
+				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X, mesh.Vertices.at(j).Position.Y, mesh.Vertices.at(j).Position.Z);
+				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
+				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
+				vertices.push_back(vertex);
+			}
+			for (int j = 0; j < mesh.Indices.size(); j++) {
+				indices.push_back(mesh.Indices.at(j));
+			}
+			Mesh object(vertices, indices);
+			objects.push_back(object);
+		}
+	}
+	else { // error
+		cout << "Failed to load OBJ" << endl;
+		throw new exception("B");
+	}
+
+	Shader shaderProgram("default.vert", "default.frag");
+
+	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
+	glm::vec3 lightPos = glm::vec3(100, 1000, 300);
+
+	shaderProgram.Activate();
+	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
+	glUniform3f(glGetUniformLocation(shaderProgram.ID, "lightPos"), lightPos.x, lightPos.y, lightPos.z);
+
+	// Enables the Depth Buffer
+	glEnable(GL_DEPTH_TEST);
+
+	Camera2 camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
+
+    // Create Optix mesh of same .obj
+    OptixModel * scene = loadOBJ(filePath);
+
+    // AudioRenderer
+    AudioRenderer * renderer = new AudioRenderer(scene);
+    glm::ivec2 frameSize(width, height);
+	renderer->resize(frameSize);
+    renderer->setThresholds(100.0,0.1);
+    renderer->setPos(glm::vec3(0.f));
+    renderer->setCamera(camera);
+    renderer->render();
+
+	while (!glfwWindowShouldClose(window)) {
+		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		//change window title
+		string cameraPosition = "X: " + to_string(camera.Position.x) + " Y:" + to_string(camera.Position.y) + " Z: " + to_string(camera.Position.z);
+		string newTitle("Audiorendering V2 - " + cameraPosition);
+		glfwSetWindowTitle(window, newTitle.c_str());
+
+		camera.Inputs(window);
+		camera.updateMatrix(90.0f, 0.1f, 10000.0f);
+		camera.Matrix(shaderProgram, "camMatrix");
+
+		for (int i = 0; i < objects.size(); i++)
+			objects.at(i).Draw(shaderProgram, camera);
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	shaderProgram.Delete();
+	glfwDestroyWindow(window);
+	glfwTerminate();
+}
+
+int main(int argc, char** argv) {
+	// Initialize context
+	string configJsonPath;
+
+	if (argc < 2) {
+		configJsonPath = "config.json";
+	}
+	else {
+		configJsonPath = argv[1];
+	}
+	RtAudio* dac = new RtAudio();
+
+	thread screen1(screen);
+	thread audio1(audio, dac);
+
+	screen1.join();
+	audio1.detach();
+	// Stop the stream
+	RtAudioErrorType checkError = dac->stopStream();
+	// if (dac.isStreamOpen()) 
+	dac->closeStream();
+	delete dac;
+
+	return 0;
 }
