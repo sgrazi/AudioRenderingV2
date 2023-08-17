@@ -1,5 +1,6 @@
 #pragma once
 #include "optix7.h"
+#include <glm/glm.hpp>
 
 struct __align__(64) PRD
 {

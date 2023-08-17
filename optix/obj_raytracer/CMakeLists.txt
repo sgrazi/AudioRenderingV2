@@ -27,8 +27,14 @@ add_executable(obj_raytracer
   LaunchParams.h
   AudioRenderer.h
   AudioRenderer.cpp
-  Model.h
-  Model.cpp
+  OptixModel.h
+  OptixModel.cpp
+  Camera.h
+  Camera.cpp
+  Mesh.h
+  OBJ_Loader.h
+  RtAudio.h
+  Utils.h
   main.cpp
   )
 

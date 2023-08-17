@@ -20,6 +20,6 @@ public:
 	Mesh(std::vector <Vertex>& vertices, std::vector <GLuint>& indices);
 
 	// Draws the mesh
-	void Draw(Shader& shader, Camera2& camera);
+	void Draw(Shader& shader, Camera& camera);
 };
 #endif

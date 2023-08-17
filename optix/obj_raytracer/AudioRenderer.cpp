@@ -3,6 +3,7 @@
 #include "./kernels.cuh"
 #include <glm/glm.hpp>
 #include <optix_function_table_definition.h>
+#include "Utils.h"
 
 extern "C" char embedded_ptx_code[];
 
@@ -420,7 +421,7 @@ void AudioRenderer::buildSBT()
         HitgroupRecord rec;
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-        rec.data.color = model->meshes[meshID]->diffuse;
+        rec.data.color = gdt2glm(model->meshes[meshID]->diffuse);
         rec.data.mat = model->meshes[meshID]->materialID;
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
@@ -460,7 +461,7 @@ void AudioRenderer::render()
 }
 
 /*! set camera to render with */
-void AudioRenderer::setCamera(const Camera2 &camera)
+void AudioRenderer::setCamera(const Camera &camera)
 {
     launchParams.camera.position = camera.Position;
     launchParams.camera.direction = normalize(camera.Orientation - camera.Position);

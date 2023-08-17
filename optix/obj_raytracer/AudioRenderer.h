@@ -37,7 +37,7 @@ public:
     void downloadPixels(uint32_t h_pixels[]);
 
     /*! set camera to render with */
-    void setCamera(const Camera2 &camera);
+    void setCamera(const Camera &camera);
 
 protected:
     // ------------------------------------------------------------------

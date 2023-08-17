@@ -7,7 +7,10 @@
     <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.cpp">
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OptixModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
@@ -27,7 +30,22 @@
     <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Model.h">
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OptixModel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OBJ_Loader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\RtAudio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

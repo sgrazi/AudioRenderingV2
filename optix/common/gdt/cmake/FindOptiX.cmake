@@ -31,14 +31,22 @@
 # Our initial guess will be within the SDK.
 
 if (WIN32)
-#		set(OptiX_INSTALL_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.1.0" CACHE PATH "Path to OptiX installed location.")
-	find_path(searched_OptiX_INSTALL_DIR
-		NAME include/optix.h
-		PATHS
-		"C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
-	)
-	mark_as_advanced(searched_OptiX_INSTALL_DIR)
-  set(OptiX_INSTALL_DIR ${searched_OptiX_INSTALL_DIR} CACHE PATH "Path to OptiX installed location.")
+  find_path(OptiX_INSTALL_DIR
+    NAME include/optix.h
+    PATHS
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.2.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.1.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.0.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.5.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 6.0.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.1.1"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.1.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.0.1"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK 5.0.0"
+    "C:/ProgramData/NVIDIA Corporation/OptiX SDK *"
+  )
+  message("DEBUG--->${OptiX_INSTALL_DIR}")
 else()
   set(OptiX_INSTALL_DIR $ENV{OptiX_INSTALL_DIR} CACHE PATH "Path to OptiX installed location.")
 endif()
@@ -52,26 +60,26 @@ else()
   set(bit_dest "")
 endif()
 
-# macro(OPTIX_find_api_library name version)
-#   find_library(${name}_LIBRARY
-#     NAMES ${name}.${version} ${name}
-#     PATHS "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/SDK/lib${bit_dest}"
-#     NO_DEFAULT_PATH
-#     )
-#   find_library(${name}_LIBRARY
-#     NAMES ${name}.${version} ${name}
-#     )
-#   if(WIN32)
-#     find_file(${name}_DLL
-#       NAMES ${name}.${version}.dll
-#       PATHS "${OptiX_INSTALL_DIR}/bin${bit_dest}"
-#       NO_DEFAULT_PATH
-#       )
-#     find_file(${name}_DLL
-#       NAMES ${name}.${version}.dll
-#       )
-#   endif()
-# endmacro()
+macro(OPTIX_find_api_library name version)
+  find_library(${name}_LIBRARY
+    NAMES ${name}.${version} ${name}
+    PATHS "${OptiX_INSTALL_DIR}/lib${bit_dest}"
+    NO_DEFAULT_PATH
+    )
+  find_library(${name}_LIBRARY
+    NAMES ${name}.${version} ${name}
+    )
+  if(WIN32)
+    find_file(${name}_DLL
+      NAMES ${name}.${version}.dll
+      PATHS "${OptiX_INSTALL_DIR}/bin${bit_dest}"
+      NO_DEFAULT_PATH
+      )
+    find_file(${name}_DLL
+      NAMES ${name}.${version}.dll
+      )
+  endif()
+endmacro()
 
 #OPTIX_find_api_library(optix 7.0.0)
 #OPTIX_find_api_library(optixu 7.0.0)
@@ -80,7 +88,7 @@ endif()
 # Include
 find_path(OptiX_INCLUDE
   NAMES optix.h
-  PATHS "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.7.0/include"
+  PATHS "${OptiX_INSTALL_DIR}/include"
   NO_DEFAULT_PATH
   )
 find_path(OptiX_INCLUDE

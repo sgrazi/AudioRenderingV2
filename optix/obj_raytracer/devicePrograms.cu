@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <optix_device.h>
+#include <optix.h>
 #include <cuda_runtime.h>
 #include <cuda.h>
-#include "gdt/math/vec.h"
+#include <gdt/math/vec.h>
+#include <glm/glm.hpp>
 #include "LaunchParams.h"
 #include "PRD.h"
 
