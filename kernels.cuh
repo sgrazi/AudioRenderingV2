@@ -1,1 +1,0 @@
-void fillWithZeroesKernel(float* buf);

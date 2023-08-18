@@ -75,7 +75,7 @@ void audio(RtAudio* dac) {
 }
 
 void screen() {
-    std::string filePath = "test.obj";
+    std::string filePath = "../models/test.obj";
 
 	glfwInit();
 
