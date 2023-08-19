@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\build\CMakeFiles\41a8e36f1958af4437f163af344fab5f\INSTALL_force.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{0A838668-4688-391A-AEBD-6CD61082E260}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

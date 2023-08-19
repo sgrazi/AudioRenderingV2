@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/common/gdt
+# Install script for directory: C:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/common/gdt
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

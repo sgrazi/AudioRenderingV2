@@ -1,19 +1,19 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
+    <ClCompile Include="..\obj_raytracer\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.cpp">
+    <ClCompile Include="..\obj_raytracer\AudioRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OptixModel.cpp">
+    <ClCompile Include="..\obj_raytracer\OptixModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Camera.cpp">
+    <ClCompile Include="..\obj_raytracer\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
+    <ClCompile Include="..\obj_raytracer\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="EBO.cpp">
@@ -39,34 +39,34 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h">
+    <ClInclude Include="..\obj_raytracer\optix7.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CUDABuffer.h">
+    <ClInclude Include="..\obj_raytracer\CUDABuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\LaunchParams.h">
+    <ClInclude Include="..\obj_raytracer\LaunchParams.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\AudioRenderer.h">
+    <ClInclude Include="..\obj_raytracer\AudioRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OptixModel.h">
+    <ClInclude Include="..\obj_raytracer\OptixModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Camera.h">
+    <ClInclude Include="..\obj_raytracer\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Mesh.h">
+    <ClInclude Include="..\obj_raytracer\Mesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\OBJ_Loader.h">
+    <ClInclude Include="..\obj_raytracer\OBJ_Loader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\RtAudio.h">
+    <ClInclude Include="..\obj_raytracer\RtAudio.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\Utils.h">
+    <ClInclude Include="..\obj_raytracer\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AudioFile.h">
@@ -89,13 +89,13 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
+    <CustomBuild Include="..\obj_raytracer\devicePrograms.cu">
       <Filter>Source Files</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\CMakeFiles\aee6950d706d397604c587bab7005e9f\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
+    <CustomBuild Include="..\CMakeFiles\aee6950d706d397604c587bab7005e9f\cuda_compile_ptx_1_generated_devicePrograms.cu.ptx_embedded.c.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
-    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\obj_raytracer\CMakeLists.txt" />
+    <CustomBuild Include="..\obj_raytracer\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="CMake Rules">

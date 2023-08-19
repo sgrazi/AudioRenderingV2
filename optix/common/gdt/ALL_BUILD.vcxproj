@@ -49,7 +49,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;..\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -59,7 +59,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;..\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -68,11 +68,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt\CMakeLists.txt">
+    <CustomBuild Include="..\common\gdt\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule ../common/gdt/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt/CMakeFiles/generate.stamp
+..\..\..\..\..\..\..\Downloads\cmake-3.26.4-windows-x86_64\bin\cmake.exe -S.. -B.. --check-stamp-file ../common/gdt/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -81,11 +81,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">..\common\gdt\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule ../common/gdt/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-C:\Users\Fede\Downloads\cmake-3.26.1-windows-x86_64\bin\cmake.exe -SC:/Users/Fede/Documents/AudioRenderingV2/optix -BC:/Users/Fede/Documents/AudioRenderingV2/optix --check-stamp-file C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt/CMakeFiles/generate.stamp
+..\..\..\..\..\..\..\Downloads\cmake-3.26.4-windows-x86_64\bin\cmake.exe -S.. -B.. --check-stamp-file ../common/gdt/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -94,20 +94,20 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">..\common\gdt\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\ZERO_CHECK.vcxproj">
+    <ProjectReference Include="ZERO_CHECK.vcxproj">
       <Project>{200CCB95-840E-3944-B1EC-C59505C70465}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\common\gdt\gdt.vcxproj">
+    <ProjectReference Include="..\common\gdt\gdt.vcxproj">
       <Project>{715BB771-6684-3540-9438-5B496E767BDC}</Project>
       <Name>gdt</Name>
     </ProjectReference>

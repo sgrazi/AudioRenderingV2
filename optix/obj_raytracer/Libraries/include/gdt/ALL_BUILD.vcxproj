@@ -49,7 +49,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -59,7 +59,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Midl>
-      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.1\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -68,11 +68,11 @@
     </Midl>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\CMakeLists.txt">
+    <CustomBuild Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\CMakeLists.txt">
       <UseUtf8Encoding>Always</UseUtf8Encoding>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Building Custom Rule C:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix -BC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build --check-stamp-file C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/generate.stamp
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix -BC:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/build --check-stamp-file C:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -81,11 +81,11 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</LinkObjects>
-      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Building Custom Rule C:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/common/gdt/CMakeLists.txt</Message>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">setlocal
-"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix -BC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build --check-stamp-file C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/generate.stamp
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix -BC:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/build --check-stamp-file C:/Users/Agustin/Documents/GitHub/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/generate.stamp
 if %errorlevel% neq 0 goto :cmEnd
 :cmEnd
 endlocal &amp; call :cmErrorLevel %errorlevel% &amp; goto :cmDone
@@ -94,20 +94,20 @@ exit /b %1
 :cmDone
 if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">%(AdditionalInputs)</AdditionalInputs>
-      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\CMakeFiles\generate.stamp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\CMakeFiles\generate.stamp</Outputs>
       <LinkObjects Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkObjects>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\build\ZERO_CHECK.vcxproj">
+    <ProjectReference Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\build\ZERO_CHECK.vcxproj">
       <Project>{C14A36F0-78D2-3DF8-842D-222F320E8297}</Project>
       <Name>ZERO_CHECK</Name>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </ProjectReference>
-    <ProjectReference Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\gdt.vcxproj">
+    <ProjectReference Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\build\common\gdt\gdt.vcxproj">
       <Project>{8E1A952B-9EDB-3B4D-97A9-1050FEC64031}</Project>
       <Name>gdt</Name>
     </ProjectReference>

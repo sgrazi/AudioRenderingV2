@@ -1,4 +1,4 @@
-# Install script for directory: C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer
+# Install script for directory: ../obj_raytracer
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)

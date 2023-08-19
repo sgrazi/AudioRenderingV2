@@ -1,6 +1,6 @@
-C:/Users/Fede/Documents/AudioRenderingV2/optix/CMakeFiles/generate.stamp
-C:/Users/Fede/Documents/AudioRenderingV2/optix/common/gdt/CMakeFiles/generate.stamp
-C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeFiles/generate.stamp
-C:/Users/Fede/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/src/CMakeFiles/generate.stamp
-C:/Users/Fede/Documents/AudioRenderingV2/optix/common/glfWindow/CMakeFiles/generate.stamp
-C:/Users/Fede/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeFiles/generate.stamp
+../CMakeFiles/generate.stamp
+../common/gdt/CMakeFiles/generate.stamp
+../common/3rdParty/glfw/CMakeFiles/generate.stamp
+../common/3rdParty/glfw/src/CMakeFiles/generate.stamp
+../common/glfWindow/CMakeFiles/generate.stamp
+../obj_raytracer/CMakeFiles/generate.stamp

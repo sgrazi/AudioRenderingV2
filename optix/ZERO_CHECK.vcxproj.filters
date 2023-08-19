@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <CustomBuild Include="C:\Users\Fede\Documents\AudioRenderingV2\optix\CMakeFiles\5df40b7fb88b7d69d1f5989a9c240b18\generate.stamp.rule">
+    <CustomBuild Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\CMakeFiles\5df40b7fb88b7d69d1f5989a9c240b18\generate.stamp.rule">
       <Filter>CMake Rules</Filter>
     </CustomBuild>
   </ItemGroup>

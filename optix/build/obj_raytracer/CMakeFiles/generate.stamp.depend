@@ -1,0 +1,8 @@
+# CMake generation dependency list for this directory.
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cmake.pre-gen
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/build/obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/obj_raytracer/CMakeLists.txt
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindCUDA/run_nvcc.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindOpenGL.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindPackageMessage.cmake

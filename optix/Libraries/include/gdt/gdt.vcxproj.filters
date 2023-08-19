@@ -1,28 +1,28 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.cpp">
+    <ClCompile Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.h">
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\LinearSpace.h">
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\LinearSpace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\AffineSpace.h">
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\AffineSpace.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\CMakeLists.txt" />
+    <CustomBuild Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_build_type.cmake" />
-    <None Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_optix.cmake" />
-    <None Include="C:\Users\etzio\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\FindOptiX.cmake" />
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_build_type.cmake" />
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_optix.cmake" />
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\FindOptiX.cmake" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
