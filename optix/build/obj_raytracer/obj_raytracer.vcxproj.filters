@@ -16,27 +16,6 @@
     <ClCompile Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\obj_raytracer\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\EBO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\Mesh.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\shaderClass.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\Utils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\VAO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\obj_raytracer\VBO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Libraries\include\glad\glad.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\obj_raytracer\optix7.h">
@@ -69,27 +48,6 @@
     <ClInclude Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\obj_raytracer\Utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\AudioFile.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\EBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\PRD.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\shaderClass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\tiny_obj_loader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\VAO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\obj_raytracer\VBO.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Users\Agustin\Documents\AudioRenderingV2\optix\obj_raytracer\devicePrograms.cu">
@@ -110,15 +68,5 @@
     <Filter Include="Source Files">
       <UniqueIdentifier>{18789C39-99B7-306D-BBAF-4A671EB2F068}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\obj_raytracer\kernels.cuh">
-      <Filter>Header Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <CudaCompile Include="..\..\obj_raytracer\kernels.cu">
-      <Filter>Source Files</Filter>
-    </CudaCompile>
   </ItemGroup>
 </Project>
