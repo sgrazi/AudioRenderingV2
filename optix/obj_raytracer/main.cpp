@@ -16,28 +16,35 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
 #include <thread>
+#include <filesystem>
 
 using namespace std;
 
 const unsigned int width = 1366;
 const unsigned int height = 768;
+float* volumen = new float(1.0f);
+
+struct AudioInfo
+{
+	AudioFile<float>* audio;
+	float* volumen;
+};
+
 
 int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
 	double streamTime, RtAudioStreamStatus status, void* userData)
 {
 	unsigned int i, j;
 	double* buffer = (double*)outputBuffer;
-	//double* lastValues = (double*)userData;
 	if (status)
 		std::cout << "Stream underflow detected!" << std::endl;
 	// Write interleaved audio data.
-	AudioFile<float>* audio = (AudioFile<float>*)userData;
-	/*onst char* file_path = "guitar_sample_16k.wav";
+	AudioInfo* audioInfo = (AudioInfo*)userData;
 
-	audio.load("guitar_sample_16k.wav");*/
-
-	for (i = 0; i < nBufferFrames; i++) {
-		*buffer++ = (double) audio->samples.at(0).at(i);
+	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
+	for (i = 0; i < nBufferFrames * 2; i++) {
+		if (i + nextStream >= audioInfo->audio->samples.at(0).size()) break;
+		*buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * (*audioInfo->volumen);
 	}
 	return 0;
 }
@@ -55,16 +62,18 @@ int audioPlay(RtAudio* dac)
 
 
 	AudioFile<float>* audio = new AudioFile<float>;
-	const char* file_path = "guitar_sample_16k.wav";
+	const char* file_path = "testsound1.wav";
 	audio->load(file_path);
-	//cout << audio.getNumChannels() << endl;
-	unsigned int sampleRate = audio->getSampleRate() / audio->samples.size();
-	unsigned int bufferFrames = audio->samples.at(0).size(); // 256 sample frames
-	//const int length = audio.samples.at(0).size();
 
-	double data[2] = {0,0};
+	unsigned int sampleRate = audio->getSampleRate() / audio->getNumChannels();
+	unsigned int bufferFrames = 256; // 256 sample frames
+
+	AudioInfo* audioInfo = new AudioInfo;
+	audioInfo->audio = audio;
+	audioInfo->volumen = volumen;
+
 	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64,
-		sampleRate, &bufferFrames, &saw, (void*)audio);
+		sampleRate, &bufferFrames, &saw, (void*)audioInfo);
 	checkError = dac->startStream();
 
 	return 0;
@@ -74,8 +83,20 @@ void audio(RtAudio* dac) {
 	audioPlay(dac);
 }
 
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if (action == GLFW_RELEASE) return; //only handle press events
+	if (key == GLFW_KEY_V) {
+		if (*volumen == 0.0f)
+			*volumen = 1.0f;
+		else
+			*volumen = 0.0f;
+		cout << "volumen seteado a " << *volumen << endl;
+	}
+}
+
 void screen() {
-    std::string filePath = "../models/test.obj";
+	std::string filePath = "../../models/test.obj";
 
 	glfwInit();
 
@@ -92,6 +113,7 @@ void screen() {
 	glfwMakeContextCurrent(window);
 
 	gladLoadGL();
+	glfwSetKeyCallback(window, key_callback);
 
 	glViewport(0, 0, width, height);
 
@@ -151,6 +173,7 @@ void screen() {
     renderer->setPos(glm::vec3(0.f));
     renderer->setCamera(camera);
     renderer->render();
+	renderer->isHit();
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
@@ -179,6 +202,7 @@ void screen() {
 
 int main(int argc, char** argv) {
 	// Initialize context
+	// Not currently being used, TO DO
 	string configJsonPath;
 
 	if (argc < 2) {

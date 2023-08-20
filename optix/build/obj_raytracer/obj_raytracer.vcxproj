@@ -71,6 +71,7 @@
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;NOMINMAX;__CUDA_INCLUDE_COMPILER_INTERNAL_HEADERS__=1;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
