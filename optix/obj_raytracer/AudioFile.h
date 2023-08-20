@@ -484,7 +484,11 @@ bool AudioFile<T>::load(std::string filePath)
     if (audioFileFormat == AudioFileFormat::Wave)
     {
         //return true;
+<<<<<<< HEAD:optix/obj_raytracer/AudioFile.h
         return decodeWaveFile(fileData);
+=======
+        return decodeWaveFile (fileData);
+>>>>>>> 471702044b65f7222ff4bf74dbd1c1f490af916c:AudioRendering/AudioFile.h
     }
     else if (audioFileFormat == AudioFileFormat::Aiff)
     {
