@@ -62,7 +62,7 @@ int audioPlay(RtAudio* dac)
 
 
 	AudioFile<float>* audio = new AudioFile<float>;
-	const char* file_path = "testsound1.wav";
+	const char* file_path = "../../assets/sound_samples/testsound1.wav";
 	audio->load(file_path);
 
 	unsigned int sampleRate = audio->getSampleRate() / audio->getNumChannels();
@@ -96,7 +96,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void screen() {
-	std::string filePath = "../../models/test.obj";
+	std::string filePath = "../../assets/models/test.obj";
 
 	glfwInit();
 
