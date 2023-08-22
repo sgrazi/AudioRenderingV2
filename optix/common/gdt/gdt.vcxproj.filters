@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\common\gdt\gdt\gdt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\common\gdt\gdt\gdt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\gdt\gdt\math\LinearSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\gdt\gdt\math\AffineSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\common\gdt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\common\gdt\cmake\configure_build_type.cmake" />
+    <None Include="..\common\gdt\cmake\configure_optix.cmake" />
+    <None Include="..\common\gdt\cmake\FindOptiX.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{5F57E1F9-EF62-3B37-A485-90151687BEC5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{B86206B3-9CA2-3B65-B021-016E9DE0390F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

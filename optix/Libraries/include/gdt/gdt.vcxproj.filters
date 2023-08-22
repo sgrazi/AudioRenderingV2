@@ -1,0 +1,35 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\gdt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\LinearSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\gdt\math\AffineSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_build_type.cmake" />
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\configure_optix.cmake" />
+    <None Include="C:\Users\Agustin\Documents\GitHub\AudioRenderingV2\optix\common\gdt\cmake\FindOptiX.cmake" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{92BFBCC1-DB5E-3C99-8230-59FE006BFD7C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{AD7A7708-C755-3426-8071-C2F0655EEDA2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

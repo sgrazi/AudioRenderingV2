@@ -1,0 +1,19 @@
+# CMake generation dependency list for this directory.
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/CMakeLists.txt
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/cmake_uninstall.cmake.in
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/src/glfw3.pc.in
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/src/glfw3Config.cmake.in
+C:/Users/Agustin/Documents/AudioRenderingV2/optix/common/3rdParty/glfw/src/glfw_config.h.in
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/CMakeDependentOption.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/CMakePackageConfigHelpers.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/CheckCSourceCompiles.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/CheckIncludeFile.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/CheckLibraryExists.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindDoxygen.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindPackageMessage.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/FindThreads.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/GNUInstallDirs.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/Internal/CheckSourceCompiles.cmake
+C:/Users/Agustin/Downloads/cmake-3.26.1-windows-x86_64/cmake-3.26.1-windows-x86_64/share/cmake-3.26/Modules/WriteBasicConfigVersionFile.cmake
