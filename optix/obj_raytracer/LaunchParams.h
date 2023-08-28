@@ -30,7 +30,9 @@ struct LaunchParams
     OptixTraversableHandle traversable;
 
     glm::vec3 origin_pos;
+    int sample_rate;
     float dist_thres, energy_thres;
-    float* other;
+    int histogram_length;
+    float* histogram;
 };
 

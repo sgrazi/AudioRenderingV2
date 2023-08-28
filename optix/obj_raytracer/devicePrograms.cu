@@ -8,6 +8,8 @@
 #include "LaunchParams.h"
 #include "PRD.h"
 
+#define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
+
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
       optixLaunch) */
@@ -55,9 +57,6 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
-    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
-
-    // compute normal:
     const int primID = optixGetPrimitiveIndex();
     const glm::ivec3 index = sbtData.index[primID];
     const glm::vec3 &A = sbtData.vertex[index.x];
@@ -65,9 +64,9 @@ extern "C" __global__ void __closesthit__radiance()
     const glm::vec3 &C = sbtData.vertex[index.z];
     const glm::vec3 Ng = normalize(cross(B - A, C - A));
 
+    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
     const float3 wrd = optixGetWorldRayDirection();
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
-    const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     PRD &prd = *(PRD *)getPRD<PRD>();
 
     switch (sbtData.mat)
@@ -77,16 +76,19 @@ extern "C" __global__ void __closesthit__radiance()
         const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
-        prd.energy = 1;
-        float *other = optixLaunchParams.other;
-        *other = 1.1f;
-        // optixLaunchParams.hit = 's';
-        prd.color = cosDN * sbtData.color;
+
+        float *histogram = optixLaunchParams.histogram;
+        float elapsed_time = prd.distance / SPEED_OF_SOUND;
+        int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
+        if (array_pos < optixLaunchParams.histogram_length)
+            *histogram[array_pos] += prd.remaining_factor;
         break;
     default:
         // material
-        prd.color = cosDN * sbtData.color;
-        prd.energy = prd.energy * 0; // el int seria un acoustic absorption
+		float ray_leg = optixGetRayTmax(); // investigar que es el Tmax y cambiarle el nombre a ray_leg
+        prd.distance += ray_leg;
+
+        prd.remaining_factor *= 0; // el int seria un acoustic absorption
     }
 }
 

@@ -64,6 +64,8 @@ int audioPlay(RtAudio* dac)
 	AudioFile<float>* audio = new AudioFile<float>;
 	const char* file_path = "../../assets/sound_samples/testsound1.wav";
 	audio->load(file_path);
+	
+	// send AudioFile info to screen thread??? (audio_length, sample_rate)
 
 	unsigned int sampleRate = audio->getSampleRate() / audio->getNumChannels();
 	unsigned int bufferFrames = 256; // 256 sample frames
