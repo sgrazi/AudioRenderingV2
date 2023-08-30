@@ -4,12 +4,6 @@
 
 using namespace gdt;
 
-struct Material
-{
-    const char* name;
-    float ac_absorption;
-};
-
 struct TriangleMesh
 {
     std::vector<vec3f> vertex;

@@ -57,12 +57,6 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
-    const int primID = optixGetPrimitiveIndex();
-    const glm::ivec3 index = sbtData.index[primID];
-    const glm::vec3 &A = sbtData.vertex[index.x];
-    const glm::vec3 &B = sbtData.vertex[index.y];
-    const glm::vec3 &C = sbtData.vertex[index.z];
-    const glm::vec3 Ng = normalize(cross(B - A, C - A));
 
     const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
     const float3 wrd = optixGetWorldRayDirection();
@@ -85,10 +79,30 @@ extern "C" __global__ void __closesthit__radiance()
         break;
     default:
         // material
-		float ray_leg = optixGetRayTmax(); // investigar que es el Tmax y cambiarle el nombre a ray_leg
-        prd.distance += ray_leg;
+        const int primID = optixGetPrimitiveIndex();
+        const glm::ivec3 index = sbtData.index[primID];
+        const glm::vec3 &A = sbtData.vertex[index.x];
+        const glm::vec3 &B = sbtData.vertex[index.y];
+        const glm::vec3 &C = sbtData.vertex[index.z];
+        const glm::vec3 Ng = normalize(cross(B - A, C - A));
+        prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
 
-        prd.remaining_factor *= 0; // el int seria un acoustic absorption
+        prd.curr_position = sbtData.pos;
+
+		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
+        prd.distance += dist_traveled;
+
+        uint32_t mat = sbtData.mat;
+        float absorption_factor = optixLaunchParams.absorption.find(mat);
+        if (absorption_factor != optixLaunchParams.absorption.end()){
+            prd.remaining_factor *= absorption_factor;
+        }
+        else {
+            // material not found
+            prd.remaining_factor *= 0;
+        }
+        
+        prd.recursion_depth++
     }
 }
 

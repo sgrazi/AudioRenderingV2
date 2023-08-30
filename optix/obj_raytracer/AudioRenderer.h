@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "kernels.cuh"
 #include <glm/glm.hpp>
+#include <unordered_map>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -73,6 +74,9 @@ protected:
 
     /*! build an acceleration structure for the given triangle mesh */
     OptixTraversableHandle buildAccel();
+
+    /*! loads material data into map */
+    std::unordered_map<int, Material> buildAbsorptionMap();
 
 protected:
     /*! @{ CUDA device context and stream that optix pipeline will run

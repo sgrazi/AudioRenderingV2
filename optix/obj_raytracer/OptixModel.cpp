@@ -72,28 +72,6 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
-// std::map<int, Material> loadMaterialMap() {
-//     std::map<int, Material> materials;
-
-//     // Load and parse the XML file
-//     tinyxml2::XMLDocument doc;
-//     if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS) {
-//         throw std::runtime_error("Failed to load material XML file");
-//     }
-
-//     // Traverse the XML and populate the materials dictionary
-//     tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
-//     for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
-//         Material material;
-//         int id = std::stoi(materialNode->FirstChildElement("id")->GetText());
-//         material.name = materialNode->FirstChildElement("name")->GetText();
-//         material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
-//         materials[id] = material;
-//     }
-
-//     return materials;
-// }
-
 OptixModel *loadOBJ(const std::string &objFile)
 {
     OptixModel *model = new OptixModel;

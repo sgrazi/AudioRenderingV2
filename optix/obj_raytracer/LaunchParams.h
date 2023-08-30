@@ -1,6 +1,7 @@
 #pragma once
 #include "optix7.h"
 #include <glm/glm.hpp>
+#include <unordered_map>
 
 struct TriangleMeshSBTData
 {
@@ -9,6 +10,12 @@ struct TriangleMeshSBTData
     glm::vec3* vertex;
     glm::ivec3* index;
     uint32_t mat;
+};
+
+struct Material
+{
+    const char* name;
+    float ac_absorption;
 };
 
 struct LaunchParams
@@ -29,9 +36,13 @@ struct LaunchParams
 
     OptixTraversableHandle traversable;
 
+    std::unordered_map<int, Material> absorption;
+
     glm::vec3 origin_pos;
-    int sample_rate;
     float dist_thres, energy_thres;
+    
+    int sample_rate;
+
     int histogram_length;
     float* histogram;
 };

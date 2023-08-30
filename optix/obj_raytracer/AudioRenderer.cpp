@@ -1,9 +1,10 @@
 #include "AudioRenderer.h"
 #include "CUDABuffer.h"
+#include "Utils.h"
 #include "./kernels.cuh"
 #include <glm/glm.hpp>
+#include <unordered_map>
 #include <optix_function_table_definition.h>
-#include "Utils.h"
 
 extern "C" char embedded_ptx_code[];
 
@@ -54,7 +55,11 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
     
     int size = audio_length * sample_rate;
     launchParams.histogram_length = size;
+
     launchParams.sample_rate = sample_rate;
+    
+    LaunchParams.absorption = buildAbsorptionMap();
+
     cudaMalloc(&launchParams.histogram, size * sizeof(float));
     fillWithZeroesKernel(launchParams.histogram, size);
 
@@ -192,6 +197,29 @@ OptixTraversableHandle AudioRenderer::buildAccel()
     compactedSizeBuffer.free();
 
     return asHandle;
+}
+
+std::unordered_map<int, Material> AudioRenderer::buildAbsorptionMap()
+{
+    std::unordered_map<int, Material> materials;
+
+    // Load and parse the XML file
+    tinyxml2::XMLDocument doc;
+    if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS) {
+        throw std::runtime_error("Failed to load material XML file");
+    }
+
+    // Traverse the XML and populate the materials dictionary
+    tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
+    for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
+        Material material;
+        int id = std::stoi(materialNode->FirstChildElement("id")->GetText());
+        material.name = materialNode->FirstChildElement("name")->GetText();
+        material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
+        materials[id] = material;
+    }
+
+    return materials;
 }
 
 /*! helper function that initializes optix and checks for errors */
