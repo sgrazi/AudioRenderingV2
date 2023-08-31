@@ -170,7 +170,6 @@ void screen() {
     // AudioRenderer
     AudioRenderer * renderer = new AudioRenderer(scene);
     glm::ivec2 frameSize(width, height);
-	renderer->resize(frameSize);
     renderer->setThresholds(100.0,0.1);
     renderer->setPos(glm::vec3(0.f));
     renderer->setCamera(camera);

@@ -30,13 +30,6 @@ public:
     
     void isHit();
 
-    // TODO: delete these temporal functions once we move to a pathtracer
-    /*! resize frame buffer to given resolution */
-    void resize(const glm::ivec2 &newSize);
-
-    /*! download the rendered color buffer */
-    void downloadPixels(uint32_t h_pixels[]);
-
     /*! set camera to render with */
     void setCamera(const Camera &camera);
 

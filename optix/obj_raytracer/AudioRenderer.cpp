@@ -51,6 +51,10 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
     std::cout << " creating hitgroup programs ..." << std::endl;
     createHitgroupPrograms();
 
+    launchParams.size_x = 10;
+    launchParams.size_y = 10;
+    launchParams.size_z = 10;
+
     launchParams.traversable = buildAccel();
     
     int size = audio_length * sample_rate;
@@ -58,7 +62,7 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
 
     launchParams.sample_rate = sample_rate;
     
-    LaunchParams.absorption = buildAbsorptionMap();
+    launchParams.absorption = buildAbsorptionMap();
 
     cudaMalloc(&launchParams.histogram, size * sizeof(float));
     fillWithZeroesKernel(launchParams.histogram, size);
@@ -467,10 +471,7 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-    // sanity check: make sure we launch only after first resize is
-    // already done:
-    if (launchParams.frame.size.x == 0)
-        return;
+
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -481,9 +482,9 @@ void AudioRenderer::render()
                             launchParamsBuffer.sizeInBytes,
                             &sbt,
                             /*! dimensions of the launch: */
-                            launchParams.frame.size.x,
-                            launchParams.frame.size.y,
-                            1));
+                            launchParams.size_x,
+                            launchParams.size_y,
+                            launchParams.size_z,));
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
@@ -497,7 +498,8 @@ void AudioRenderer::setCamera(const Camera &camera)
     launchParams.camera.position = camera.Position;
     launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
     const float cosFovy = 0.66f;
-    const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
+    // const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
+    const float aspect = 16 / 9;
     launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.Up));
     launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
                                                              launchParams.camera.direction));
@@ -512,23 +514,6 @@ void AudioRenderer::setThresholds(float dist, float energy)
 {
     launchParams.dist_thres = dist;
     launchParams.energy_thres = energy;
-}
-
-/*! resize frame buffer to given resolution */
-void AudioRenderer::resize(const glm::ivec2 &newSize)
-{
-    // if window minimized
-    if (newSize.x == 0 || newSize.y == 0)
-        return;
-
-    colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
-    launchParams.frame.size = newSize;
-    launchParams.frame.colorBuffer = (uint32_t *)colorBuffer.d_pointer();
-}
-
-void AudioRenderer::downloadPixels(uint32_t h_pixels[])
-{
-    colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
 }
 
 void AudioRenderer::isHit(){

@@ -118,29 +118,36 @@ extern "C" __global__ void __miss__radiance()
 
 extern "C" __global__ void __raygen__renderFrame()
 {
-    // compute a test pattern based on pixel ID
+    
+    // TODO, check if dimensions are three dimensional
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
+    const int iz = optixGetLaunchIndex().z;
+    const int x_rays = optixGetLaunchDimensions().x; 
+    const int y_rays = optixGetLaunchDimensions().y;
+    const int z_rays = optixGetLaunchDimensions().z;
 
     const auto &camera = optixLaunchParams.camera;
 
     // the values we store the PRD pointer in:
-    // Nota: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
+    // Note: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.energy = 1.0f;
+    prd.remaining_factor = 1.0f;
     prd.distance = 0;
     prd.curr_position = optixLaunchParams.origin_pos;
     prd.recursion_depth = 0;
-    prd.color = glm::vec3(0.f);
 
-    // normalized screen plane position, in [0,1]^2
-    const glm::vec2 screen(glm::vec2(ix + .5f, iy + .5f) / glm::vec2(optixLaunchParams.frame.size));
+    // TODO distribution of rays should be uniform, to be tested
+    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays) 
+    double theta = 2 * M_PI * offset;
+    double phi = acos(1 - 2 * offset);
+    double dx = sin(phi) * cos(theta);
+    double dy = sin(phi) * sin(theta);
+    double dz = cos(phi);
+    prd.direction = {dx, dy, dz};
 
-    // generate ray direction
-
-    prd.direction = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
     int i = 0;
     // pack data into payload
     while (prd.distance < optixLaunchParams.dist_thres &&
@@ -164,16 +171,4 @@ extern "C" __global__ void __raygen__renderFrame()
                    SURFACE_RAY_TYPE,              // missSBTIndex
                    u0, u1);
     }
-
-    const int r = int(255.99f * prd.color.x);
-    const int g = int(255.99f * prd.color.y);
-    const int b = int(255.99f * prd.color.z);
-
-    // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-    // to make stb_image_write happy ...
-    const uint32_t rgba = 0xff000000 | (r << 0) | (g << 8) | (b << 16);
-
-    // and write to frame buffer ...
-    const uint32_t fbIndex = ix + iy * optixLaunchParams.frame.size.x;
-    optixLaunchParams.frame.colorBuffer[fbIndex] = rgba;
 }

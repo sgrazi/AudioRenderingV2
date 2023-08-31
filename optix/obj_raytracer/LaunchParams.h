@@ -20,11 +20,9 @@ struct Material
 
 struct LaunchParams
 {
-    struct
-    {
-        uint32_t* colorBuffer;
-        glm::ivec2 size;
-    } frame;
+    int size_x;
+    int size_y;
+    int size_z;
 
     struct
     {
@@ -32,7 +30,7 @@ struct LaunchParams
         glm::vec3 direction;
         glm::vec3 horizontal;
         glm::vec3 vertical;
-    } camera;
+    } camera; //TODO not sure how necessary at this point, we should only care about position
 
     OptixTraversableHandle traversable;
 
