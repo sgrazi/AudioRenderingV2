@@ -168,7 +168,8 @@ void screen() {
     OptixModel * scene = loadOBJ(filePath);
 
     // AudioRenderer
-    AudioRenderer * renderer = new AudioRenderer(scene);
+	// TODO modificar cuando se tenga comunicacion entre threads
+    AudioRenderer * renderer = new AudioRenderer(scene, 256, 256);
     glm::ivec2 frameSize(width, height);
     renderer->setThresholds(100.0,0.1);
     renderer->setPos(glm::vec3(0.f));

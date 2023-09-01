@@ -75,7 +75,7 @@ extern "C" __global__ void __closesthit__radiance()
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         if (array_pos < optixLaunchParams.histogram_length)
-            *histogram[array_pos] += prd.remaining_factor;
+            histogram[array_pos] += prd.remaining_factor;
         break;
     default:
         // material
@@ -93,16 +93,16 @@ extern "C" __global__ void __closesthit__radiance()
         prd.distance += dist_traveled;
 
         uint32_t mat = sbtData.mat;
-        float absorption_factor = optixLaunchParams.absorption.find(mat);
-        if (absorption_factor != optixLaunchParams.absorption.end()){
-            prd.remaining_factor *= absorption_factor;
+        auto it = optixLaunchParams.absorption.find(mat);
+        if (it != optixLaunchParams.absorption.end()) {
+            prd.remaining_factor *= it->second.ac_absorption;
         }
         else {
-            // material not found
+            material not found
             prd.remaining_factor *= 0;
         }
         
-        prd.recursion_depth++
+        prd.recursion_depth++;
     }
 }
 
@@ -138,9 +138,9 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.distance = 0;
     prd.curr_position = optixLaunchParams.origin_pos;
     prd.recursion_depth = 0;
-
+    
     // TODO distribution of rays should be uniform, to be tested
-    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays) 
+    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays);
     double theta = 2 * M_PI * offset;
     double phi = acos(1 - 2 * offset);
     double dx = sin(phi) * cos(theta);
@@ -151,7 +151,7 @@ extern "C" __global__ void __raygen__renderFrame()
     int i = 0;
     // pack data into payload
     while (prd.distance < optixLaunchParams.dist_thres &&
-           prd.energy > optixLaunchParams.energy_thres &&
+           prd.remaining_factor > optixLaunchParams.energy_thres &&
            prd.recursion_depth >= 0 &&
            i < 10000) // por las dudas le pongo un tope
     {

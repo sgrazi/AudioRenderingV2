@@ -5,6 +5,7 @@
 #include <glm/glm.hpp>
 #include <unordered_map>
 #include <optix_function_table_definition.h>
+#include "tinyxml2.h"
 
 extern "C" char embedded_ptx_code[];
 
@@ -484,7 +485,7 @@ void AudioRenderer::render()
                             /*! dimensions of the launch: */
                             launchParams.size_x,
                             launchParams.size_y,
-                            launchParams.size_z,));
+                            launchParams.size_z));
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
