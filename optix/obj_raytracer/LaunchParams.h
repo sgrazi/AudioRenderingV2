@@ -1,7 +1,8 @@
 #pragma once
 #include "optix7.h"
 #include <glm/glm.hpp>
-#include <unordered_map>
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
 
 struct TriangleMeshSBTData
 {
@@ -14,6 +15,7 @@ struct TriangleMeshSBTData
 
 struct Material
 {
+    int id;
     const char* name;
     float ac_absorption;
 };
@@ -34,7 +36,7 @@ struct LaunchParams
 
     OptixTraversableHandle traversable;
 
-    std::unordered_map<int, Material> absorption;
+    thrust::device_vector<Material> absorption;
 
     glm::vec3 origin_pos;
     float dist_thres, energy_thres;

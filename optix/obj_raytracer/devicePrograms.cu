@@ -92,13 +92,17 @@ extern "C" __global__ void __closesthit__radiance()
 		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
         prd.distance += dist_traveled;
 
+        // TO DO, is sbtData.mat the id of the material or the name?
         uint32_t mat = sbtData.mat;
-        auto it = optixLaunchParams.absorption.find(mat);
-        if (it != optixLaunchParams.absorption.end()) {
-            prd.remaining_factor *= it->second.ac_absorption;
+        auto result = thrust::find_if(optixLaunchParams.absorption.begin(), optixLaunchParams.absorption.end(),
+                                  [mat] (const Material& m) {
+                                      return m.id == mat;
+                                  });
+        if (result != optixLaunchParams.absorption.end()) {
+            prd.remaining_factor *= result->ac_absorption;
         }
         else {
-            material not found
+            // material not found
             prd.remaining_factor *= 0;
         }
         

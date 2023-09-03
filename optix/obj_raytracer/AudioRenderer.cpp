@@ -1,11 +1,12 @@
+#include <glm/glm.hpp>
+#include <optix_function_table_definition.h>
+#include <thrust/device_vector.h>
+#include <thrust/sort.h>
+#include "tinyxml2.h"
 #include "AudioRenderer.h"
 #include "CUDABuffer.h"
 #include "Utils.h"
 #include "./kernels.cuh"
-#include <glm/glm.hpp>
-#include <unordered_map>
-#include <optix_function_table_definition.h>
-#include "tinyxml2.h"
 
 extern "C" char embedded_ptx_code[];
 
@@ -204,9 +205,9 @@ OptixTraversableHandle AudioRenderer::buildAccel()
     return asHandle;
 }
 
-std::unordered_map<int, Material> AudioRenderer::buildAbsorptionMap()
+thrust::device_vector<Material> AudioRenderer::buildAbsorptionMap()
 {
-    std::unordered_map<int, Material> materials;
+    thrust::device_vector<Material> materials;
 
     // Load and parse the XML file
     tinyxml2::XMLDocument doc;
@@ -218,11 +219,17 @@ std::unordered_map<int, Material> AudioRenderer::buildAbsorptionMap()
     tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
     for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
         Material material;
-        int id = std::stoi(materialNode->FirstChildElement("id")->GetText());
+        material.id = std::stoi(materialNode->FirstChildElement("id")->GetText());
         material.name = materialNode->FirstChildElement("name")->GetText();
         material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
-        materials[id] = material;
+        materials.push_back(material);
     }
+
+    // sorting for later efficiency
+    thrust::sort(materials.begin(), materials.end(),
+                 [](const Material& a, const Material& b) {
+                     return a.id < b.id;
+                 });
 
     return materials;
 }
