@@ -174,10 +174,9 @@ OptixModel *loadOBJ(const std::string &objFile)
 }
 
 void placeCamera(OptixModel *model, vec3f cameraPosition)
-{ //this does not actually place the sphere in cameraPosition, TO DO
+{
     const std::string objFile = "../models/sphere.obj";
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    printf("%s",mtlDir.c_str());
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -200,12 +199,23 @@ void placeCamera(OptixModel *model, vec3f cameraPosition)
     if (materials.empty())
         throw std::runtime_error("could not parse materials ...");
 
+    // moving the sphere
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
+            // Translate each vertex by (x, y, z)
+            attributes.vertices[3 * index.vertex_index + 0] += cameraPosition.x;
+            attributes.vertices[3 * index.vertex_index + 1] += cameraPosition.y;
+            attributes.vertices[3 * index.vertex_index + 2] += cameraPosition.z;
+        }
+    }
+
     std::set<int> materialIDs;
     for (auto faceMatID : shapes[0].mesh.material_ids)
     {
         materialIDs.insert(faceMatID);
     }
 
+    // converting to optix model
     for (int materialID : materialIDs)
     {
         std::map<tinyobj::index_t, int> knownVertices;
@@ -223,6 +233,7 @@ void placeCamera(OptixModel *model, vec3f cameraPosition)
                       addVertex(mesh, attributes, idx1, knownVertices),
                       addVertex(mesh, attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
+            // TO DO: check to see if we can remove this, we no longer need visuals
             mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
             if (materialID >= 0) {
