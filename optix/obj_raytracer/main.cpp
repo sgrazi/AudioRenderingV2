@@ -1,9 +1,11 @@
-#include<iostream>
-#include<glad/glad.h>
-#include<GLFW/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
+#include <iostream>
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <thread>
+#include <filesystem>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -15,43 +17,44 @@
 #include "RtAudio.h"
 #include "OptixModel.h"
 #include "AudioRenderer.h"
-#include <thread>
-#include <filesystem>
+#include "tinyxml2.h"
 
 using namespace std;
 
 const unsigned int width = 1366;
 const unsigned int height = 768;
-float* volumen = new float(1.0f);
+float *volumen = new float(1.0f);
 
 struct AudioInfo
 {
-	AudioFile<float>* audio;
-	float* volumen;
+	AudioFile<float> *audio;
+	float *volumen;
 };
 
-
-int saw(void* outputBuffer, void* inputBuffer, unsigned int nBufferFrames,
-	double streamTime, RtAudioStreamStatus status, void* userData)
+int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+				double streamTime, RtAudioStreamStatus status, void *userData)
 {
 	unsigned int i, j;
-	double* buffer = (double*)outputBuffer;
+	double *buffer = (double *)outputBuffer;
 	if (status)
 		std::cout << "Stream underflow detected!" << std::endl;
 	// Write interleaved audio data.
-	AudioInfo* audioInfo = (AudioInfo*)userData;
+	AudioInfo *audioInfo = (AudioInfo *)userData;
 
 	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
-	for (i = 0; i < nBufferFrames * 2; i++) {
-		if (i + nextStream >= audioInfo->audio->samples.at(0).size()) break;
+	for (i = 0; i < nBufferFrames * 2; i++)
+	{
+		if (i + nextStream >= audioInfo->audio->samples.at(0).size())
+			break;
 		*buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * (*audioInfo->volumen);
 	}
 	return 0;
 }
 
-int audioPlay(RtAudio* dac)
+int audioPlay(RtAudio *dac)
 {
-	if (dac->getDeviceCount() < 1) {
+	if (dac->getDeviceCount() < 1)
+	{
 		std::cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
@@ -60,35 +63,37 @@ int audioPlay(RtAudio* dac)
 	parameters.nChannels = 2; // tienq ue machear con los channels del audio
 	parameters.firstChannel = 0;
 
-
-	AudioFile<float>* audio = new AudioFile<float>;
-	const char* file_path = "../../assets/sound_samples/testsound1.wav";
+	AudioFile<float> *audio = new AudioFile<float>;
+	const char *file_path = "../../assets/sound_samples/testsound1.wav";
 	audio->load(file_path);
-	
+
 	// send AudioFile info to screen thread??? (audio_length, sample_rate)
 
 	unsigned int sampleRate = audio->getSampleRate() / audio->getNumChannels();
 	unsigned int bufferFrames = 256; // 256 sample frames
 
-	AudioInfo* audioInfo = new AudioInfo;
+	AudioInfo *audioInfo = new AudioInfo;
 	audioInfo->audio = audio;
 	audioInfo->volumen = volumen;
 
 	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64,
-		sampleRate, &bufferFrames, &saw, (void*)audioInfo);
+																								sampleRate, &bufferFrames, &saw, (void *)audioInfo);
 	checkError = dac->startStream();
 
 	return 0;
 }
 
-void audio(RtAudio* dac) {
+void audio(RtAudio *dac)
+{
 	audioPlay(dac);
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void key_callback(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
-	if (action == GLFW_RELEASE) return; //only handle press events
-	if (key == GLFW_KEY_V) {
+	if (action == GLFW_RELEASE)
+		return; // only handle press events
+	if (key == GLFW_KEY_V)
+	{
 		if (*volumen == 0.0f)
 			*volumen = 1.0f;
 		else
@@ -97,7 +102,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	}
 }
 
-void screen() {
+void screen()
+{
 	std::string filePath = "../../assets/models/test.obj";
 
 	glfwInit();
@@ -106,8 +112,9 @@ void screen() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
-	if (window == NULL) {
+	GLFWwindow *window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
+	if (window == NULL)
+	{
 		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
 		throw new exception("A");
@@ -119,7 +126,7 @@ void screen() {
 
 	glViewport(0, 0, width, height);
 
-	//Load obj && initialize Loader
+	// Load obj && initialize Loader
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(filePath);
 
@@ -127,25 +134,29 @@ void screen() {
 	vector<Mesh> lights;
 	if (load_res)
 	{
-		for (int i = 0; i < loader.LoadedMeshes.size(); i++) {
+		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
+		{
 			objl::Mesh mesh = loader.LoadedMeshes.at(i);
 			vector<Vertex> vertices;
 			vector<unsigned int> indices;
-			for (int j = 0; j < mesh.Vertices.size(); j++) {
+			for (int j = 0; j < mesh.Vertices.size(); j++)
+			{
 				Vertex vertex;
 				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X, mesh.Vertices.at(j).Position.Y, mesh.Vertices.at(j).Position.Z);
 				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
 				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
 				vertices.push_back(vertex);
 			}
-			for (int j = 0; j < mesh.Indices.size(); j++) {
+			for (int j = 0; j < mesh.Indices.size(); j++)
+			{
 				indices.push_back(mesh.Indices.at(j));
 			}
 			Mesh object(vertices, indices);
 			objects.push_back(object);
 		}
 	}
-	else { // error
+	else
+	{ // error
 		cout << "Failed to load OBJ" << endl;
 		throw new exception("B");
 	}
@@ -164,24 +175,31 @@ void screen() {
 
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
-    // Create Optix mesh of same .obj
-    OptixModel * scene = loadOBJ(filePath);
+	// load material properties
+	tinyxml2::XMLDocument doc;
+	if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
+	{
+		throw std::runtime_error("Failed to load material XML file");
+	}
 
-    // AudioRenderer
+	// Create Optix mesh of same .obj
+	OptixModel *scene = loadOBJ(filePath, doc);
+
+	// AudioRenderer
 	// TODO modificar cuando se tenga comunicacion entre threads
-    AudioRenderer * renderer = new AudioRenderer(scene, 256, 256);
-    glm::ivec2 frameSize(width, height);
-    renderer->setThresholds(100.0,0.1);
-    renderer->setPos(glm::vec3(0.f));
-    renderer->setCamera(camera);
-    renderer->render();
+	AudioRenderer *renderer = new AudioRenderer(scene, 256, 256);
+	glm::ivec2 frameSize(width, height);
+	renderer->setThresholds(100.0, 0.1);
+	renderer->setPos(glm::vec3(0.f));
+	renderer->render();
 	renderer->isHit();
 
-	while (!glfwWindowShouldClose(window)) {
+	while (!glfwWindowShouldClose(window))
+	{
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//change window title
+		// change window title
 		string cameraPosition = "X: " + to_string(camera.Position.x) + " Y:" + to_string(camera.Position.y) + " Z: " + to_string(camera.Position.z);
 		string newTitle("Audiorendering V2 - " + cameraPosition);
 		glfwSetWindowTitle(window, newTitle.c_str());
@@ -202,18 +220,21 @@ void screen() {
 	glfwTerminate();
 }
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
 	// Initialize context
 	// Not currently being used, TO DO
 	string configJsonPath;
 
-	if (argc < 2) {
+	if (argc < 2)
+	{
 		configJsonPath = "config.json";
 	}
-	else {
+	else
+	{
 		configJsonPath = argv[1];
 	}
-	RtAudio* dac = new RtAudio();
+	RtAudio *dac = new RtAudio();
 
 	thread screen1(screen);
 	thread audio1(audio, dac);
@@ -222,7 +243,7 @@ int main(int argc, char** argv) {
 	audio1.detach();
 	// Stop the stream
 	RtAudioErrorType checkError = dac->stopStream();
-	// if (dac.isStreamOpen()) 
+	// if (dac.isStreamOpen())
 	dac->closeStream();
 	delete dac;
 

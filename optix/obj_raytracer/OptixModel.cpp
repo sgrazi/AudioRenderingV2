@@ -72,12 +72,11 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
-OptixModel *loadOBJ(const std::string &objFile)
+OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument xml_dict)
 {
     OptixModel *model = new OptixModel;
 
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    PRINT(mtlDir);
 
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
@@ -104,9 +103,10 @@ OptixModel *loadOBJ(const std::string &objFile)
     for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++)
     {
         tinyobj::shape_t &shape = shapes[shapeID];
-        
+
         std::set<int> materialIDs;
-        for (auto faceMatID : shape.mesh.material_ids){
+        for (auto faceMatID : shape.mesh.material_ids)
+        {
             materialIDs.insert(faceMatID);
         }
 
@@ -129,8 +129,9 @@ OptixModel *loadOBJ(const std::string &objFile)
                 mesh->index.push_back(idx);
                 mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
                 mesh->diffuse = gdt::randomColor(materialID);
-                if (materialID >= 0) {
-                    mesh->materialID = materialID;
+                if (materialID >= 0)
+                {
+                    mesh->material_absorption = get_absorption(materialID, xml_dict);
                 }
             }
 
@@ -151,11 +152,21 @@ OptixModel *loadOBJ(const std::string &objFile)
     return model;
 }
 
+float get_absorption(int material_id, tinyxml2::XMLDocument doc)
+{
+    tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
+    for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
+    {
+        if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
+            return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
+    }
+}
+
 void placeCamera(OptixModel *model, vec3f cameraPosition)
-{ //this does not actually place the sphere in cameraPosition, TO DO
+{ // this does not actually place the sphere in cameraPosition, TO DO
     const std::string objFile = "../models/sphere.obj";
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    printf("%s",mtlDir.c_str());
+    printf("%s", mtlDir.c_str());
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
@@ -187,7 +198,7 @@ void placeCamera(OptixModel *model, vec3f cameraPosition)
     for (int materialID : materialIDs)
     {
         std::map<tinyobj::index_t, int> knownVertices;
-        TriangleMesh* mesh = new TriangleMesh();
+        TriangleMesh *mesh = new TriangleMesh();
 
         for (int faceID = 0; faceID < shapes[0].mesh.material_ids.size(); faceID++)
         {
@@ -201,9 +212,10 @@ void placeCamera(OptixModel *model, vec3f cameraPosition)
                       addVertex(mesh, attributes, idx1, knownVertices),
                       addVertex(mesh, attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
-            mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
+            mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
-            if (materialID >= 0) {
+            if (materialID >= 0)
+            {
                 mesh->materialID = materialID;
             }
         }

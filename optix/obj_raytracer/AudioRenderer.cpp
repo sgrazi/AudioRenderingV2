@@ -1,8 +1,5 @@
 #include <glm/glm.hpp>
 #include <optix_function_table_definition.h>
-#include <thrust/device_vector.h>
-#include <thrust/sort.h>
-#include "tinyxml2.h"
 #include "AudioRenderer.h"
 #include "CUDABuffer.h"
 #include "Utils.h"
@@ -58,13 +55,11 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
     launchParams.size_z = 10;
 
     launchParams.traversable = buildAccel();
-    
+
     int size = audio_length * sample_rate;
     launchParams.histogram_length = size;
 
     launchParams.sample_rate = sample_rate;
-    
-    launchParams.absorption = buildAbsorptionMap();
 
     cudaMalloc(&launchParams.histogram, size * sizeof(float));
     fillWithZeroesKernel(launchParams.histogram, size);
@@ -77,7 +72,6 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
 
     launchParamsBuffer.alloc(sizeof(launchParams));
     std::cout << " context, module, pipeline, etc, all set up ..." << std::endl;
- 
 }
 
 OptixTraversableHandle AudioRenderer::buildAccel()
@@ -205,35 +199,6 @@ OptixTraversableHandle AudioRenderer::buildAccel()
     return asHandle;
 }
 
-thrust::device_vector<Material> AudioRenderer::buildAbsorptionMap()
-{
-    thrust::device_vector<Material> materials;
-
-    // Load and parse the XML file
-    tinyxml2::XMLDocument doc;
-    if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS) {
-        throw std::runtime_error("Failed to load material XML file");
-    }
-
-    // Traverse the XML and populate the materials dictionary
-    tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
-    for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
-        Material material;
-        material.id = std::stoi(materialNode->FirstChildElement("id")->GetText());
-        material.name = materialNode->FirstChildElement("name")->GetText();
-        material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
-        materials.push_back(material);
-    }
-
-    // sorting for later efficiency
-    thrust::sort(materials.begin(), materials.end(),
-                 [](const Material& a, const Material& b) {
-                     return a.id < b.id;
-                 });
-
-    return materials;
-}
-
 /*! helper function that initializes optix and checks for errors */
 void AudioRenderer::initOptix()
 {
@@ -304,7 +269,7 @@ void AudioRenderer::createModule()
                                   log, &sizeof_log,
                                   &module));
     if (sizeof_log > 1)
-        printf("%s",log);
+        printf("%s", log);
 }
 
 /*! does all setup for the raygen program(s) we are going to use */
@@ -316,7 +281,7 @@ void AudioRenderer::createRaygenPrograms()
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module; //Module holding single program
+    pgDesc.raygen.module = module; // Module holding single program
     pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
 
     char log[2048];
@@ -465,7 +430,7 @@ void AudioRenderer::buildSBT()
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
         rec.data.color = gdt2glm(model->meshes[meshID]->diffuse);
-        rec.data.mat = model->meshes[meshID]->materialID;
+        rec.data.mat = model->meshes[meshID]->material_absorption;
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
@@ -479,7 +444,6 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -500,22 +464,9 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 }
 
-/*! set camera to render with */
-void AudioRenderer::setCamera(const Camera &camera)
-{
-    launchParams.camera.position = camera.Position;
-    launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
-    const float cosFovy = 0.66f;
-    // const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
-    const float aspect = 16 / 9;
-    launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.Up));
-    launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
-                                                             launchParams.camera.direction));
-}
-
 void AudioRenderer::setPos(glm::vec3 pos)
 {
-    launchParams.origin_pos = pos;
+    launchParams.emitter_position = pos;
 }
 
 void AudioRenderer::setThresholds(float dist, float energy)
@@ -524,13 +475,17 @@ void AudioRenderer::setThresholds(float dist, float energy)
     launchParams.energy_thres = energy;
 }
 
-void AudioRenderer::isHit(){
-    float* device_c = launchParams.histogram;
-    float* host_c = new float();
+void AudioRenderer::isHit()
+{
+    float *device_c = launchParams.histogram;
+    float *host_c = new float();
     cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
-    if (*host_c > 1.f){
+    if (*host_c > 1.f)
+    {
         printf("Result: A RAY HAS HIT\n");
-    } else {
+    }
+    else
+    {
         printf("Result: NO RAY HAS HIT\n");
     }
 }

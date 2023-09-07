@@ -30,9 +30,6 @@ public:
     
     void isHit();
 
-    /*! set camera to render with */
-    void setCamera(const Camera &camera);
-
 protected:
     // ------------------------------------------------------------------
     // internal helper functions

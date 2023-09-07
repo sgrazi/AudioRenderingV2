@@ -63,10 +63,10 @@ extern "C" __global__ void __closesthit__radiance()
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
     PRD &prd = *(PRD *)getPRD<PRD>();
 
-    switch (sbtData.mat)
+    switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
-    case 0:
-        // receptor
+    case true:
+        // receiver
         const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
@@ -77,7 +77,7 @@ extern "C" __global__ void __closesthit__radiance()
         if (array_pos < optixLaunchParams.histogram_length)
             histogram[array_pos] += prd.remaining_factor;
         break;
-    default:
+    case false:
         // material
         const int primID = optixGetPrimitiveIndex();
         const glm::ivec3 index = sbtData.index[primID];
@@ -86,27 +86,14 @@ extern "C" __global__ void __closesthit__radiance()
         const glm::vec3 &C = sbtData.vertex[index.z];
         const glm::vec3 Ng = normalize(cross(B - A, C - A));
         prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
-
         prd.curr_position = sbtData.pos;
-
 		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
         prd.distance += dist_traveled;
-
-        // TO DO, is sbtData.mat the id of the material or the name?
-        uint32_t mat = sbtData.mat;
-        auto result = thrust::find_if(optixLaunchParams.absorption.begin(), optixLaunchParams.absorption.end(),
-                                  [mat] (const Material& m) {
-                                      return m.id == mat;
-                                  });
-        if (result != optixLaunchParams.absorption.end()) {
-            prd.remaining_factor *= result->ac_absorption;
-        }
-        else {
-            // material not found
-            prd.remaining_factor *= 0;
-        }
-        
+        prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
+        break;
+    default:
+        // ERROR
     }
 }
 
@@ -131,8 +118,6 @@ extern "C" __global__ void __raygen__renderFrame()
     const int y_rays = optixGetLaunchDimensions().y;
     const int z_rays = optixGetLaunchDimensions().z;
 
-    const auto &camera = optixLaunchParams.camera;
-
     // the values we store the PRD pointer in:
     // Note: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
     PRD prd;
@@ -140,7 +125,7 @@ extern "C" __global__ void __raygen__renderFrame()
     packPointer(&prd, u0, u1);
     prd.remaining_factor = 1.0f;
     prd.distance = 0;
-    prd.curr_position = optixLaunchParams.origin_pos;
+    prd.curr_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
     
     // TODO distribution of rays should be uniform, to be tested
@@ -153,18 +138,16 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.direction = {dx, dy, dz};
 
     int i = 0;
-    // pack data into payload
+
     while (prd.distance < optixLaunchParams.dist_thres &&
            prd.remaining_factor > optixLaunchParams.energy_thres &&
            prd.recursion_depth >= 0 &&
            i < 10000) // por las dudas le pongo un tope
     {
         i++;
-        gdt::vec3f rayOrigin(camera.position.x, camera.position.y, camera.position.z);
-        gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
         optixTrace(optixLaunchParams.traversable,
-                   rayOrigin,
-                   rayDir,
+                   prd.curr_position,
+                   prd.direction,
                    0.f,   // tmin
                    1e20f, // tmax
                    0.0f,  // rayTime
