@@ -138,7 +138,9 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.direction = {dx, dy, dz};
 
     int i = 0;
-
+    gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
+    gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
+    
     while (prd.distance < optixLaunchParams.dist_thres &&
            prd.remaining_factor > optixLaunchParams.energy_thres &&
            prd.recursion_depth >= 0 &&
@@ -146,8 +148,8 @@ extern "C" __global__ void __raygen__renderFrame()
     {
         i++;
         optixTrace(optixLaunchParams.traversable,
-                   prd.curr_position,
-                   prd.direction,
+                   rayOrigin,
+                   rayDir,
                    0.f,   // tmin
                    1e20f, // tmax
                    0.0f,  // rayTime
