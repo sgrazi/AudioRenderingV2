@@ -23,7 +23,11 @@ using namespace std;
 const unsigned int width = 1366;
 const unsigned int height = 768;
 float* volumen = new float(1.0f);
-std::string filePath = "../../assets/models/test.obj";
+std::string filePath = "../../../assets/models/test.obj";
+vector<Mesh> objects;
+vector<Mesh> transmitterVector;
+
+Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
 // Create Optix mesh of same .obj
 OptixModel* scene = loadOBJ(filePath);
@@ -94,6 +98,37 @@ void audio(RtAudio* dac) {
 	audioPlay(dac);
 }
 
+void setTransmitter (glm::vec3 posTransmitter) {
+	std::string transmitterPath = "../../../assets/models/sphere.obj";
+	objl::Loader loader;
+	bool load_res = loader.LoadFile(transmitterPath);
+
+	if (load_res)
+	{
+		for (int i = 0; i < loader.LoadedMeshes.size(); i++) {
+			objl::Mesh mesh = loader.LoadedMeshes.at(i);
+			vector<Vertex> vertices;
+			vector<unsigned int> indices;
+			for (int j = 0; j < mesh.Vertices.size(); j++) {
+				Vertex vertex;
+				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X + posTransmitter.x, mesh.Vertices.at(j).Position.Y + posTransmitter.y, mesh.Vertices.at(j).Position.Z + posTransmitter.z);
+				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
+				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
+				vertices.push_back(vertex);
+			}
+			for (int j = 0; j < mesh.Indices.size(); j++) {
+				indices.push_back(mesh.Indices.at(j));
+			}
+			Mesh transmitter(vertices, indices);
+			transmitterVector.push_back(transmitter);
+		}
+	}
+	else { // error
+		cout << "Failed to transmitter OBJ" << endl;
+		throw new exception("B");
+	}
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
 	if (action == GLFW_RELEASE) return; //only handle press events
@@ -106,6 +141,11 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		else
 			*volumen = 0.0f;
 		cout << "volumen seteado a " << *volumen << endl;
+	}
+	if (key == GLFW_KEY_E) {
+		transmitterVector.pop_back();
+		setTransmitter(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
+		cout << "transmitter set"  << endl;
 	}
 }
 
@@ -133,8 +173,7 @@ void screen() {
 	//Load obj && initialize Loader
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(filePath);
-
-	vector<Mesh> objects;
+	setTransmitter(glm::vec3(0 , 0, 0));
 	vector<Mesh> lights;
 	if (load_res)
 	{
@@ -173,8 +212,6 @@ void screen() {
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
 
-	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
-
  //   // Create Optix mesh of same .obj
  //   OptixModel * scene = loadOBJ(filePath);
 
@@ -207,6 +244,8 @@ void screen() {
 
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
+
+		transmitterVector.back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
