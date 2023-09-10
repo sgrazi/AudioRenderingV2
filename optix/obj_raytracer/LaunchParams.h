@@ -6,31 +6,32 @@ struct TriangleMeshSBTData
 {
     glm::vec3 color;
     glm::vec3 pos;
-    glm::vec3* vertex;
-    glm::ivec3* index;
-    uint32_t mat;
+    glm::vec3 *vertex;
+    glm::ivec3 *index;
+    float mat_absorption;
+};
+
+struct Material
+{
+    int id;
+    const char *name;
+    float ac_absorption;
 };
 
 struct LaunchParams
 {
-    struct
-    {
-        uint32_t* colorBuffer;
-        glm::ivec2 size;
-    } frame;
+    int size_x;
+    int size_y;
+    int size_z;
 
-    struct
-    {
-        glm::vec3 position;
-        glm::vec3 direction;
-        glm::vec3 horizontal;
-        glm::vec3 vertical;
-    } camera;
+    glm::vec3 emitter_position;
 
     OptixTraversableHandle traversable;
 
-    glm::vec3 origin_pos;
     float dist_thres, energy_thres;
-    float* other;
-};
 
+    int sample_rate;
+
+    int histogram_length;
+    float *histogram;
+};

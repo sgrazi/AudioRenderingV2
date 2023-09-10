@@ -1,9 +1,9 @@
-#include "AudioRenderer.h"
-#include "CUDABuffer.h"
-#include "./kernels.cuh"
 #include <glm/glm.hpp>
 #include <optix_function_table_definition.h>
+#include "AudioRenderer.h"
+#include "CUDABuffer.h"
 #include "Utils.h"
+#include "./kernels.cuh"
 
 extern "C" char embedded_ptx_code[];
 
@@ -32,7 +32,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model)
+AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int sample_rate)
     : model(model)
 {
     initOptix();
@@ -50,10 +50,19 @@ AudioRenderer::AudioRenderer(const OptixModel *model)
     std::cout << " creating hitgroup programs ..." << std::endl;
     createHitgroupPrograms();
 
+    launchParams.size_x = 10;
+    launchParams.size_y = 10;
+    launchParams.size_z = 10;
+
     launchParams.traversable = buildAccel();
 
-    cudaMalloc(&launchParams.other, sizeof(float));
-    fillWithZeroesKernel(launchParams.other);
+    int size = audio_length * sample_rate;
+    launchParams.histogram_length = size;
+
+    launchParams.sample_rate = sample_rate;
+
+    cudaMalloc(&launchParams.histogram, size * sizeof(float));
+    fillWithZeroesKernel(launchParams.histogram, size);
 
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
@@ -63,7 +72,6 @@ AudioRenderer::AudioRenderer(const OptixModel *model)
 
     launchParamsBuffer.alloc(sizeof(launchParams));
     std::cout << " context, module, pipeline, etc, all set up ..." << std::endl;
- 
 }
 
 OptixTraversableHandle AudioRenderer::buildAccel()
@@ -261,7 +269,7 @@ void AudioRenderer::createModule()
                                   log, &sizeof_log,
                                   &module));
     if (sizeof_log > 1)
-        printf("%s",log);
+        printf("%s", log);
 }
 
 /*! does all setup for the raygen program(s) we are going to use */
@@ -273,7 +281,7 @@ void AudioRenderer::createRaygenPrograms()
     OptixProgramGroupOptions pgOptions = {};
     OptixProgramGroupDesc pgDesc = {};
     pgDesc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
-    pgDesc.raygen.module = module; //Module holding single program
+    pgDesc.raygen.module = module; // Module holding single program
     pgDesc.raygen.entryFunctionName = "__raygen__renderFrame";
 
     char log[2048];
@@ -422,7 +430,7 @@ void AudioRenderer::buildSBT()
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
         rec.data.color = gdt2glm(model->meshes[meshID]->diffuse);
-        rec.data.mat = model->meshes[meshID]->materialID;
+        rec.data.mat_absorption = model->meshes[meshID]->material_absorption;
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
@@ -436,10 +444,6 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-    // sanity check: make sure we launch only after first resize is
-    // already done:
-    if (launchParams.frame.size.x == 0)
-        return;
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -450,9 +454,9 @@ void AudioRenderer::render()
                             launchParamsBuffer.sizeInBytes,
                             &sbt,
                             /*! dimensions of the launch: */
-                            launchParams.frame.size.x,
-                            launchParams.frame.size.y,
-                            1));
+                            launchParams.size_x,
+                            launchParams.size_y,
+                            launchParams.size_z));
     // sync - make sure the frame is rendered before we download and
     // display (obviously, for a high-performance application you
     // want to use streams and double-buffering, but for this simple
@@ -460,21 +464,9 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 }
 
-/*! set camera to render with */
-void AudioRenderer::setCamera(const Camera &camera)
-{
-    launchParams.camera.position = camera.Position;
-    launchParams.camera.direction = normalize(camera.Orientation - camera.Position);
-    const float cosFovy = 0.66f;
-    const float aspect = launchParams.frame.size.x / float(launchParams.frame.size.y);
-    launchParams.camera.horizontal = cosFovy * aspect * normalize(cross(launchParams.camera.direction, camera.Up));
-    launchParams.camera.vertical = cosFovy * normalize(cross(launchParams.camera.horizontal,
-                                                             launchParams.camera.direction));
-}
-
 void AudioRenderer::setPos(glm::vec3 pos)
 {
-    launchParams.origin_pos = pos;
+    launchParams.emitter_position = pos;
 }
 
 void AudioRenderer::setThresholds(float dist, float energy)
@@ -483,30 +475,17 @@ void AudioRenderer::setThresholds(float dist, float energy)
     launchParams.energy_thres = energy;
 }
 
-/*! resize frame buffer to given resolution */
-void AudioRenderer::resize(const glm::ivec2 &newSize)
+void AudioRenderer::isHit()
 {
-    // if window minimized
-    if (newSize.x == 0 || newSize.y == 0)
-        return;
-
-    colorBuffer.resize(newSize.x * newSize.y * sizeof(uint32_t));
-    launchParams.frame.size = newSize;
-    launchParams.frame.colorBuffer = (uint32_t *)colorBuffer.d_pointer();
-}
-
-void AudioRenderer::downloadPixels(uint32_t h_pixels[])
-{
-    colorBuffer.download(h_pixels, launchParams.frame.size.x * launchParams.frame.size.y);
-}
-
-void AudioRenderer::isHit(){
-    float* device_c = launchParams.other;
-    float* host_c = new float();
+    float *device_c = launchParams.histogram;
+    float *host_c = new float();
     cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
-    if (*host_c > 1.f){
+    if (*host_c > 1.f)
+    {
         printf("Result: A RAY HAS HIT\n");
-    } else {
+    }
+    else
+    {
         printf("Result: NO RAY HAS HIT\n");
     }
 }

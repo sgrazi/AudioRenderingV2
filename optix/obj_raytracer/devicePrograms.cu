@@ -8,6 +8,8 @@
 #include "LaunchParams.h"
 #include "PRD.h"
 
+#define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
+
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
       optixLaunch) */
@@ -55,38 +57,43 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
+
     const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
-
-    // compute normal:
-    const int primID = optixGetPrimitiveIndex();
-    const glm::ivec3 index = sbtData.index[primID];
-    const glm::vec3 &A = sbtData.vertex[index.x];
-    const glm::vec3 &B = sbtData.vertex[index.y];
-    const glm::vec3 &C = sbtData.vertex[index.z];
-    const glm::vec3 Ng = normalize(cross(B - A, C - A));
-
     const float3 wrd = optixGetWorldRayDirection();
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
-    const float cosDN = 0.2f + .8f * fabsf(dot(rayDir, Ng));
     PRD &prd = *(PRD *)getPRD<PRD>();
 
-    switch (sbtData.mat)
+    switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
-    case 0:
-        // receptor
+    case true:
+        // receiver
         const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
-        prd.energy = 1;
-        float *other = optixLaunchParams.other;
-        *other = 1.1f;
-        // optixLaunchParams.hit = 's';
-        prd.color = cosDN * sbtData.color;
+
+        float *histogram = optixLaunchParams.histogram;
+        float elapsed_time = prd.distance / SPEED_OF_SOUND;
+        int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
+        if (array_pos < optixLaunchParams.histogram_length)
+            histogram[array_pos] += prd.remaining_factor;
+        break;
+    case false:
+        // material
+        const int primID = optixGetPrimitiveIndex();
+        const glm::ivec3 index = sbtData.index[primID];
+        const glm::vec3 &A = sbtData.vertex[index.x];
+        const glm::vec3 &B = sbtData.vertex[index.y];
+        const glm::vec3 &C = sbtData.vertex[index.z];
+        const glm::vec3 Ng = normalize(cross(B - A, C - A));
+        prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
+        prd.curr_position = sbtData.pos;
+		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
+        prd.distance += dist_traveled;
+        prd.remaining_factor *= (1 - sbtData.mat_absorption);
+        prd.recursion_depth++;
         break;
     default:
-        // material
-        prd.color = cosDN * sbtData.color;
-        prd.energy = prd.energy * 0; // el int seria un acoustic absorption
+        // ERROR
     }
 }
 
@@ -102,39 +109,44 @@ extern "C" __global__ void __miss__radiance()
 
 extern "C" __global__ void __raygen__renderFrame()
 {
-    // compute a test pattern based on pixel ID
+    
+    // TODO, check if dimensions are three dimensional
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
-
-    const auto &camera = optixLaunchParams.camera;
+    const int iz = optixGetLaunchIndex().z;
+    const int x_rays = optixGetLaunchDimensions().x; 
+    const int y_rays = optixGetLaunchDimensions().y;
+    const int z_rays = optixGetLaunchDimensions().z;
 
     // the values we store the PRD pointer in:
-    // Nota: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
+    // Note: Payload Reference Data and represents the data structure used to pass information between shaders during the ray tracing process
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.energy = 1.0f;
+    prd.remaining_factor = 1.0f;
     prd.distance = 0;
-    prd.curr_position = optixLaunchParams.origin_pos;
+    prd.curr_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
-    prd.color = glm::vec3(0.f);
+    
+    // TODO distribution of rays should be uniform, to be tested
+    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays);
+    double theta = 2 * M_PI * offset;
+    double phi = acos(1 - 2 * offset);
+    double dx = sin(phi) * cos(theta);
+    double dy = sin(phi) * sin(theta);
+    double dz = cos(phi);
+    prd.direction = {dx, dy, dz};
 
-    // normalized screen plane position, in [0,1]^2
-    const glm::vec2 screen(glm::vec2(ix + .5f, iy + .5f) / glm::vec2(optixLaunchParams.frame.size));
-
-    // generate ray direction
-
-    prd.direction = normalize(camera.direction + (screen.x - 0.5f) * camera.horizontal + (screen.y - 0.5f) * camera.vertical);
     int i = 0;
-    // pack data into payload
+    gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
+    gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
+    
     while (prd.distance < optixLaunchParams.dist_thres &&
-           prd.energy > optixLaunchParams.energy_thres &&
+           prd.remaining_factor > optixLaunchParams.energy_thres &&
            prd.recursion_depth >= 0 &&
            i < 10000) // por las dudas le pongo un tope
     {
         i++;
-        gdt::vec3f rayOrigin(camera.position.x, camera.position.y, camera.position.z);
-        gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
         optixTrace(optixLaunchParams.traversable,
                    rayOrigin,
                    rayDir,
@@ -148,16 +160,4 @@ extern "C" __global__ void __raygen__renderFrame()
                    SURFACE_RAY_TYPE,              // missSBTIndex
                    u0, u1);
     }
-
-    const int r = int(255.99f * prd.color.x);
-    const int g = int(255.99f * prd.color.y);
-    const int b = int(255.99f * prd.color.z);
-
-    // convert to 32-bit rgba value (we explicitly set alpha to 0xff
-    // to make stb_image_write happy ...
-    const uint32_t rgba = 0xff000000 | (r << 0) | (g << 8) | (b << 16);
-
-    // and write to frame buffer ...
-    const uint32_t fbIndex = ix + iy * optixLaunchParams.frame.size.x;
-    optixLaunchParams.frame.colorBuffer[fbIndex] = rgba;
 }

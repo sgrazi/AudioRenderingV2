@@ -5,6 +5,7 @@
 #include "Camera.h"
 #include "kernels.cuh"
 #include <glm/glm.hpp>
+#include <unordered_map>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -18,7 +19,7 @@ class AudioRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates modOptixModelpipeline, programs, SBT, etc. */
-    AudioRenderer(const OptixModel *model);
+    AudioRenderer(const OptixModel *model, int audio_length, int sample_rate);
 
     /*! render one frame */
     void render();
@@ -28,16 +29,6 @@ public:
     void setThresholds(float dist, float energy);
     
     void isHit();
-
-    // TODO: delete these temporal functions once we move to a pathtracer
-    /*! resize frame buffer to given resolution */
-    void resize(const glm::ivec2 &newSize);
-
-    /*! download the rendered color buffer */
-    void downloadPixels(uint32_t h_pixels[]);
-
-    /*! set camera to render with */
-    void setCamera(const Camera &camera);
 
 protected:
     // ------------------------------------------------------------------
@@ -73,6 +64,9 @@ protected:
 
     /*! build an acceleration structure for the given triangle mesh */
     OptixTraversableHandle buildAccel();
+
+    /*! loads material data into map */
+    std::unordered_map<int, Material> buildAbsorptionMap();
 
 protected:
     /*! @{ CUDA device context and stream that optix pipeline will run

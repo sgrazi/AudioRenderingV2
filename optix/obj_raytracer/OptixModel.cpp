@@ -1,8 +1,7 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
-//#include "tinyxml2.h"
+#include "tinyxml2.h"
 // std
 #include <set>
 #include <map>
@@ -72,34 +71,11 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
-// std::map<int, Material> loadMaterialMap() {
-//     std::map<int, Material> materials;
-
-//     // Load and parse the XML file
-//     tinyxml2::XMLDocument doc;
-//     if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS) {
-//         throw std::runtime_error("Failed to load material XML file");
-//     }
-
-//     // Traverse the XML and populate the materials dictionary
-//     tinyxml2::XMLElement* materialsNode = doc.FirstChildElement("materials");
-//     for (tinyxml2::XMLElement* materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material")) {
-//         Material material;
-//         int id = std::stoi(materialNode->FirstChildElement("id")->GetText());
-//         material.name = materialNode->FirstChildElement("name")->GetText();
-//         material.ac_absorption = std::stod(materialNode->FirstChildElement("ac_absorption")->GetText());
-//         materials[id] = material;
-//     }
-
-//     return materials;
-// }
-
-OptixModel *loadOBJ(const std::string &objFile)
+OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict)
 {
     OptixModel *model = new OptixModel;
 
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    PRINT(mtlDir);
 
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
@@ -126,9 +102,10 @@ OptixModel *loadOBJ(const std::string &objFile)
     for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++)
     {
         tinyobj::shape_t &shape = shapes[shapeID];
-        
+
         std::set<int> materialIDs;
-        for (auto faceMatID : shape.mesh.material_ids){
+        for (auto faceMatID : shape.mesh.material_ids)
+        {
             materialIDs.insert(faceMatID);
         }
 
@@ -151,8 +128,9 @@ OptixModel *loadOBJ(const std::string &objFile)
                 mesh->index.push_back(idx);
                 mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
                 mesh->diffuse = gdt::randomColor(materialID);
-                if (materialID >= 0) {
-                    mesh->materialID = materialID;
+                if (materialID >= 0)
+                {
+                    mesh->material_absorption = get_absorption(materialID, xml_dict);
                 }
             }
 
@@ -173,65 +151,76 @@ OptixModel *loadOBJ(const std::string &objFile)
     return model;
 }
 
-void placeCamera(OptixModel *model, vec3f cameraPosition)
-{ //this does not actually place the sphere in cameraPosition, TO DO
-    const std::string objFile = "../models/sphere.obj";
-    const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    printf("%s",mtlDir.c_str());
-    tinyobj::attrib_t attributes;
-    std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;
-    std::string err = "";
-
-    bool readOK = tinyobj::LoadObj(&attributes,
-                                   &shapes,
-                                   &materials,
-                                   &err,
-                                   &err,
-                                   objFile.c_str(),
-                                   mtlDir.c_str(),
-                                   /* triangulate */ true);
-
-    if (!readOK)
+float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
+{
+    tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
+    for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
     {
-        throw std::runtime_error("Could not read sphere OBJ model from " + objFile + " : " + err);
-    }
-
-    if (materials.empty())
-        throw std::runtime_error("could not parse materials ...");
-
-    std::set<int> materialIDs;
-    for (auto faceMatID : shapes[0].mesh.material_ids)
-    {
-        materialIDs.insert(faceMatID);
-    }
-
-    for (int materialID : materialIDs)
-    {
-        std::map<tinyobj::index_t, int> knownVertices;
-        TriangleMesh* mesh = new TriangleMesh();
-
-        for (int faceID = 0; faceID < shapes[0].mesh.material_ids.size(); faceID++)
-        {
-            if (shapes[0].mesh.material_ids[faceID] != materialID)
-                continue;
-            tinyobj::index_t idx0 = shapes[0].mesh.indices[3 * faceID + 0];
-            tinyobj::index_t idx1 = shapes[0].mesh.indices[3 * faceID + 1];
-            tinyobj::index_t idx2 = shapes[0].mesh.indices[3 * faceID + 2];
-
-            vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
-                      addVertex(mesh, attributes, idx1, knownVertices),
-                      addVertex(mesh, attributes, idx2, knownVertices));
-            mesh->index.push_back(idx);
-            mesh->diffuse = (const vec3f&)materials[materialID].diffuse;
-            mesh->diffuse = gdt::randomColor(materialID);
-            if (materialID >= 0) {
-                mesh->materialID = materialID;
-            }
-        }
-        if (mesh->vertex.empty())
-            delete mesh;
-        else
-            model->meshes.push_back(mesh);
+        if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
+            return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
     }
 }
+
+// void placeCamera(OptixModel *model, vec3f cameraPosition)
+//{ // this does not actually place the sphere in cameraPosition, TO DO
+//     const std::string objFile = "../models/sphere.obj";
+//     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
+//     printf("%s", mtlDir.c_str());
+//     tinyobj::attrib_t attributes;
+//     std::vector<tinyobj::shape_t> shapes;
+//     std::vector<tinyobj::material_t> materials;
+//     std::string err = "";
+//
+//     bool readOK = tinyobj::LoadObj(&attributes,
+//                                    &shapes,
+//                                    &materials,
+//                                    &err,
+//                                    &err,
+//                                    objFile.c_str(),
+//                                    mtlDir.c_str(),
+//                                    /* triangulate */ true);
+//
+//     if (!readOK)
+//     {
+//         throw std::runtime_error("Could not read sphere OBJ model from " + objFile + " : " + err);
+//     }
+//
+//     if (materials.empty())
+//         throw std::runtime_error("could not parse materials ...");
+//
+//     std::set<int> materialIDs;
+//     for (auto faceMatID : shapes[0].mesh.material_ids)
+//     {
+//         materialIDs.insert(faceMatID);
+//     }
+//
+//     for (int materialID : materialIDs)
+//     {
+//         std::map<tinyobj::index_t, int> knownVertices;
+//         TriangleMesh *mesh = new TriangleMesh();
+//
+//         for (int faceID = 0; faceID < shapes[0].mesh.material_ids.size(); faceID++)
+//         {
+//             if (shapes[0].mesh.material_ids[faceID] != materialID)
+//                 continue;
+//             tinyobj::index_t idx0 = shapes[0].mesh.indices[3 * faceID + 0];
+//             tinyobj::index_t idx1 = shapes[0].mesh.indices[3 * faceID + 1];
+//             tinyobj::index_t idx2 = shapes[0].mesh.indices[3 * faceID + 2];
+//
+//             vec3i idx(addVertex(mesh, attributes, idx0, knownVertices),
+//                       addVertex(mesh, attributes, idx1, knownVertices),
+//                       addVertex(mesh, attributes, idx2, knownVertices));
+//             mesh->index.push_back(idx);
+//             mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
+//             mesh->diffuse = gdt::randomColor(materialID);
+//             if (materialID >= 0)
+//             {
+//                 mesh->materialID = materialID;
+//             }
+//         }
+//         if (mesh->vertex.empty())
+//             delete mesh;
+//         else
+//             model->meshes.push_back(mesh);
+//     }
+// }

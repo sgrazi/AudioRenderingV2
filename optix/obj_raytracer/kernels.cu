@@ -3,10 +3,18 @@
 
 __global__ void fillZeros(float *buf)
 {
-    *buf = 0.0f;
+    int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    buf[thread] = 0.0f;
 }
 
-void fillWithZeroesKernel(float *buf)
+void fillWithZeroesKernel(float *buf, int size)
 {
-    fillZeros<<<1, 1>>>(buf);
+    int numThreads = 1024;
+    int numBlocks;
+    if (size % numThreads != 0) {
+        numBlocks = (size / numThreads) + 1;
+    } else {
+        numBlocks = size / numThreads;
+    }
+    fillZeros<<<numThreads, numBlocks>>>(buf);
 }
