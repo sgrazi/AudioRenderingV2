@@ -15,16 +15,8 @@
 # ======================================================================== #
 
 find_package(OpenGL REQUIRED)
-find_package(CUDA REQUIRED)
-
-project(obj_raytracer LANGUAGES CXX CUDA)
 
 include_directories(${OptiX_INCLUDE})
-include_directories(${CUDA_INCLUDE_DIRS})
-include_directories(${CMAKE_SOURCE_DIR}/common/glad)
-
-# Add rtaudio as a sub-directory so its CMakeLists.txt gets invoked.
-#add_subdirectory(external/rtaudio)
 
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
 
@@ -40,25 +32,10 @@ add_executable(obj_raytracer
   Camera.h
   Camera.cpp
   Mesh.h
-  Mesh.cpp
   OBJ_Loader.h
   RtAudio.h
   Utils.h
   main.cpp
-  shaderClass.h
-  shaderClass.cpp
-  VAO.h
-  VAO.cpp
-  VBO.h
-  VBO.cpp
-  EBO.h
-  EBO.cpp
-  Utils.h
-  Utils.cpp
-  kernels.cu
-  kernels.cuh
-  ${CMAKE_SOURCE_DIR}/common/glad/glad.h
-  ${CMAKE_SOURCE_DIR}/common/glad/glad.c
   )
 
 target_link_libraries(obj_raytracer
@@ -71,5 +48,4 @@ target_link_libraries(obj_raytracer
   glfWindow
   glfw
   ${OPENGL_gl_LIBRARY}
-  rtaudio
   )

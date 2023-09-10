@@ -30,9 +30,6 @@ public:
     
     void isHit();
 
-    /*! set camera to render with */
-    void setCamera(const Camera &camera);
-
 protected:
     // ------------------------------------------------------------------
     // internal helper functions
@@ -69,7 +66,7 @@ protected:
     OptixTraversableHandle buildAccel();
 
     /*! loads material data into map */
-    //thrust::device_vector<Material> buildAbsorptionMap();
+    std::unordered_map<int, Material> buildAbsorptionMap();
 
 protected:
     /*! @{ CUDA device context and stream that optix pipeline will run
