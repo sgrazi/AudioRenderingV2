@@ -17,6 +17,7 @@
 #include "AudioRenderer.h"
 #include <thread>
 #include <filesystem>
+#include "Sphere.h"
 
 using namespace std;
 
@@ -27,7 +28,7 @@ std::string filePath = "../../../assets/models/test.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
 
-Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
+Camera camera(width, height, glm::vec3(4.0f, 4.0f, 4.0f));
 
 // Create Optix mesh of same .obj
 OptixModel* scene = loadOBJ(filePath);
@@ -212,6 +213,8 @@ void screen() {
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
 
+	Sphere sphere = Sphere();
+
  //   // Create Optix mesh of same .obj
  //   OptixModel * scene = loadOBJ(filePath);
 
@@ -237,6 +240,7 @@ void screen() {
 		camera.Inputs(window);
 		camera.updateMatrix(90.0f, 0.1f, 10000.0f);
 		camera.Matrix(shaderProgram, "camMatrix");
+		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
 
 		if (*volumen > 0.5) {
 			renderer->setCamera(camera);
