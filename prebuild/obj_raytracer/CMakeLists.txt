@@ -32,6 +32,7 @@ add_executable(obj_raytracer
   Camera.h
   Camera.cpp
   Mesh.h
+  tiny_obj_loader.h
   OBJ_Loader.h
   RtAudio.h
   Utils.h

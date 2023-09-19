@@ -127,37 +127,43 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.distance = 0;
     prd.curr_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
-    
-    // TODO distribution of rays should be uniform, to be tested
-    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays);
-    double theta = 2 * M_PI * offset;
-    double phi = acos(1 - 2 * offset);
-    double dx = sin(phi) * cos(theta);
-    double dy = sin(phi) * sin(theta);
-    double dz = cos(phi);
-    prd.direction = {dx, dy, dz};
 
-    int i = 0;
-    gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
-    gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
+    double dx = (ix * (2.0 / (x_rays - 1)) - 1.0);
+    double dy = (iy * (2.0 / (y_rays - 1)) - 1.0);
+    double dz = (iz * (2.0 / (z_rays - 1)) - 1.0);
+    // it is bound to happen that some threads have (0,0,0) as their vector
+    if (dx != 0.0 || dy != 0.0 || dz != 0.0) {
+        double length = std::sqrt(dx * dx + dy * dy + dz * dz);
+        dx /= length;
+        dy /= length;
+        dz /= length;
+
+        // printf("%f,%f,%f\n", dx, dy, dz);
+
+        prd.direction = {dx, dy, dz};
+
+        int i = 0;
+        gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
+        gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
     
-    while (prd.distance < optixLaunchParams.dist_thres &&
-           prd.remaining_factor > optixLaunchParams.energy_thres &&
-           prd.recursion_depth >= 0 &&
-           i < 10000) // por las dudas le pongo un tope
-    {
-        i++;
-        optixTrace(optixLaunchParams.traversable,
-                   rayOrigin,
-                   rayDir,
-                   0.f,   // tmin
-                   1e20f, // tmax
-                   0.0f,  // rayTime
-                   OptixVisibilityMask(255),
-                   OPTIX_RAY_FLAG_DISABLE_ANYHIT, // OPTIX_RAY_FLAG_NONE,
-                   SURFACE_RAY_TYPE,              // SBT offset
-                   RAY_TYPE_COUNT,                // SBT stride
-                   SURFACE_RAY_TYPE,              // missSBTIndex
-                   u0, u1);
+        while (prd.distance < optixLaunchParams.dist_thres &&
+               prd.remaining_factor > optixLaunchParams.energy_thres &&
+               prd.recursion_depth >= 0 &&
+               i < 10000) // por las dudas le pongo un tope
+        {
+            i++;
+            optixTrace(optixLaunchParams.traversable,
+                       rayOrigin,
+                       rayDir,
+                       0.f,   // tmin
+                       1e20f, // tmax
+                       0.0f,  // rayTime
+                       OptixVisibilityMask(255),
+                       OPTIX_RAY_FLAG_DISABLE_ANYHIT, // OPTIX_RAY_FLAG_NONE,
+                       SURFACE_RAY_TYPE,              // SBT offset
+                       RAY_TYPE_COUNT,                // SBT stride
+                       SURFACE_RAY_TYPE,              // missSBTIndex
+                       u0, u1);
+        }
     }
 }
