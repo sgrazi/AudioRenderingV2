@@ -76,10 +76,6 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
-<<<<<<< HEAD
-# *.obj
-=======
->>>>>>> 471702044b65f7222ff4bf74dbd1c1f490af916c
 *.iobj
 *.pch
 *.pdb
