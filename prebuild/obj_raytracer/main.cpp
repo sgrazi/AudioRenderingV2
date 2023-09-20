@@ -24,7 +24,7 @@ using namespace std;
 const unsigned int width = 1366;
 const unsigned int height = 768;
 float* volumen = new float(1.0f);
-std::string filePath = "../../../assets/models/test.obj";
+std::string filePath = "../../assets/models/test.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
 
@@ -100,7 +100,7 @@ void audio(RtAudio* dac) {
 }
 
 void setTransmitter (glm::vec3 posTransmitter) {
-	std::string transmitterPath = "../../../assets/models/sphere.obj";
+	std::string transmitterPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(transmitterPath);
 

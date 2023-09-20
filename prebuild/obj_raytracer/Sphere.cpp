@@ -2,8 +2,8 @@
 #include "gdt/math/AffineSpace.h"
 
 Sphere::Sphere() {
-    const std::string objFile = "../../../assets/models/sphere.obj";
-    const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
+    const std::string objFile = "../../assets/models/sphere.obj";
+    const std::string mtlDir = objFile.substr(0, objFile.rfind('/'));
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;

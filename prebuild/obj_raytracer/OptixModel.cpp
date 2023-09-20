@@ -156,7 +156,6 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
     std::set<int> uniqueValues;
     // moving the sphere
     for (const auto& shape : sphere.shapes) {
-        std::cout << "HOLAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << std::endl;
         // shape.mesh.indices contains repeated indexes due to the shapes sharing indexes
         // this "for" will make sure that the same index is not overwritten multiple times
         for (const auto& num : shape.mesh.indices) {
@@ -167,11 +166,9 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
         for (const auto& index : uniqueValues) {
 
             // Translate each vertex by (x, y, z)
-            std::cout << "POSITION X ORIGINAL " << sphere.original_attributes.vertices[3 * index + 0] << std::endl;
             sphere.attributes.vertices[3 * index + 0] = cameraPosition.x + sphere.original_attributes.vertices[3 * index + 0];
             sphere.attributes.vertices[3 * index + 1] = cameraPosition.y + sphere.original_attributes.vertices[3 * index + 1];
             sphere.attributes.vertices[3 * index + 2] = cameraPosition.z + sphere.original_attributes.vertices[3 * index + 2];
-            std::cout << "POSITION X CHANGED " << sphere.attributes.vertices[3 * index + 0] << std::endl;
 
         }
     }
