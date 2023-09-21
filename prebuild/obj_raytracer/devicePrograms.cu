@@ -123,7 +123,7 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = 1.0f;
+    prd.remaining_factor = (optixLaunchParams.BASE_POWER)/(x_rays*y_rays*z_rays);
     prd.distance = 0;
     prd.curr_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;

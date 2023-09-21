@@ -34,4 +34,6 @@ struct LaunchParams
 
     int histogram_length;
     float *histogram;
+
+    const float BASE_POWER = 31.62f;
 };
