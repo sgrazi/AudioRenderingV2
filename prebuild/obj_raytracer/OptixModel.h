@@ -1,5 +1,6 @@
 #pragma once
 #include "gdt/math/AffineSpace.h"
+#include "Sphere.h"
 #include <vector>
 
 using namespace gdt;
@@ -31,4 +32,4 @@ struct OptixModel
 
 OptixModel *loadOBJ(const std::string &objFile);
 
-void placeCamera(OptixModel *model, vec3f cameraPosition);
+void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition);

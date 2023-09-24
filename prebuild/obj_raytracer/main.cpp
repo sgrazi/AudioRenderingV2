@@ -17,17 +17,18 @@
 #include "AudioRenderer.h"
 #include <thread>
 #include <filesystem>
+#include "Sphere.h"
 
 using namespace std;
 
 const unsigned int width = 1366;
 const unsigned int height = 768;
 float* volumen = new float(1.0f);
-std::string filePath = "../../../assets/models/test.obj";
+std::string filePath = "../../assets/models/test.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
 
-Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
+Camera camera(width, height, glm::vec3(4.0f, 4.0f, 4.0f));
 
 // Create Optix mesh of same .obj
 OptixModel* scene = loadOBJ(filePath);
@@ -36,6 +37,7 @@ OptixModel* scene = loadOBJ(filePath);
 // TODO modificar cuando se tenga comunicacion entre threads
 AudioRenderer* renderer = new AudioRenderer(scene, 256, 256);
 glm::ivec2 frameSize(width, height);
+Sphere sphere = Sphere();
 
 struct AudioInfo
 {
@@ -99,7 +101,7 @@ void audio(RtAudio* dac) {
 }
 
 void setTransmitter (glm::vec3 posTransmitter) {
-	std::string transmitterPath = "../../../assets/models/sphere.obj";
+	std::string transmitterPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(transmitterPath);
 
@@ -146,6 +148,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		transmitterVector.pop_back();
 		setTransmitter(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
 		cout << "transmitter set"  << endl;
+	}
+	if (key == GLFW_KEY_R) {
+		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
+		cout << "Receivcer set in Optix at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << endl;
 	}
 }
 
