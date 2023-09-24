@@ -37,6 +37,7 @@ OptixModel* scene = loadOBJ(filePath);
 // TODO modificar cuando se tenga comunicacion entre threads
 AudioRenderer* renderer = new AudioRenderer(scene, 256, 256);
 glm::ivec2 frameSize(width, height);
+Sphere sphere = Sphere();
 
 struct AudioInfo
 {
@@ -148,6 +149,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 		setTransmitter(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
 		cout << "transmitter set"  << endl;
 	}
+	if (key == GLFW_KEY_R) {
+		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
+		cout << "Receivcer set in Optix at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << endl;
+	}
 }
 
 void screen() {
@@ -213,8 +218,6 @@ void screen() {
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
 
-	Sphere sphere = Sphere();
-
  //   // Create Optix mesh of same .obj
  //   OptixModel * scene = loadOBJ(filePath);
 
@@ -240,7 +243,6 @@ void screen() {
 		camera.Inputs(window);
 		camera.updateMatrix(90.0f, 0.1f, 10000.0f);
 		camera.Matrix(shaderProgram, "camMatrix");
-		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
 
 		if (*volumen > 0.5) {
 			renderer->setCamera(camera);
