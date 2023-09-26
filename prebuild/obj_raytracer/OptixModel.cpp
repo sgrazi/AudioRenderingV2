@@ -71,7 +71,8 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
-OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict)
+// OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict)
+OptixModel *loadOBJ(const std::string &objFile, int &xml_dict)
 {
     OptixModel *model = new OptixModel;
 
@@ -130,7 +131,8 @@ OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict)
                 mesh->diffuse = gdt::randomColor(materialID);
                 if (materialID >= 0)
                 {
-                    mesh->material_absorption = get_absorption(materialID, xml_dict);
+                    // mesh->material_absorption = get_absorption(materialID, xml_dict);
+                    mesh->material_absorption = 0.5f;
                 }
             }
 
@@ -151,15 +153,15 @@ OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict)
     return model;
 }
 
-float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
-{
-    tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
-    for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
-    {
-        if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
-            return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
-    }
-}
+// float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
+// {
+//     tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
+//     for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
+//     {
+//         if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
+//             return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
+//     }
+// }
 
 // void placeCamera(OptixModel *model, vec3f cameraPosition)
 //{ // this does not actually place the sphere in cameraPosition, TO DO

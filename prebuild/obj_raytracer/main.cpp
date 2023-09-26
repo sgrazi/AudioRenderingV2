@@ -17,7 +17,7 @@
 #include "RtAudio.h"
 #include "OptixModel.h"
 #include "AudioRenderer.h"
-#include "tinyxml2.h"
+// #include "tinyxml2.h"
 
 using namespace std;
 
@@ -176,11 +176,12 @@ void screen()
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
 	// load material properties
-	tinyxml2::XMLDocument doc;
-	if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
-	{
-		throw std::runtime_error("Failed to load material XML file");
-	}
+	// tinyxml2::XMLDocument doc;
+	// if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
+	// {
+	// 	throw std::runtime_error("Failed to load material XML file");
+	// }
+	int doc;
 
 	// Create Optix mesh of same .obj
 	OptixModel *scene = loadOBJ(filePath, doc);
