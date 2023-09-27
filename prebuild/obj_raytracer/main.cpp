@@ -17,7 +17,7 @@
 #include "RtAudio.h"
 #include "OptixModel.h"
 #include "AudioRenderer.h"
-#include "tinyxml2.h"
+// #include "tinyxml2.h"
 
 using namespace std;
 
@@ -161,7 +161,7 @@ void screen()
 		throw new exception("B");
 	}
 
-	Shader shaderProgram("default.vert", "default.frag");
+	Shader shaderProgram("../../assets/shaders/default.vert", "../../assets/shaders/default.frag");
 
 	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
 	glm::vec3 lightPos = glm::vec3(100, 1000, 300);
@@ -176,11 +176,12 @@ void screen()
 	Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
 
 	// load material properties
-	tinyxml2::XMLDocument doc;
-	if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
-	{
-		throw std::runtime_error("Failed to load material XML file");
-	}
+	// tinyxml2::XMLDocument doc;
+	// if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
+	// {
+	// 	throw std::runtime_error("Failed to load material XML file");
+	// }
+	int doc;
 
 	// Create Optix mesh of same .obj
 	OptixModel *scene = loadOBJ(filePath, doc);
