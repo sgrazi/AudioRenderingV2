@@ -1,6 +1,7 @@
 #pragma once
 #include "gdt/math/AffineSpace.h"
 #include "Sphere.h"
+// #include "tinyxml2.h"
 #include <vector>
 
 using namespace gdt;
@@ -14,7 +15,7 @@ struct TriangleMesh
 
     // material data:
     vec3f diffuse;
-    uint32_t materialID;
+    float material_absorption;
 };
 
 struct OptixModel
@@ -30,6 +31,9 @@ struct OptixModel
     box3f bounds;
 };
 
+// OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict);
 OptixModel *loadOBJ(const std::string &objFile);
 
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition);
+
+// float get_absorption(int material_id, tinyxml2::XMLDocument &xml_dict);

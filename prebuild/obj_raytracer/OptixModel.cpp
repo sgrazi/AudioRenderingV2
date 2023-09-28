@@ -1,8 +1,7 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
-#define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
-#include "tinyxml2.h"
+// #include "tinyxml2.h"
 // std
 #include <set>
 #include <map>
@@ -72,12 +71,12 @@ int addVertex(TriangleMesh *mesh,
     return newID;
 }
 
+// OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dic)
 OptixModel *loadOBJ(const std::string &objFile)
 {
     OptixModel *model = new OptixModel;
 
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/') + 1);
-    PRINT(mtlDir);
 
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;
@@ -104,9 +103,10 @@ OptixModel *loadOBJ(const std::string &objFile)
     for (int shapeID = 0; shapeID < (int)shapes.size(); shapeID++)
     {
         tinyobj::shape_t &shape = shapes[shapeID];
-        
+
         std::set<int> materialIDs;
-        for (auto faceMatID : shape.mesh.material_ids){
+        for (auto faceMatID : shape.mesh.material_ids)
+        {
             materialIDs.insert(faceMatID);
         }
 
@@ -129,8 +129,9 @@ OptixModel *loadOBJ(const std::string &objFile)
                 mesh->index.push_back(idx);
                 mesh->diffuse = (const vec3f &)materials[materialID].diffuse;
                 mesh->diffuse = gdt::randomColor(materialID);
-                if (materialID >= 0) {
-                    mesh->materialID = materialID;
+                if (materialID >= 0)
+                {
+                    mesh->material_absorption = 0;//get_absorption(materialID, xml_dict);
                 }
             }
 
@@ -150,6 +151,16 @@ OptixModel *loadOBJ(const std::string &objFile)
     std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
     return model;
 }
+
+// float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
+// {
+//     tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
+//     for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
+//     {
+//         if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
+//             return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
+//     }
+// }
 
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
 {
@@ -194,14 +205,14 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
             tinyobj::index_t idx2 = sphere.shapes[0].mesh.indices[3 * faceID + 2];
 
             vec3i idx(addVertex(mesh, sphere.attributes, idx0, knownVertices),
-                      addVertex(mesh, sphere.attributes, idx1, knownVertices),
-                      addVertex(mesh, sphere.attributes, idx2, knownVertices));
+                    addVertex(mesh, sphere.attributes, idx1, knownVertices),
+                    addVertex(mesh, sphere.attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
             // TO DO: check to see if we can remove this, we no longer need visuals
             mesh->diffuse = (const vec3f&)sphere.materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
             if (materialID >= 0) {
-                mesh->materialID = materialID;
+                mesh->material_absorption = materialID;
             }
         }
         if (mesh->vertex.empty()) {
@@ -211,4 +222,4 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
             model->meshes.push_back(mesh);
         }
     }
-}
+}   
