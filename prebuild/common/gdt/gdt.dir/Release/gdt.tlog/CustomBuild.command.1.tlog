@@ -1,0 +1,10 @@
+^C:\USERS\ETZIO\DOCUMENTS\GITHUB\AUDIORENDERINGV2\OPTIX\COMMON\GDT\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" -SC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix -BC:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build --check-stamp-file C:/Users/etzio/Documents/GitHub/AudioRenderingV2/optix/build/common/gdt/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
