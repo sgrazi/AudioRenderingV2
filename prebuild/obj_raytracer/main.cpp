@@ -25,6 +25,7 @@ using namespace std;
 
 const unsigned int width = 1366;
 const unsigned int height = 768;
+
 float* volumen = new float(1.0f);
 std::string filePath = "../../assets/models/test.obj";
 vector<Mesh> objects;
