@@ -135,7 +135,6 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 {
 	if (action == GLFW_RELEASE) return; //only handle press events
 	if (key == GLFW_KEY_V) {
-		renderer->setPos(glm::vec3(10, 10, 10));
 		renderer->render();
 		renderer->isHit();
 		if (*volumen == 0.0f)
@@ -147,6 +146,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_E) {
 		transmitterVector.pop_back();
 		setTransmitter(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
+		renderer->setPos(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
 		cout << "transmitter set"  << endl;
 	}
 	if (key == GLFW_KEY_R) {
