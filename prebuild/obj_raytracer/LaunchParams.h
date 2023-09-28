@@ -32,6 +32,6 @@ struct LaunchParams
 
     int sample_rate;
 
-    int histogram_length;
-    float *histogram;
+    int ir_length;
+    float *ir;
 };

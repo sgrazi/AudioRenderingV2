@@ -5,6 +5,9 @@
 #include "Utils.h"
 #include "./kernels.cuh"
 
+int BUFFER_SECONDS;
+int OUTPUT_CHANNELS;
+
 extern "C" char embedded_ptx_code[];
 
 /*! SBT record for a raygen program */
@@ -32,7 +35,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int sample_rate)
+AudioRenderer::AudioRenderer(const OptixModel *model, int buffer_size_in_seconds, int output_channels, int sample_rate)
     : model(model)
 {
     initOptix();
@@ -56,13 +59,11 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int audio_length, int samp
 
     launchParams.traversable = buildAccel();
 
-    int size = audio_length * sample_rate;
-    launchParams.histogram_length = size;
-
+    int ir_lenght = buffer_size_in_seconds * output_channels * sample_rate;
+    launchParams.ir_length = ir_lenght;
     launchParams.sample_rate = sample_rate;
-
-    cudaMalloc(&launchParams.histogram, size * sizeof(float));
-    fillWithZeroesKernel(launchParams.histogram, size);
+    cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
+    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
 
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
@@ -477,7 +478,7 @@ void AudioRenderer::setThresholds(float dist, float energy)
 
 void AudioRenderer::isHit()
 {
-    float *device_c = launchParams.histogram;
+    float *device_c = launchParams.ir;
     float *host_c = new float();
     cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
     if (*host_c > 1.f)
@@ -488,4 +489,10 @@ void AudioRenderer::isHit()
     {
         printf("Result: NO RAY HAS HIT\n");
     }
+}
+
+void AudioRenderer::getIR(float *h_ir, int ir_size)
+{
+    float *d_ir = launchParams.ir;
+    cudaMemcpy(h_ir, d_ir, ir_size, cudaMemcpyDeviceToHost);
 }

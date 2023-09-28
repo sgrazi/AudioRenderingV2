@@ -6,6 +6,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <thread>
 #include <filesystem>
+#include <fstream>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -20,7 +21,8 @@
 // #include "tinyxml2.h"
 
 using namespace std;
-
+const unsigned int IR_LENGTH_IN_SECONDS = 2;
+const unsigned int OUTPUT_CHANNELS = 2;
 const unsigned int width = 1366;
 const unsigned int height = 768;
 float *volumen = new float(1.0f);
@@ -187,13 +189,37 @@ void screen()
 	OptixModel *scene = loadOBJ(filePath, doc);
 
 	// AudioRenderer
-	// TODO modificar cuando se tenga comunicacion entre threads
-	AudioRenderer *renderer = new AudioRenderer(scene, 256, 256);
+	// TODO modificar 256 por el audio sample_rate cuando se tenga comunicacion entre threads
+	int sample_rate = 10000;
+	AudioRenderer *renderer = new AudioRenderer(scene, IR_LENGTH_IN_SECONDS, OUTPUT_CHANNELS, sample_rate);
 	glm::ivec2 frameSize(width, height);
 	renderer->setThresholds(100.0, 0.1);
 	renderer->setPos(glm::vec3(0.f));
 	renderer->render();
-	renderer->isHit();
+
+	// get IR after render
+	int ir_size = IR_LENGTH_IN_SECONDS * OUTPUT_CHANNELS * sample_rate * sizeof(float);
+	float *h_ir = (float*) malloc(ir_size);
+	renderer->getIR(h_ir, ir_size);
+
+		// place on file
+	// Open a text file for writing
+	std::ofstream outFile("output.txt");
+
+	// Check if the file is opened successfully
+	if (!outFile.is_open()) {
+		std::cerr << "Error opening the file." << std::endl;
+	}
+	cout << "mande a file" << endl;
+
+	// Write each element of the float array to the file, one per line
+	for (int i = 0; i < IR_LENGTH_IN_SECONDS * OUTPUT_CHANNELS * sample_rate; ++i) {
+		outFile << h_ir[i] << std::endl;
+	}
+
+	// Close the file
+	outFile.close();
+		//
 
 	while (!glfwWindowShouldClose(window))
 	{

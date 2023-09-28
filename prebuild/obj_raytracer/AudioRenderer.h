@@ -19,7 +19,7 @@ class AudioRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates modOptixModelpipeline, programs, SBT, etc. */
-    AudioRenderer(const OptixModel *model, int audio_length, int sample_rate);
+    AudioRenderer(const OptixModel *model, int buffer_size_in_seconds, int output_channels, int sample_rate);
 
     /*! render one frame */
     void render();
@@ -27,8 +27,10 @@ public:
     void setPos(glm::vec3 pos);
 
     void setThresholds(float dist, float energy);
-    
+
     void isHit();
+
+    void getIR(float *h_ir, int ir_size);
 
 protected:
     // ------------------------------------------------------------------

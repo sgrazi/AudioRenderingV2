@@ -71,11 +71,11 @@ extern "C" __global__ void __closesthit__radiance()
         const float distance = fabs(dot(dist_vec, prd.direction));
         prd.distance += distance;
 
-        float *histogram = optixLaunchParams.histogram;
+        float *ir = optixLaunchParams.ir;
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        if (array_pos < optixLaunchParams.histogram_length)
-            histogram[array_pos] += prd.remaining_factor;
+        if (array_pos < optixLaunchParams.ir_length)
+            ir[array_pos] += prd.remaining_factor;
         break;
     case false:
         // material
