@@ -5,9 +5,6 @@
 #include "Utils.h"
 #include "./kernels.cuh"
 
-int BUFFER_SECONDS;
-int OUTPUT_CHANNELS;
-
 extern "C" char embedded_ptx_code[];
 
 /*! SBT record for a raygen program */
@@ -463,9 +460,35 @@ void AudioRenderer::render()
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+
+    // get IR after render
+    int ir_size = 2 * 2 * 10000 * sizeof(float);
+    float *h_ir = (float *)malloc(ir_size);
+    this->getIR(h_ir, ir_size);
+
+    // place on file
+    // Open a text file for writing
+    std::ofstream outFile("output.txt");
+
+    // Check if the file is opened successfully
+    if (!outFile.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    std::cout << "wrote to file" << std::endl;
+
+    // Write each element of the float array to the file, one per line
+    for (int i = 0; i < 2 * 2 * 10000; ++i)
+    {
+        outFile << h_ir[i] << std::endl;
+    }
+
+    // Close the file
+    outFile.close();
+    //
 }
 
-void AudioRenderer::setPos(glm::vec3 pos)
+void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
 {
     launchParams.emitter_position = pos;
 }

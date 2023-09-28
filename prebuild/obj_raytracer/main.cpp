@@ -27,19 +27,13 @@ const unsigned int width = 1366;
 const unsigned int height = 768;
 
 float *volumen = new float(1.0f);
-std::string filePath = "../../assets/models/test.obj";
+std::string filePath = "../../assets/models/planaso.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
-
-Camera camera(width, height, glm::vec3(4.0f, 4.0f, 4.0f));
-
-// Create Optix mesh of same .obj
-OptixModel *scene = loadOBJ(filePath);
-
-// AudioRenderer
-// TODO modificar 256 por el audio sample_rate cuando se tenga comunicacion entre threads
-int sample_rate = 10000;
-AudioRenderer *renderer = new AudioRenderer(scene, IR_LENGTH_IN_SECONDS, OUTPUT_CHANNELS, sample_rate);
+glm::vec3 initial_receiver_pos((4.0f, 4.0f, 4.0f));
+Camera camera(width, height, initial_receiver_pos);
+OptixModel *scene;
+AudioRenderer *renderer;
 glm::ivec2 frameSize(width, height);
 Sphere sphere = Sphere();
 
@@ -159,21 +153,25 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_E)
 	{
 		transmitterVector.pop_back();
-		setTransmitter(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
-		renderer->setPos(glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z));
-		cout << "transmitter set" << endl;
+		glm::vec3 cameraPosition = glm::vec3(camera.Position.x, camera.Position.y, camera.Position.z);
+		setTransmitter(cameraPosition);
+		renderer->setEmitterPosInOptix(cameraPosition);
+		cout << "Emitter set at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << endl;
+	}
+	if (key == GLFW_KEY_Q)
+	{
+		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
+		cout << "Receiver set at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
-		placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
-		cout << "Receivcer set in Optix at: " << camera.Position.x << ", " << camera.Position.y << ", " << camera.Position.z << endl;
+		renderer->render();
+		cout << "Rendered" << endl;
 	}
 }
 
 void screen()
 {
-	std::string filePath = "../../assets/models/test.obj";
-
 	glfwInit();
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -249,40 +247,16 @@ void screen()
 	// 	throw std::runtime_error("Failed to load material XML file");
 	// }
 
-	// // Create Optix mesh of same .obj
-	// OptixModel *scene = loadOBJ(filePath, doc);
-
+	// Create Optix mesh of same .obj
+	scene = loadOBJ(filePath);
+	placeReceiver(sphere, scene, gdt::vec3f(initial_receiver_pos.x, initial_receiver_pos.y, initial_receiver_pos.z));
 	// AudioRenderer
-	renderer->setThresholds(100.0, 0.1);
-	renderer->setPos(glm::vec3(0.f));
+	// TODO modificar sample_rate por el audio sample_rate cuando se tenga comunicacion entre threads
+	int sample_rate = 10000;
+	renderer = new AudioRenderer(scene, IR_LENGTH_IN_SECONDS, OUTPUT_CHANNELS, sample_rate);
+	renderer->setThresholds(1000.0, 0.01);
+	renderer->setEmitterPosInOptix(glm::vec3(20.f, 4.f, 4.f));
 	renderer->render();
-
-	// get IR after render
-	int ir_size = IR_LENGTH_IN_SECONDS * OUTPUT_CHANNELS * sample_rate * sizeof(float);
-	float *h_ir = (float *)malloc(ir_size);
-	renderer->getIR(h_ir, ir_size);
-
-	// place on file
-	// Open a text file for writing
-	std::ofstream outFile("output.txt");
-
-	// Check if the file is opened successfully
-	if (!outFile.is_open())
-	{
-		std::cerr << "Error opening the file." << std::endl;
-	}
-	cout << "mande a file" << endl;
-
-	// Write each element of the float array to the file, one per line
-	for (int i = 0; i < IR_LENGTH_IN_SECONDS * OUTPUT_CHANNELS * sample_rate; ++i)
-	{
-		outFile << h_ir[i] << std::endl;
-	}
-
-	// Close the file
-	outFile.close();
-	//
-
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);

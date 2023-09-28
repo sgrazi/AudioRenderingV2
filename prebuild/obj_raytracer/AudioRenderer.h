@@ -24,7 +24,7 @@ public:
     /*! render one frame */
     void render();
 
-    void setPos(glm::vec3 pos);
+    void setEmitterPosInOptix(glm::vec3 pos);
 
     void setThresholds(float dist, float energy);
 

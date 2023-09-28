@@ -132,7 +132,7 @@ OptixModel *loadOBJ(const std::string &objFile)
                 mesh->diffuse = gdt::randomColor(materialID);
                 if (materialID >= 0)
                 {
-                    mesh->material_absorption = 0; // get_absorption(materialID, xml_dict);
+                    mesh->material_absorption = 0.1; // get_absorption(materialID, xml_dict);
                 }
             }
 
@@ -215,10 +215,7 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
             // TO DO: check to see if we can remove this, we no longer need visuals
             mesh->diffuse = (const vec3f &)sphere.materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
-            if (materialID >= 0)
-            {
-                mesh->material_absorption = materialID;
-            }
+            mesh->material_absorption = -1;
         }
         if (mesh->vertex.empty())
         {
