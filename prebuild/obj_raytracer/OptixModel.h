@@ -1,5 +1,6 @@
 #pragma once
 #include "gdt/math/AffineSpace.h"
+#include "Sphere.h"
 // #include "tinyxml2.h"
 #include <vector>
 
@@ -31,8 +32,8 @@ struct OptixModel
 };
 
 // OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict);
-OptixModel *loadOBJ(const std::string &objFile, int &xml_dict);
+OptixModel *loadOBJ(const std::string &objFile);
 
-void placeCamera(OptixModel *model, vec3f cameraPosition);
+void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition);
 
 // float get_absorption(int material_id, tinyxml2::XMLDocument &xml_dict);
