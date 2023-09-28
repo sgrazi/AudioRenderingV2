@@ -609,7 +609,7 @@ namespace tinyobj {
 
 #endif  // TINY_OBJ_LOADER_H_
 
-#ifndef TINYOBJLOADER_IMPLEMENTATION
+#ifdef TINYOBJLOADER_IMPLEMENTATION
 #include <cassert>
 #include <cctype>
 #include <cmath>
