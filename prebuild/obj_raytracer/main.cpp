@@ -22,7 +22,7 @@
 
 using namespace std;
 const unsigned int IR_LENGTH_IN_SECONDS = 2;
-const unsigned int OUTPUT_CHANNELS = 2;
+const unsigned int OUTPUT_CHANNELS = 1;
 const unsigned int width = 1366;
 const unsigned int height = 768;
 
@@ -255,7 +255,7 @@ void screen()
 	int sample_rate = 10000;
 	renderer = new AudioRenderer(scene, IR_LENGTH_IN_SECONDS, OUTPUT_CHANNELS, sample_rate);
 	renderer->setThresholds(1000.0, 0.01);
-	renderer->setEmitterPosInOptix(glm::vec3(20.f, 4.f, 4.f));
+	renderer->setEmitterPosInOptix(glm::vec3(0.f, 8.f, -4.f));
 	renderer->render();
 	while (!glfwWindowShouldClose(window))
 	{

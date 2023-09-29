@@ -84,15 +84,10 @@ extern "C" __global__ void __closesthit__radiance()
     {
     case true:
         printf("RECEIVER\n");
-        // receiver
-        // comento, me parece que esto es la distancia hasta el centro de la esfera, cindy lo muestra
-        // const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
-        // const float distance = fabs(dot(dist_vec, prd.direction));
-        // prd.distance += distance;
-
-        float *ir = optixLaunchParams.ir;
+        prd.distance += distance(P,prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
+        float *ir = optixLaunchParams.ir;
         if (array_pos < optixLaunchParams.ir_length)
             ir[array_pos] += prd.remaining_factor;
             printf("adding: %f\nat index: %d\ndistance was: %f\n", prd.remaining_factor, array_pos, prd.distance);
@@ -101,7 +96,6 @@ extern "C" __global__ void __closesthit__radiance()
         printf("MATERIAL\n");
         // material
         prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
-        prd.curr_position = P;
 		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
         prd.distance += dist_traveled;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
@@ -110,6 +104,7 @@ extern "C" __global__ void __closesthit__radiance()
     default:
         // ERROR
     }
+    prd.prev_position = P;
 }
 
 extern "C" __global__ void __anyhit__radiance()
@@ -140,7 +135,7 @@ extern "C" __global__ void __raygen__renderFrame()
     packPointer(&prd, u0, u1);
     prd.remaining_factor = (optixLaunchParams.BASE_POWER)/(x_rays*y_rays*z_rays);
     prd.distance = 0;
-    prd.curr_position = optixLaunchParams.emitter_position;
+    prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
 
     double dx = (ix * (2.0 / (x_rays - 1)) - 1.0);
@@ -155,7 +150,7 @@ extern "C" __global__ void __raygen__renderFrame()
 
         prd.direction = {dx, dy, dz};
         int i = 0;
-        gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
+        gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
         gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
     
         while (prd.distance < optixLaunchParams.dist_thres &&
