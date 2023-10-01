@@ -22,11 +22,11 @@
 
 using namespace std;
 const unsigned int IR_LENGTH_IN_SECONDS = 2;
-const unsigned int OUTPUT_CHANNELS = 1;
+const unsigned int OUTPUT_CHANNELS = 2;
 const unsigned int width = 1366;
 const unsigned int height = 768;
 
-float *volumen = new float(1.0f);
+float *volumen = new float(0.2f);
 std::string filePath = "../../assets/models/planaso.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
@@ -142,8 +142,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		return; // only handle press events
 	if (key == GLFW_KEY_V)
 	{
-		renderer->render();
-		renderer->isHit();
 		if (*volumen == 0.0f)
 			*volumen = 1.0f;
 		else

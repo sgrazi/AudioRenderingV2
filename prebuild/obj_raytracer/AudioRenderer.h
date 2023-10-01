@@ -6,6 +6,7 @@
 #include "kernels.cuh"
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <stdio.h>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -30,7 +31,7 @@ public:
 
     void isHit();
 
-    void getIR(float *h_ir, int ir_size);
+    void getIR(float *h_ir, size_t ir_size);
 
 protected:
     // ------------------------------------------------------------------

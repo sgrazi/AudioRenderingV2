@@ -61,7 +61,7 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int buffer_size_in_seconds
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
     fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
-
+    cudaDeviceSynchronize();
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -442,7 +442,6 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-
     launchParamsBuffer.upload(&launchParams, 1);
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
@@ -462,7 +461,7 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 
     // get IR after render
-    int ir_size = 2 * 2 * 10000 * sizeof(float);
+    size_t ir_size = 2 * 2 * 10000 * sizeof(float);
     float *h_ir = (float *)malloc(ir_size);
     this->getIR(h_ir, ir_size);
 
@@ -486,6 +485,7 @@ void AudioRenderer::render()
     // Close the file
     outFile.close();
     //
+    free(h_ir);
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -514,8 +514,7 @@ void AudioRenderer::isHit()
     }
 }
 
-void AudioRenderer::getIR(float *h_ir, int ir_size)
+void AudioRenderer::getIR(float *h_ir, size_t ir_size)
 {
-    float *d_ir = launchParams.ir;
-    cudaMemcpy(h_ir, d_ir, ir_size, cudaMemcpyDeviceToHost);
+    read_from_gpu(launchParams.ir, h_ir,ir_size);
 }
