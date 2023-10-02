@@ -461,7 +461,7 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 }
 
-void AudioRenderer::convolute(void *h_inputBuffer, size_t h_inputBufferSize, void *h_outputBuffer)
+void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer)
 {
 
     // move inputBuffer to device

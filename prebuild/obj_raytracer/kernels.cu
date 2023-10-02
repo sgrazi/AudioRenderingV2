@@ -55,9 +55,9 @@ __global__ void convolute_toeplitz_lower_matrix(float* samples, float* IR, size_
     then cell with col = row - 1 has I1 (because we moved column one to the left)
     then cell with col = row - x has Ix
     then row - col = x
-    int ir_index = row - col;
     */
-    atomic_add(samples[col] * IR[ir_index], outputBuffer[col]);
+    int ir_index = row - col;
+    atomicAdd(&outputBuffer[col], samples[col] * IR[ir_index]);
 }
 
 __global__ void convolute_toeplitz_vectors(float* samples, float* IR, size_t ir_size, float* outputBuffer){
@@ -69,7 +69,7 @@ __global__ void convolute_toeplitz_vectors(float* samples, float* IR, size_t ir_
     for each complete multiplication we (the whole IR vector * a subvector of samples) we need to continue with a new subvector
     this new subvector is the samples vector moved one unit forward, thats why we add a samples_offset to the samples index
     */
-    atomic_add(samples[ir_size + samples_offset] * IR[ir_size - 1 - ir_index], outputBuffer[ir_size + samples_offset]);
+    atomicAdd(&outputBuffer[ir_size + samples_offset], samples[ir_size + samples_offset] * IR[ir_size - 1 - ir_index]);
 }
 
 void convolute_toeplitz_in_gpu_kernel(float* samples, float* IR, float* outputBuffer){
@@ -107,13 +107,13 @@ __global__ void convolute_fourier(float* samples, float* IR, float* outputBuffer
 }
 
 void convolute_fourier_in_gpu_kernel(float* samples, float* IR, float* outputBuffer){
-    convolute_fourier(samples,IR,outputBuffer);
+    // convolute_fourier(samples,IR,outputBuffer);
 }
 
-void copy_from_gpu(void* device_pointer, void* host_pointer, size_t size) {
+void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {
     CUDA_CHK(cudaMemcpy(host_pointer, device_pointer, size, cudaMemcpyDeviceToHost));
 };
 
-void copy_to_gpu(void* host_pointer, void* device_pointer, size_t size) {
+void copy_to_gpu(float* host_pointer, float* device_pointer, size_t size) {
     CUDA_CHK(cudaMemcpy(device_pointer, host_pointer, size, cudaMemcpyHostToDevice));
 };
