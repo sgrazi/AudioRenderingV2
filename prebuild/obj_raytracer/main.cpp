@@ -27,7 +27,7 @@ const unsigned int width = 1366;
 const unsigned int height = 768;
 
 float *volumen = new float(0.2f);
-std::string filePath = "../../assets/models/planaso.obj";
+std::string filePath = "../../assets/models/conference.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
 glm::vec3 initial_receiver_pos((4.0f, 4.0f, 4.0f));
@@ -248,6 +248,7 @@ void screen()
 	// Create Optix mesh of same .obj
 	scene = loadOBJ(filePath);
 	placeReceiver(sphere, scene, gdt::vec3f(initial_receiver_pos.x, initial_receiver_pos.y, initial_receiver_pos.z));
+
 	// AudioRenderer
 	// TODO modificar sample_rate por el audio sample_rate cuando se tenga comunicacion entre threads
 	int sample_rate = 10000;

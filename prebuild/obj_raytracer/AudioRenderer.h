@@ -29,9 +29,7 @@ public:
 
     void setThresholds(float dist, float energy);
 
-    void isHit();
-
-    void getIR(float *h_ir, size_t ir_size);
+    void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
     // ------------------------------------------------------------------

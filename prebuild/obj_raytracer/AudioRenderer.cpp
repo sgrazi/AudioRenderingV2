@@ -50,18 +50,18 @@ AudioRenderer::AudioRenderer(const OptixModel *model, int buffer_size_in_seconds
     std::cout << " creating hitgroup programs ..." << std::endl;
     createHitgroupPrograms();
 
+    std::cout << " setting up pathtracer parameters ..." << std::endl;
     launchParams.size_x = 10;
     launchParams.size_y = 10;
     launchParams.size_z = 10;
-
     launchParams.traversable = buildAccel();
-
     int ir_lenght = buffer_size_in_seconds * output_channels * sample_rate;
     launchParams.ir_length = ir_lenght;
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
     fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
     cudaDeviceSynchronize();
+
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
 
@@ -459,33 +459,28 @@ void AudioRenderer::render()
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+}
 
-    // get IR after render
-    size_t ir_size = 2 * 2 * 10000 * sizeof(float);
-    float *h_ir = (float *)malloc(ir_size);
-    this->getIR(h_ir, ir_size);
+void AudioRenderer::convolute(void *h_inputBuffer, size_t h_inputBufferSize, void *h_outputBuffer)
+{
 
-    // place on file
-    // Open a text file for writing
-    std::ofstream outFile("output.txt");
+    // move inputBuffer to device
+    float *d_inputBuffer;
+    cudaMalloc(&d_inputBuffer, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
 
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    std::cout << "wrote to file" << std::endl;
+    // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
+    float *d_outputBuffer;
+    size_t outputSize = 0; // TODO
+    cudaMalloc(&d_inputBuffer, h_inputBufferSize);
+    convolute_toeplitz_in_gpu_kernel(d_inputBuffer, launchParams.ir, d_outputBuffer);
 
-    // Write each element of the float array to the file, one per line
-    for (int i = 0; i < 2 * 2 * 10000; ++i)
-    {
-        outFile << h_ir[i] << std::endl;
-    }
+    // copy result to host
+    copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
 
-    // Close the file
-    outFile.close();
-    //
-    free(h_ir);
+    // free
+    cudaFree(d_inputBuffer);
+    cudaFree(d_outputBuffer);
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -499,22 +494,7 @@ void AudioRenderer::setThresholds(float dist, float energy)
     launchParams.energy_thres = energy;
 }
 
-void AudioRenderer::isHit()
+void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)
 {
-    float *device_c = launchParams.ir;
-    float *host_c = new float();
-    cudaMemcpy(host_c, device_c, sizeof(float), cudaMemcpyDeviceToHost);
-    if (*host_c > 1.f)
-    {
-        printf("Result: A RAY HAS HIT\n");
-    }
-    else
-    {
-        printf("Result: NO RAY HAS HIT\n");
-    }
-}
-
-void AudioRenderer::getIR(float *h_ir, size_t ir_size)
-{
-    read_from_gpu(launchParams.ir, h_ir,ir_size);
+    copy_from_gpu(launchParams.ir, h_ir, ir_size);
 }

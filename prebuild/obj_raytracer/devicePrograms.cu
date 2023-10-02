@@ -62,11 +62,6 @@ extern "C" __global__ void __closesthit__radiance()
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
     PRD &prd = *(PRD *)getPRD<PRD>();
 
-    float3 travel;
-    travel.x = wrd.x * optixGetRayTmax();
-    travel.y = wrd.y * optixGetRayTmax();
-    travel.z = wrd.z * optixGetRayTmax();
-
     const int primID = optixGetPrimitiveIndex();
     const glm::ivec3 index = sbtData.index[primID];
     const glm::vec3& A = sbtData.vertex[index.x];
@@ -76,25 +71,21 @@ extern "C" __global__ void __closesthit__radiance()
     const float u = optixGetTriangleBarycentrics().x;
     const float v = optixGetTriangleBarycentrics().y;
     glm::vec3 P = (1.f - u - v) * A + u * B + v * C;
-    // printf("HIT SOMETHING at: %f,%f,%f...\n", P.x, P.y, P.z);
-    //printf("HIT SOMETHING at: %f,%f,%f\n", optixGetWorldRayOrigin().x + travel.x, optixGetWorldRayOrigin().y + travel.y, optixGetWorldRayOrigin().z + travel.z);
-
 
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        //printf("RECEIVER\n");
+        // printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
         prd.distance += distance(P,prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         float *ir = optixLaunchParams.ir;
         if (array_pos < optixLaunchParams.ir_length) {\
             ir[array_pos] += prd.remaining_factor;
-            //printf("adding: %f\nat index: %d\ndistance was: %f\n", prd.remaining_factor, array_pos, prd.distance);
         }
         break;
     case false:
-        //printf("MATERIAL\n");
+        // printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
         // material
         prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
 		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
