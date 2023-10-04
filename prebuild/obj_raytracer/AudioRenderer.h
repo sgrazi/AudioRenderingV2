@@ -25,7 +25,7 @@ public:
     /*! render one frame */
     void render();
 
-    void convolute(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer);
+    void convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer);
 
     void setEmitterPosInOptix(glm::vec3 pos);
 

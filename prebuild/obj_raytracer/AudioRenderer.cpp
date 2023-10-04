@@ -459,28 +459,74 @@ void AudioRenderer::render()
     // want to use streams and double-buffering, but for this simple
     // example, this will have to do)
     CUDA_SYNC_CHECK();
+
+    /////////
+    float *host = NULL;
+    host = new float[launchParams.ir_length];
+    copy_from_gpu(launchParams.ir, host, launchParams.ir_length * sizeof(float));
+    std::ofstream outFile("output_ir.txt");
+
+    // Check if the file is opened successfully
+    if (!outFile.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    else
+    {
+        std::cout << "wrote ir to file" << std::endl;
+
+        // Write each element of the float array to the file, one per line
+        for (int i = 0; i < launchParams.ir_length; ++i)
+        {
+            outFile << host[i] << std::endl;
+        }
+
+        // Close the file
+        outFile.close();
+    }
 }
 
 void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer)
 {
-
     // move inputBuffer to device
     float *d_inputBuffer;
     cudaMalloc(&d_inputBuffer, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
 
     // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
-    float *d_outputBuffer;
-    size_t outputSize = 0; // TODO
-    cudaMalloc(&d_inputBuffer, h_inputBufferSize);
-    convolute_toeplitz_in_gpu_kernel(d_inputBuffer, launchParams.ir, d_outputBuffer);
-
+    float *d_outputBuffer = NULL;
+    size_t outputSize = h_inputBufferSize;
+    cudaMalloc(&d_outputBuffer, h_inputBufferSize);
+    convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, d_outputBuffer);
+    cudaDeviceSynchronize();
     // copy result to host
     copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
 
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer);
+
+    // temporal, guardar h_outputBuffer en archivo
+    std::ofstream outFile("output.txt");
+
+    // Check if the file is opened successfully
+    if (!outFile.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    else
+    {
+        std::cout << "wrote result to file" << std::endl;
+
+        // Write each element of the float array to the file, one per line
+        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+        {
+            outFile << h_outputBuffer[i] << std::endl;
+        }
+
+        // Close the file
+        outFile.close();
+    }
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)

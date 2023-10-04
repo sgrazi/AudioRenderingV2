@@ -27,7 +27,7 @@ const unsigned int width = 1366;
 const unsigned int height = 768;
 
 float *volumen = new float(0.2f);
-std::string filePath = "../../assets/models/conference.obj";
+std::string filePath = "../../assets/models/planaso.obj";
 vector<Mesh> objects;
 vector<Mesh> transmitterVector;
 glm::vec3 initial_receiver_pos((4.0f, 4.0f, 4.0f));
@@ -63,7 +63,7 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
-int audioPlay(RtAudio *dac)
+int audioPlay(RtAudio *dac, AudioFile<float> *audio)
 {
 	if (dac->getDeviceCount() < 1)
 	{
@@ -74,10 +74,6 @@ int audioPlay(RtAudio *dac)
 	parameters.deviceId = dac->getDefaultOutputDevice();
 	parameters.nChannels = 2; // tienq ue machear con los channels del audio
 	parameters.firstChannel = 0;
-
-	AudioFile<float> *audio = new AudioFile<float>;
-	const char *file_path = "../../assets/sound_samples/testsound1.wav";
-	audio->load(file_path);
 
 	// send AudioFile info to screen thread??? (audio_length, sample_rate)
 
@@ -95,9 +91,9 @@ int audioPlay(RtAudio *dac)
 	return 0;
 }
 
-void audio(RtAudio *dac)
+void audio(RtAudio *dac, AudioFile<float> *audio)
 {
-	audioPlay(dac);
+	audioPlay(dac, audio);
 }
 
 void setTransmitter(glm::vec3 posTransmitter)
@@ -168,7 +164,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 }
 
-void screen()
+void screen(AudioFile<float> *audio)
 {
 	glfwInit();
 
@@ -256,6 +252,12 @@ void screen()
 	renderer->setThresholds(1000.0, 0.01);
 	renderer->setEmitterPosInOptix(glm::vec3(0.f, 8.f, -4.f));
 	renderer->render();
+
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float *outputBuffer = (float *)malloc(size_of_audio);
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);
+
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
@@ -300,8 +302,12 @@ int main(int argc, char **argv)
 	}
 	RtAudio *dac = new RtAudio();
 
-	thread screen1(screen);
-	thread audio1(audio, dac);
+	AudioFile<float> *audiofile = new AudioFile<float>;
+	const char *file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
+	audiofile->load(file_path);
+
+	thread screen1(screen, audiofile);
+	thread audio1(audio, dac, audiofile);
 
 	screen1.join();
 	audio1.detach();
