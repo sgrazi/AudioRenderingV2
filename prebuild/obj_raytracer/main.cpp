@@ -72,7 +72,7 @@ int audioPlay(RtAudio *dac, AudioFile<float> *audio)
 	}
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = dac->getDefaultOutputDevice();
-	parameters.nChannels = 2; // tienq ue machear con los channels del audio
+	parameters.nChannels = audio->getNumChannels(); // tienq ue machear con los channels del audio
 	parameters.firstChannel = 0;
 
 	// send AudioFile info to screen thread??? (audio_length, sample_rate)

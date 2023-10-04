@@ -65,8 +65,8 @@ __global__ void convolute_toeplitz_lower_matrix_2d(float* samples, float* IR, si
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x <= y && (x < ir_size && y < ir_size)) {
-        if (samples[x] != 0)
-            printf("%d --> IR=%f\n", x,IR[y - x]);
+        /*if (samples[x] != 0)
+            printf("%d --> IR=%f\n", x,IR[y - x]);*/
         atomicAdd(&outputBuffer[y], samples[x] * IR[y - x]);
     }
 }
@@ -83,8 +83,7 @@ __global__ void convolute_toeplitz_vectors(float* samples, float* IR, size_t ir_
     atomicAdd(&outputBuffer[ir_size + samples_offset], samples[ir_size + samples_offset] * IR[ir_size - 1 - ir_index]);
 }
 
-void convolute_toeplitz_in_gpu(float* samples, float* IR, float* outputBuffer){
-    size_t ir_len = sizeof(IR) / sizeof(float);
+void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* outputBuffer){
     printf("ir_len: %d", ir_len);
     const int threadsPerBlock = 256;
 
