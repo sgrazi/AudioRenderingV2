@@ -1,4 +1,5 @@
 #include "./kernels.cuh"
+#include <cufft.h>
 #define CUDA_CHK(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
@@ -57,7 +58,7 @@ __global__ void convolute_toeplitz_lower_matrix(float* samples, float* IR, size_
     then row - col = x
     */
     int ir_index = row - col;
-    atomicAdd(&outputBuffer[col], samples[col] * IR[ir_index]);
+    atomicAdd(&outputBuffer[col], samples[row] * IR[ir_index]);
 }
 
 __global__ void convolute_toeplitz_lower_matrix_2d(float* samples, float* IR, size_t ir_size, float* outputBuffer) {
@@ -65,9 +66,8 @@ __global__ void convolute_toeplitz_lower_matrix_2d(float* samples, float* IR, si
     int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (x <= y && (x < ir_size && y < ir_size)) {
-        /*if (samples[x] != 0)
-            printf("%d --> IR=%f\n", x,IR[y - x]);*/
-        atomicAdd(&outputBuffer[y], samples[x] * IR[y - x]);
+        atomicAdd(&outputBuffer[y*2], samples[x] * IR[y - x]);
+        atomicAdd(&outputBuffer[(y*2) - 1], samples[x] * IR[y - x]);
     }
 }
 
@@ -84,7 +84,7 @@ __global__ void convolute_toeplitz_vectors(float* samples, float* IR, size_t ir_
 }
 
 void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* outputBuffer){
-    printf("ir_len: %d", ir_len);
+    //printf("ir_len: %d", ir_len);
     const int threadsPerBlock = 256;
 
     // first part, lower matrix multiplication
@@ -121,8 +121,55 @@ __global__ void convolute_fourier(float* samples, float* IR, float* outputBuffer
     
 }
 
-void convolute_fourier_in_gpu(float* samples, float* IR, float* outputBuffer){
-    // convolute_fourier(samples,IR,outputBuffer);
+void convolute_fourier_in_gpu(float* samples, float* IR, float* outputBuffer){ // WIP
+    const int threadsPerBlock = 256;
+    const int batchSize = 1; // Number of batches
+    size_t samples_len = sizeof(samples) / sizeof(float);
+    size_t ir_len = sizeof(samples) / sizeof(float);
+
+    // Allocate device memory for samples
+    cufftComplex* sampleData;
+    cudaMalloc((void**)&sampleData, samples_len * sizeof(cufftComplex));
+    
+    for (int i = 0; i < samples_len; i++) {
+        sampleData[i].x = samples[i];
+        sampleData[i].y = 0.0f;
+    }
+
+    cufftHandle samplesPlan;
+    cufftPlan1d(&samplesPlan, samples_len, CUFFT_C2C, batchSize);
+    cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
+
+    // Allocate device memory for IR
+    cufftComplex* IRData;
+    cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
+    
+    for (int i = 0; i < ir_len; i++) {
+        IRData[i].x = IR[i];
+        IRData[i].y = 0.0f;
+    }
+
+    cufftHandle IRPlan;
+    cufftPlan1d(&IRPlan, ir_len, CUFFT_C2C, batchSize);
+    cufftExecC2C(IRPlan, IRData, IRData, CUFFT_FORWARD);
+
+    // Convolute
+    cufftComplex* resultData = new cufftComplex[N];
+    // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
+    for (int i = 0; i < N; i++) {
+        resultData[i].x = sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;
+        resultData[i].y = sampleData[i].x * IRData[i].y + sampleData[i].y * IRData[i].x;
+    }
+
+    // Invert result
+    cufftHandle plan;
+    cufftPlan1d(&plan, N, CUFFT_C2C, batchSize);
+
+    // Clean up
+    cufftDestroy(samplesPlan);
+    cufftDestroy(IRPlan);
+    cudaFree(sampleData);
+    cudaFree(IRData);
 }
 
 void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {

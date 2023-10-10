@@ -497,7 +497,7 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     float *d_outputBuffer = NULL;
     size_t outputSize = h_inputBufferSize;
     cudaMalloc(&d_outputBuffer, h_inputBufferSize);
-    convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length , d_outputBuffer);
+    convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
     cudaDeviceSynchronize();
     // copy result to host
     copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
