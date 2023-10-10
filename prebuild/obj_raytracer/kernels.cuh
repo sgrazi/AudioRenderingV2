@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <cuda_runtime.h>
+#include <cufft.h>
 #include "cuda.h"
 
 void fillWithZeroesKernel(float* buf, int size);

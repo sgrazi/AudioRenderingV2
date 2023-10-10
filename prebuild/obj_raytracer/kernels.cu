@@ -1,5 +1,4 @@
 #include "./kernels.cuh"
-#include <cufft.h>
 #define CUDA_CHK(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
@@ -117,59 +116,81 @@ void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* out
     //convolute_toeplitz_vectors<<<blocksPerGrid, threadsPerBlock>>>(samples, IR, ir_len, outputBuffer); // todo se precisa un offset
 }
 
-__global__ void convolute_fourier(float* samples, float* IR, float* outputBuffer){
-    
-}
-
-void convolute_fourier_in_gpu(float* samples, float* IR, float* outputBuffer){ // WIP
+void convolute_fourier_in_gpu(float* samples, float* IR, float* outputBuffer){
     const int threadsPerBlock = 256;
     const int batchSize = 1; // Number of batches
     size_t samples_len = sizeof(samples) / sizeof(float);
     size_t ir_len = sizeof(samples) / sizeof(float);
+    const int sampleRate = 40000;
+    const int secondsToProcess = samples_len / sampleRate; 
 
     // Allocate device memory for samples
     cufftComplex* sampleData;
-    cudaMalloc((void**)&sampleData, samples_len * sizeof(cufftComplex));
-    
-    for (int i = 0; i < samples_len; i++) {
-        sampleData[i].x = samples[i];
-        sampleData[i].y = 0.0f;
-    }
-
-    cufftHandle samplesPlan;
-    cufftPlan1d(&samplesPlan, samples_len, CUFFT_C2C, batchSize);
-    cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
-
+    cudaMalloc((void**)&sampleData, sampleRate * 2 * sizeof(cufftComplex));
     // Allocate device memory for IR
     cufftComplex* IRData;
     cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
-    
+    // Allocate device memory for output
+    cufftComplex* resultData = new cufftComplex[samples_len];
+
+    // Set up FFT plans
+    cufftHandle samplesPlan;
+    cufftPlan1d(&samplesPlan, sampleRate, CUFFT_C2C, batchSize);
+    cufftHandle IRPlan;
+    cufftPlan1d(&IRPlan, ir_len, CUFFT_C2C, batchSize);
+
+    // Do FFT on IR, which will be reused a lot
     for (int i = 0; i < ir_len; i++) {
         IRData[i].x = IR[i];
         IRData[i].y = 0.0f;
     }
-
-    cufftHandle IRPlan;
-    cufftPlan1d(&IRPlan, ir_len, CUFFT_C2C, batchSize);
     cufftExecC2C(IRPlan, IRData, IRData, CUFFT_FORWARD);
 
-    // Convolute
-    cufftComplex* resultData = new cufftComplex[N];
-    // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
-    for (int i = 0; i < N; i++) {
-        resultData[i].x = sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;
-        resultData[i].y = sampleData[i].x * IRData[i].y + sampleData[i].y * IRData[i].x;
+    // Finally convolute, second by second
+    /* 
+    Basically we take each segment and we prolong it with 0's
+    Then we do FFT and sum each segment into the total
+    Then we invert the total
+    Full algorithm can be found on https://www.dspguide.com/ch18/2.htm
+    */
+    for (int second = 0 ; second < secondsToProcess; second++){
+        // First second is samples, rest is 0's (this is why we do seconds + 2 as the upper limit)
+        for (int i = second * sampleRate; i < (second + 2) * sampleRate; i++) { 
+            if (i < (second + 1) * sampleRate){
+                sampleData[i].x = samples[i];
+                sampleData[i].y = 0.0f;
+            } else {
+                sampleData[i].x = 0.0f;
+                sampleData[i].y = 0.0f;
+            }
+        }
+
+        cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
+
+        // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
+        for (int i = second * sampleRate; i < (second + 2) * sampleRate; i++) {
+            resultData[i].x += sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;
+            resultData[i].y += sampleData[i].x * IRData[i].y + sampleData[i].y * IRData[i].x;
+        }
     }
 
     // Invert result
-    cufftHandle plan;
-    cufftPlan1d(&plan, N, CUFFT_C2C, batchSize);
+    cufftHandle inversePlan;
+    cufftPlan1d(&inversePlan, samples_len, CUFFT_C2C, batchSize);
+    cufftExecC2C(inversePlan, resultData, resultData, CUFFT_INVERSE);
 
+    // Move to output buffer
+    for (int i = 0; i < samples_len; i++) {
+        outputBuffer[i] = resultData[i].x;
+    }
+    
     // Clean up
     cufftDestroy(samplesPlan);
     cufftDestroy(IRPlan);
+    cufftDestroy(inversePlan);
     cudaFree(sampleData);
     cudaFree(IRData);
+    cudaFree(resultData);
 }
 
 void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {
