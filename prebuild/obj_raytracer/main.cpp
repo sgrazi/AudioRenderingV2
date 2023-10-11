@@ -380,7 +380,7 @@ int main(int argc, char **argv)
 	RtAudioErrorType checkError = dac->stopStream();
 	// if (dac.isStreamOpen())
 	dac->closeStream();
-	//delete dac;
+	delete dac;
 
 	return 0;
 }
