@@ -32,7 +32,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, int buffer_size_in_seconds, int output_channels, int sample_rate)
+AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate)
     : model(model)
 {
     initOptix();
