@@ -130,7 +130,7 @@ void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* out
     dim3 threadsPorBlocks(32,32);
     int aaa = (ir_len / 32) + 1;
     dim3 numBlocks(aaa, aaa);
-    CUDA_CHK(convolute_toeplitz_lower_matrix_2d<<<numBlocks,threadsPorBlocks >>>(samples, IR, ir_len, outputBuffer));
+    convolute_toeplitz_lower_matrix_2d << <numBlocks, threadsPorBlocks >> > (samples, IR, ir_len, outputBuffer);
 
     // second part, vector multiplication
     size_t samples_size = sizeof(samples) / sizeof(float);
@@ -185,12 +185,13 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     */
     for (int second = 0; second < secondsToProcess; second++) {
         // First second is samples, rest is 0's (this is why we do seconds + 2 as the upper limit)
-        CUDA_CHK(kerneloide2_0 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData));
-
+        kerneloide2_0 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
+        cudaDeviceSynchronize();
         cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
 
         // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
-        CUDA_CHK(kerneloide2_1 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData));
+        kerneloide2_1 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
+        cudaDeviceSynchronize();
     }
     
     printf("convolucion hecha\n");
