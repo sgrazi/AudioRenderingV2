@@ -23,11 +23,10 @@
 
 using namespace std;
 
-
 struct AudioInfo
 {
-	AudioFile<float>* audio;
-	float* volumen;
+	AudioFile<float> *audio;
+	float *volumen;
 };
 
 int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
@@ -65,7 +64,7 @@ int audioPlay(RtAudio *dac, AudioFile<float> *audio)
 	// send AudioFile info to screen thread??? (audio_length, sample_rate)
 	// TODO -> check number of channels.
 
-	unsigned int sampleRate = audio->getSampleRate() / 2;
+	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
 	unsigned int bufferFrames = 256; // 256 sample frames
 
 	AudioInfo *audioInfo = new AudioInfo;
@@ -83,7 +82,7 @@ void audio(RtAudio *dac, AudioFile<float> *audio)
 	{
 		audioPlay(dac, audio);
 	}
-	catch (const std::exception& e)
+	catch (const std::exception &e)
 	{
 		cout << e.what() << endl;
 	}
@@ -94,7 +93,7 @@ void setTransmitter(glm::vec3 posTransmitter)
 	std::string transmitterPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(transmitterPath);
-	vector<Mesh>* transmitterVector = Context::get_transmitter();
+	vector<Mesh> *transmitterVector = Context::get_transmitter();
 
 	if (load_res)
 	{
@@ -142,9 +141,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_E)
 	{
-		Camera* camera = Context::get_camera();
-		vector<Mesh>* transmitterVector = Context::get_transmitter();
-		AudioRenderer* renderer = Context::get_audio_renderer();
+		Camera *camera = Context::get_camera();
+		vector<Mesh> *transmitterVector = Context::get_transmitter();
+		AudioRenderer *renderer = Context::get_audio_renderer();
 		transmitterVector->pop_back();
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
 		setTransmitter(cameraPosition);
@@ -153,15 +152,15 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_Q)
 	{
-		Camera* camera = Context::get_camera();
+		Camera *camera = Context::get_camera();
 		Sphere sphere = *Context::get_sphere();
-		OptixModel* scene = Context::get_optix_model();
+		OptixModel *scene = Context::get_optix_model();
 		placeReceiver(sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
 		cout << "Receiver set at: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
-		AudioRenderer* renderer = Context::get_audio_renderer();
+		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
 		cout << "Rendered" << endl;
 	}
@@ -174,7 +173,7 @@ void screen(AudioFile<float> *audio)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	
+
 	// Get context
 	unsigned int width = Context::get_scene_width();
 	unsigned int height = Context::get_scene_height();
@@ -251,17 +250,18 @@ void screen(AudioFile<float> *audio)
 	// }
 
 	// Create Optix mesh of same .obj
-	OptixModel* scene = Context::get_optix_model();
+	OptixModel *scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
 	Camera camera = *Context::get_camera();
 	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
 
 	// AudioRenderer
-	uint32_t sample_rate = Context::get_sample_rate();;
+	uint32_t sample_rate = Context::get_sample_rate();
+	;
 	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
 	unsigned int output_channels = Context::get_output_channels();
 
-	AudioRenderer* renderer = Context::get_audio_renderer();
+	AudioRenderer *renderer = Context::get_audio_renderer();
 	renderer->setThresholds(1000.0, 0.01);
 	renderer->setEmitterPosInOptix(glm::vec3(0.f, 8.f, -4.f));
 	renderer->render();
@@ -286,11 +286,10 @@ void screen(AudioFile<float> *audio)
 		camera.Matrix(shaderProgram, "camMatrix");
 		Context::set_camera(&camera);
 
-
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
-		
-		vector<Mesh>* transmitterVector = Context::get_transmitter();
+
+		vector<Mesh> *transmitterVector = Context::get_transmitter();
 		transmitterVector->back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
@@ -301,8 +300,6 @@ void screen(AudioFile<float> *audio)
 	glfwDestroyWindow(window);
 	glfwTerminate();
 }
-
-
 
 int main(int argc, char **argv)
 {
@@ -318,10 +315,10 @@ int main(int argc, char **argv)
 	{
 		configJsonPath = argv[1];
 	}
-	
+
 	// Setup context
 
-	Context* context = Context::getInstance();
+	Context *context = Context::getInstance();
 	context->set_volume(1.0f);
 
 	unsigned int ir_length_in_seconds = 2;
@@ -339,17 +336,17 @@ int main(int argc, char **argv)
 	string file_path = "../../assets/models/planaso.obj";
 	context->set_file_path(file_path);
 
-	vector<Mesh>* transmitterVector = new vector<Mesh>;
+	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
 
 	glm::vec3 initial_receiver_pos((4.0f, 4.0f, 4.0f));
-	Camera* camera =  new Camera(width, height, initial_receiver_pos);
+	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
-	
-	Sphere* sphere= new Sphere();
+
+	Sphere *sphere = new Sphere();
 	context->set_sphere(sphere);
 
-	OptixModel* scene = loadOBJ(file_path);
+	OptixModel *scene = loadOBJ(file_path);
 	context->set_optix_model(scene);
 
 	RtAudio *dac = new RtAudio();
@@ -360,7 +357,7 @@ int main(int argc, char **argv)
 	{
 		audio_file->load(audio_file_path);
 	}
-	catch (const std::exception&)
+	catch (const std::exception &)
 	{
 		return 1;
 	}
@@ -368,7 +365,8 @@ int main(int argc, char **argv)
 	uint32_t sample_rate = audio_file->getSampleRate();
 	context->set_sample_rate(sample_rate);
 
-	AudioRenderer* renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate);;
+	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate);
+	;
 	context->set_audio_renderer(renderer);
 
 	thread screen1(screen, audio_file);
