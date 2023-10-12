@@ -1,5 +1,6 @@
 #pragma once
 #include "3rdParty/tiny_obj_loader.h"
+#include "gdt/math/AffineSpace.h"
 
 class Sphere
 {

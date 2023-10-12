@@ -59,6 +59,8 @@ add_executable(obj_raytracer
   kernels.cuh
   Sphere.h
   Sphere.cpp
+  Context.h
+  Context.cpp
   # tinyxml2.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.c

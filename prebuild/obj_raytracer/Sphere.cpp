@@ -1,5 +1,4 @@
 #include "Sphere.h"
-#include "gdt/math/AffineSpace.h"
 
 Sphere::Sphere() {
     const std::string objFile = "../../assets/models/sphere.obj";
