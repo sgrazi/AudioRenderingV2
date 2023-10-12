@@ -75,17 +75,17 @@ extern "C" __global__ void __closesthit__radiance()
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        // printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
+        //printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
         prd.distance += distance(P,prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         float *ir = optixLaunchParams.ir;
-        if (array_pos < optixLaunchParams.ir_length) {\
+        if (array_pos < optixLaunchParams.ir_length) {
             ir[array_pos] += prd.remaining_factor;
         }
         break;
     case false:
-        // printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
+        //printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
         // material
         prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
 		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance

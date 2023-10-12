@@ -163,9 +163,17 @@ OptixModel *loadOBJ(const std::string &objFile)
 //     }
 // }
 
+void readModels(const OptixModel* model) {
+    for (const auto& mesh : model->meshes) {
+        printf("%f\n", mesh->material_absorption);
+    }
+}
+
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
 {
     std::set<int> uniqueValues;
+        std::cout << sphere.original_attributes.vertices[0] << std::endl;
+    
     // moving the sphere
     for (const auto &shape : sphere.shapes)
     {
@@ -223,7 +231,7 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
         }
         else
         {
-            model->meshes.pop_back();
+            if (model->meshes.back()->material_absorption == -1) model->meshes.pop_back();
             model->meshes.push_back(mesh);
         }
     }

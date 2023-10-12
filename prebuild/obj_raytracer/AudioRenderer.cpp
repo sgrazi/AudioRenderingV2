@@ -32,8 +32,7 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate)
-    : model(model)
+AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate):model(model)
 {
     initOptix();
 
@@ -442,6 +441,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
+    vertexBuffer.clear();
+    indexBuffer.clear();
+    asBuffer.free();
+    raygenRecordsBuffer.free();
+    missRecordsBuffer.free();
+    hitgroupRecordsBuffer.free();
+    launchParamsBuffer.free();
+
+    launchParams.traversable = buildAccel();
+    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
+    cudaDeviceSynchronize();
+
+    createPipeline();
+
+    buildSBT();
+
+    launchParamsBuffer.alloc(sizeof(launchParams));
+
     launchParamsBuffer.upload(&launchParams, 1);
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */

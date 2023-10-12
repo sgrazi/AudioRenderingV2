@@ -253,11 +253,12 @@ void screen(AudioFile<float> *audio)
 	OptixModel *scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
 	Camera camera = *Context::get_camera();
+	cout << camera.Position.y << endl;
 	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
 
 	// AudioRenderer
 	uint32_t sample_rate = Context::get_sample_rate();
-	;
+	
 	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
 	unsigned int output_channels = Context::get_output_channels();
 
@@ -266,10 +267,10 @@ void screen(AudioFile<float> *audio)
 	renderer->setEmitterPosInOptix(glm::vec3(0.f, 8.f, -4.f));
 	renderer->render();
 
-	size_t len_of_audio = audio->samples[0].size();
+	/*size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);*/
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -319,7 +320,7 @@ int main(int argc, char **argv)
 	// Setup context
 
 	Context *context = Context::getInstance();
-	context->set_volume(1.0f);
+	context->set_volume(0.0f);
 
 	unsigned int ir_length_in_seconds = 2;
 	context->set_ir_length_in_seconds(ir_length_in_seconds);
@@ -339,7 +340,7 @@ int main(int argc, char **argv)
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
 
-	glm::vec3 initial_receiver_pos((4.0f, 4.0f, 4.0f));
+	glm::vec3 initial_receiver_pos(4.0f, 15.0f, 4.0f);
 	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
 
@@ -364,9 +365,10 @@ int main(int argc, char **argv)
 
 	uint32_t sample_rate = audio_file->getSampleRate();
 	context->set_sample_rate(sample_rate);
+	
+	placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
 
 	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate);
-	;
 	context->set_audio_renderer(renderer);
 
 	thread screen1(screen, audio_file);

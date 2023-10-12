@@ -11,9 +11,9 @@ def plot_numbers_from_file(filepath):
 
     # Step 3: Plot the numbers
     plt.plot(numbers)
-    plt.xlabel('Index')
+    plt.xlabel('Time')
     plt.ylabel('Value')
-    plt.title('Plot of numbers from file')
+    plt.title('IR')
     plt.show()
 
 def main(argv):
