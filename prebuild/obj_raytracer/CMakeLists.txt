@@ -72,6 +72,7 @@ target_link_libraries(obj_raytracer
   ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDA_LIBRARY}
+  ${CUDA_CUFFT_LIBRARIES}
   # glfw and opengl, for display
   glfWindow
   glfw
