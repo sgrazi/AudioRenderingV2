@@ -75,7 +75,7 @@ extern "C" __global__ void __closesthit__radiance()
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        //printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
+        // printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
         prd.distance += distance(P,prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
@@ -140,18 +140,17 @@ extern "C" __global__ void __raygen__renderFrame()
         dy /= length;
         dz /= length;
 
+        // printf("sending to %f,%f,%f...\n", dx, dy, dz);
         prd.direction = {dx, dy, dz};
         int i = 0;
-        gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
-        gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
-    
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
-               i < 2) // por las dudas le pongo un tope
+               i < 60) // por las dudas le pongo un tope
         {
-            //printf("%d\n", i);
             i++;
+            gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
+            gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
             optixTrace(optixLaunchParams.traversable,
                        rayOrigin,
                        rayDir,

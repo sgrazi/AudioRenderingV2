@@ -14,6 +14,16 @@ def plot_numbers_from_file(filepath):
     plt.xlabel('Time')
     plt.ylabel('Value')
     plt.title('IR')
+
+    # 16k sample rate
+    # Calculate the number of data points and the x-tick positions for 250ms intervals
+    num_data_points = len(numbers)
+    num_intervals = num_data_points // 4000
+    x_tick_positions = [250 * i for i in range(num_intervals + 1)]
+
+    # Set x-tick labels and positions
+    plt.xticks(x_tick_positions, [f'{int(x)}ms' for x in x_tick_positions])
+    
     plt.show()
 
 def main(argv):
