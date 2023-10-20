@@ -2,29 +2,31 @@ import matplotlib.pyplot as plt
 import sys, getopt
 
 def plot_numbers_from_file(filepath):
-    # Step 1: Read the file
-    with open(filepath, 'r') as f:
-        lines = f.readlines()
+   # Step 1: Read the file
+   with open(filepath, 'r') as f:
+      lines = f.readlines()
 
-    # Step 2: Parse the numbers
-    numbers = [float(line.strip()) for line in lines]
+   # Step 2: Parse the numbers
+   numbers = [(index/16000, float(line.strip())) for index, line in enumerate(lines)]
 
-    # Step 3: Plot the numbers
-    plt.plot(numbers)
-    plt.xlabel('Time')
-    plt.ylabel('Value')
-    plt.title('IR')
+   x_values, y_values = zip(*numbers)
 
-    # 16k sample rate
-    # Calculate the number of data points and the x-tick positions for 250ms intervals
-    num_data_points = len(numbers)
-    num_intervals = num_data_points // 4000
-    x_tick_positions = [250 * i for i in range(num_intervals + 1)]
+   # Step 3: Plot the numbers
+   plt.plot(x_values, y_values)
+   plt.xlabel('Time')
+   plt.ylabel('Value')
+   plt.title('IR')
 
-    # Set x-tick labels and positions
-    plt.xticks(x_tick_positions, [f'{int(x)}ms' for x in x_tick_positions])
+   # 16k sample rate
+   # Calculate the number of data points and the x-tick positions for 250ms intervals
+#  num_data_points = len(numbers)
+#  num_intervals = num_data_points // 160
+#  x_tick_positions = [100 * i for i in range(num_intervals + 1)]
+
+#  # Set x-tick labels and positions
+#  plt.xticks(x_tick_positions, [f'{int(x)}ms' for x in x_tick_positions])
     
-    plt.show()
+   plt.show()
 
 def main(argv):
    filepath = ''

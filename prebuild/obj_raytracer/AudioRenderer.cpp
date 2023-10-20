@@ -50,9 +50,9 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     createHitgroupPrograms();
 
     std::cout << " setting up pathtracer parameters ..." << std::endl;
-    launchParams.size_x = 10;
-    launchParams.size_y = 10;
-    launchParams.size_z = 10;
+    launchParams.size_x = 100;
+    launchParams.size_y = 100;
+    launchParams.size_z = 100;
     launchParams.traversable = buildAccel();
     int ir_lenght = buffer_size_in_seconds * output_channels * sample_rate;
     launchParams.ir_length = ir_lenght;

@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include "LaunchParams.h"
 #include "PRD.h"
+#include "curand_kernel.h"
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
 
@@ -75,7 +76,7 @@ extern "C" __global__ void __closesthit__radiance()
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        // printf("HIT RECEIVER at: %f,%f,%f...\n", P.x, P.y, P.z);
+        printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;", P.x, P.y, P.z);
         prd.distance += distance(P,prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
@@ -83,6 +84,7 @@ extern "C" __global__ void __closesthit__radiance()
         if (array_pos < optixLaunchParams.ir_length) {
             ir[array_pos] += prd.remaining_factor;
         }
+        //prd.recursion_depth = -1;
         break;
     case false:
         //printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
@@ -130,9 +132,15 @@ extern "C" __global__ void __raygen__renderFrame()
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
 
-    double dx = (ix * (2.0 / (x_rays - 1)) - 1.0);
-    double dy = (iy * (2.0 / (y_rays - 1)) - 1.0);
-    double dz = (iz * (2.0 / (z_rays - 1)) - 1.0);
+    int tid = iz * x_rays * y_rays + iy * x_rays + ix;
+
+    curandState state;
+    curand_init((unsigned long long)clock64(), tid, 0, &state);
+
+
+    double dx = curand_uniform(&state) * 2.0f - 1.0f;
+    double dy = curand_uniform(&state) * 2.0f - 1.0f;
+    double dz = curand_uniform(&state) * 2.0f - 1.0f;
     // it is bound to happen that some threads have (0,0,0) as their vector
     if (dx != 0.0 || dy != 0.0 || dz != 0.0) {
         double length = std::sqrt(dx * dx + dy * dy + dz * dz);
@@ -146,7 +154,7 @@ extern "C" __global__ void __raygen__renderFrame()
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
-               i < 60) // por las dudas le pongo un tope
+               i < 1) // por las dudas le pongo un tope
         {
             i++;
             gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
