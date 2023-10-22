@@ -65,32 +65,37 @@ extern "C" __global__ void __closesthit__radiance()
 
     const int primID = optixGetPrimitiveIndex();
     const glm::ivec3 index = sbtData.index[primID];
-    const glm::vec3& A = sbtData.vertex[index.x];
-    const glm::vec3& B = sbtData.vertex[index.y];
-    const glm::vec3& C = sbtData.vertex[index.z];
-    const glm::vec3 Ng = normalize(cross(B - A, C - A));
-    const float u = optixGetTriangleBarycentrics().x;
-    const float v = optixGetTriangleBarycentrics().y;
-    glm::vec3 P = (1.f - u - v) * A + u * B + v * C;
+    const glm::vec3 P1 = sbtData.vertex[index.x];
+    const glm::vec3 P2 = sbtData.vertex[index.y];
+    const glm::vec3 P3 = sbtData.vertex[index.z];
 
+    glm::vec3 U = P2 - P1;
+    glm::vec3 V = P3 - P1;
+    const glm::vec3 Ng = glm::vec3(U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x);
+
+    const float u_barycentrics = optixGetTriangleBarycentrics().x;
+    const float v_barycentrics = optixGetTriangleBarycentrics().y;
+    const glm::vec3 P = (1.f - u_barycentrics - v_barycentrics) * P1 + u_barycentrics * P2 + v_barycentrics * P3;
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
         printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;", P.x, P.y, P.z);
-        prd.distance += distance(P,prd.prev_position);
+        prd.distance += distance(P, prd.prev_position);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         float *ir = optixLaunchParams.ir;
-        if (array_pos < optixLaunchParams.ir_length) {
-            ir[array_pos] += prd.remaining_factor;
+        if (array_pos < optixLaunchParams.ir_length)
+        {
+            atomicAdd(&ir[array_pos],prd.remaining_factor);
         }
-        //prd.recursion_depth = -1;
+        prd.recursion_depth = -1;
         break;
     case false:
-        //printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
-        // material
-        prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
-		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
+        // printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
+        //  material
+        float dot_product = prd.direction.x * Ng.x + prd.direction.y * Ng.y + prd.direction.z * Ng.z;
+        prd.direction = prd.direction - 2.0f * (dot_product)*Ng;
+        float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
         prd.distance += dist_traveled;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
@@ -102,7 +107,7 @@ extern "C" __global__ void __closesthit__radiance()
 }
 
 extern "C" __global__ void __anyhit__radiance()
-{ 
+{
 }
 
 extern "C" __global__ void __miss__radiance()
@@ -113,12 +118,12 @@ extern "C" __global__ void __miss__radiance()
 
 extern "C" __global__ void __raygen__renderFrame()
 {
-    
+
     // TODO, check if dimensions are three dimensional
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
-    const int x_rays = optixGetLaunchDimensions().x; 
+    const int x_rays = optixGetLaunchDimensions().x;
     const int y_rays = optixGetLaunchDimensions().y;
     const int z_rays = optixGetLaunchDimensions().z;
 
@@ -127,7 +132,7 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = (optixLaunchParams.BASE_POWER)/(x_rays*y_rays*z_rays);
+    prd.remaining_factor = (optixLaunchParams.BASE_POWER) / (x_rays * y_rays * z_rays);
     prd.distance = 0;
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
@@ -137,12 +142,12 @@ extern "C" __global__ void __raygen__renderFrame()
     curandState state;
     curand_init((unsigned long long)clock64(), tid, 0, &state);
 
-
     double dx = curand_uniform(&state) * 2.0f - 1.0f;
     double dy = curand_uniform(&state) * 2.0f - 1.0f;
     double dz = curand_uniform(&state) * 2.0f - 1.0f;
     // it is bound to happen that some threads have (0,0,0) as their vector
-    if (dx != 0.0 || dy != 0.0 || dz != 0.0) {
+    if (dx != 0.0 || dy != 0.0 || dz != 0.0)
+    {
         double length = std::sqrt(dx * dx + dy * dy + dz * dz);
         dx /= length;
         dy /= length;
@@ -154,7 +159,7 @@ extern "C" __global__ void __raygen__renderFrame()
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
-               i < 1) // por las dudas le pongo un tope
+               i < 60) // por las dudas le pongo un tope
         {
             i++;
             gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
