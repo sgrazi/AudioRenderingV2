@@ -100,13 +100,15 @@ __global__ void kerneloide2_0(int second, unsigned int secondsToProcess, unsigne
             sampleData[i].y = 0.0f;
         }
     }
+    __syncthreads();
 }
 
 __global__ void kerneloide2_1(int second, unsigned int secondsToProcess, unsigned int sampleRate, cufftComplex* sampleData, float* samples, cufftHandle samplesPlan, cufftComplex* resultData, cufftComplex* IRData) {
     for (int i = second * sampleRate; i < (second + 2) * sampleRate; i++) {
-        resultData[i].x += sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;
+        resultData[i].x += sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;        
         resultData[i].y += sampleData[i].x * IRData[i].y + sampleData[i].y * IRData[i].x;
     }
+    __syncthreads();
 }
 
 
@@ -163,8 +165,9 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
     // Allocate device memory for output
     //cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
-    cufftComplex* resultData = new cufftComplex[samples_len];
-
+    cufftComplex* resultData;
+    cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
+    // cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
     // Set up FFT plans
     cufftHandle samplesPlan;
     cufftPlan1d(&samplesPlan, sampleRate, CUFFT_C2C, batchSize);
@@ -188,12 +191,12 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
         kerneloide2_0 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
         cudaDeviceSynchronize();
         cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
-
         // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
         kerneloide2_1 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
         cudaDeviceSynchronize();
     }
-    
+    cudaDeviceSynchronize();
+
     printf("convolucion hecha\n");
 
     // Invert result
@@ -201,12 +204,12 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cufftPlan1d(&inversePlan, samples_len, CUFFT_C2C, batchSize);
     cufftExecC2C(inversePlan, resultData, resultData, CUFFT_INVERSE);
     printf("inversion hecha\n");
-
+    
     // Move to output buffer
 
     for (int i = 0; i < samples_len; i++) {
-        outputBuffer[i] = resultData[i].x;
-        //copy_from_gpu(&resultData[i].x, &outputBuffer[i], sizeof(float));
+        // outputBuffer[i] = resultData[i].x;
+        copy_from_gpu(&resultData[i].x, &outputBuffer[i], sizeof(float));
     }
     // Clean up
     cufftDestroy(samplesPlan);
