@@ -82,36 +82,6 @@ __global__ void convolute_toeplitz_vectors(float* samples, float* IR, size_t ir_
     atomicAdd(&outputBuffer[ir_size + samples_offset], samples[ir_size + samples_offset] * IR[ir_size - 1 - ir_index]);
 }
 
-__global__ void kerneloide(cufftComplex* IRData, float* IR, unsigned int ir_len) {
-    for (int i = 0; i < ir_len; i++) { // todo, do this in kernel
-        IRData[i].x = IR[i];
-        IRData[i].y = 0.0f;
-    }
-}
-
-__global__ void kerneloide2_0(int second, unsigned int secondsToProcess, unsigned int sampleRate, cufftComplex* sampleData, float* samples, cufftHandle samplesPlan, cufftComplex* resultData, cufftComplex* IRData) {
-    for (int i = second * sampleRate; i < (second + 2) * sampleRate; i++) {
-        if (i < (second + 1) * sampleRate) {
-            sampleData[i].x = samples[i];
-            sampleData[i].y = 0.0f;
-        }
-        else {
-            sampleData[i].x = 0.0f;
-            sampleData[i].y = 0.0f;
-        }
-    }
-    __syncthreads();
-}
-
-__global__ void kerneloide2_1(int second, unsigned int secondsToProcess, unsigned int sampleRate, cufftComplex* sampleData, float* samples, cufftHandle samplesPlan, cufftComplex* resultData, cufftComplex* IRData) {
-    for (int i = second * sampleRate; i < (second + 2) * sampleRate; i++) {
-        resultData[i].x += sampleData[i].x * IRData[i].x - sampleData[i].y * IRData[i].y;        
-        resultData[i].y += sampleData[i].x * IRData[i].y + sampleData[i].y * IRData[i].x;
-    }
-    __syncthreads();
-}
-
-
 void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* outputBuffer){
     //printf("ir_len: %d", ir_len);
     const int threadsPerBlock = 256;
@@ -145,29 +115,56 @@ void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* out
     //convolute_toeplitz_vectors<<<blocksPerGrid, threadsPerBlock>>>(samples, IR, ir_len, outputBuffer); // todo se precisa un offset
 }
 
+__global__ void load_complex_vector(cufftComplex* complex_data, float* real_vector, unsigned int vector_len) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    if (idx < vector_len){
+        complex_data[idx].x = real_vector[idx];
+        complex_data[idx].y = 0.0f;
+    }
+}
+
+__global__ void load_two_second_complex_vector(int second, unsigned int sampleRate, unsigned int segment_size_in_seconds, cufftComplex* sampleData, float* samples) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int index = idx + second * sampleRate;
+    if (idx < sampleRate * segment_size_in_seconds){
+        if (idx < sampleRate) {
+                sampleData[index].x = samples[index];
+                sampleData[index].y = 0.0f;
+            }
+            else {
+                sampleData[index].x = 0.0f;
+                sampleData[index].y = 0.0f;
+            }
+    }
+}
+
+__global__ void multiply_samples_segment_and_ir(int second, unsigned int sampleRate, unsigned int segment_size_in_seconds, cufftComplex* sampleData, cufftComplex* resultData, cufftComplex* IRData) {
+    int idx = threadIdx.x + blockIdx.x * blockDim.x;
+    int index = idx + second * sampleRate;
+    if (idx < sampleRate * segment_size_in_seconds){
+        // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
+        resultData[index].x += sampleData[index].x * IRData[idx].x - sampleData[index].y * IRData[idx].y;
+        resultData[index].y += sampleData[index].x * IRData[idx].y + sampleData[index].y * IRData[idx].x;
+    }
+}
+
 void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int ir_len, float* outputBuffer) {
-    printf("entr oa fourier\n");
-    printf("samples_len: %d\n", samples_len);
-    printf("ir_len: %d\n", ir_len);
     const int threadsPerBlock = 256;
+    int blocks;
     const int batchSize = 1; // Number of batches
     const int sampleRate = (samples_len / 4); //since samples is 2 seconds of 2 channel audio 
     const int secondsToProcess = samples_len / sampleRate;
+    const int segment_size_in_seconds = 2;
 
     // Allocate device memory for samples
     cufftComplex* sampleData;
     cudaMalloc((void**)&sampleData, sampleRate * 2 * sizeof(cufftComplex));
     // Allocate device memory for IR
     cufftComplex* IRData;
-    /*float* d_IR;
-    cudaMalloc(&d_IR, ir_len * sizeof(float));
-    copy_to_gpu(IR, d_IR, ir_len * sizeof(float));*/
     cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
     // Allocate device memory for output
-    //cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
     cufftComplex* resultData;
     cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
-    // cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
     // Set up FFT plans
     cufftHandle samplesPlan;
     cufftPlan1d(&samplesPlan, sampleRate, CUFFT_C2C, batchSize);
@@ -176,7 +173,9 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     printf("init pronto\n");
 
     // Do FFT on IR, which will be reused a lot
-    kerneloide << <1, 1 >> > (IRData, IR, ir_len);
+    blocks = (ir_len / threadsPerBlock) + 1;
+    load_complex_vector << <threadsPerBlock, blocks >> > (IRData, IR, ir_len);
+    cudaDeviceSynchronize();
     cufftExecC2C(IRPlan, IRData, IRData, CUFFT_FORWARD);
 
     // Finally convolute, second by second
@@ -186,13 +185,13 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     Then we invert the total
     Full algorithm can be found on https://www.dspguide.com/ch18/2.htm
     */
+    blocks = (sampleRate * segment_size_in_seconds / threadsPerBlock) + 1;
     for (int second = 0; second < secondsToProcess; second++) {
         // First second is samples, rest is 0's (this is why we do seconds + 2 as the upper limit)
-        kerneloide2_0 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
+        load_two_second_complex_vector << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, samples);
         cudaDeviceSynchronize();
         cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
-        // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
-        kerneloide2_1 << <1, 1 >> > (second, secondsToProcess, sampleRate, sampleData, samples, samplesPlan, resultData, IRData);
+        multiply_samples_segment_and_ir << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, resultData, IRData);
         cudaDeviceSynchronize();
     }
     cudaDeviceSynchronize();
