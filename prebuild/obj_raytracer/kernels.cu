@@ -123,7 +123,8 @@ __global__ void load_complex_vector(cufftComplex* complex_data, float* real_vect
     }
 }
 
-__global__ void load_two_second_complex_vector(int second, unsigned int sampleRate, unsigned int segment_size_in_seconds, cufftComplex* sampleData, float* samples) {
+__global__ void load_sample_segment_complex_vector(int second, unsigned int sampleRate, unsigned int segment_size_in_seconds, cufftComplex* sampleData, float* samples) {
+    // loads one second of samples and (segment_size_in_seconds - 1) seconds of zeros
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     int index = idx + second * sampleRate;
     if (idx < sampleRate * segment_size_in_seconds){
@@ -188,7 +189,7 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     blocks = (sampleRate * segment_size_in_seconds / threadsPerBlock) + 1;
     for (int second = 0; second < secondsToProcess; second++) {
         // First second is samples, rest is 0's (this is why we do seconds + 2 as the upper limit)
-        load_two_second_complex_vector << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, samples);
+        load_sample_segment_complex_vector << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, samples);
         cudaDeviceSynchronize();
         cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
         multiply_samples_segment_and_ir << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, resultData, IRData);
