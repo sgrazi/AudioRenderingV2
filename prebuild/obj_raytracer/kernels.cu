@@ -1,6 +1,14 @@
 #include "./kernels.cuh"
 #define CUDA_CHK(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 
+inline void CHCK_CUFFT_RES(cufftResult_t res){
+    if (res != 0)
+    {
+        fprintf(stderr, "CHCK_CUFFT_RES: %d\n", res);
+        if (abort) exit(res);
+    }
+}
+
 inline void gpuAssert(cudaError_t code, const char* file, int line, bool abort = true)
 {
     if (code != cudaSuccess)
@@ -144,22 +152,45 @@ __global__ void multiply_samples_segment_and_ir(int second, unsigned int sampleR
     int index = idx + second * sampleRate;
     if (idx < sampleRate * segment_size_in_seconds){
         // (a + ib) (c + id) = (ac – bd) + i(ad + bc)
-        resultData[index].x += sampleData[index].x * IRData[idx].x - sampleData[index].y * IRData[idx].y;
-        resultData[index].y += sampleData[index].x * IRData[idx].y + sampleData[index].y * IRData[idx].x;
+        atomicAdd(&resultData[index].x, sampleData[idx].x * IRData[idx].x - sampleData[idx].y * IRData[idx].y);
+        atomicAdd(&resultData[index].y, sampleData[idx].x * IRData[idx].y + sampleData[idx].y * IRData[idx].x);
     }
 }
 
-void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int ir_len, float* outputBuffer) {
+void convolute_fourier_in_gpu(float* samples, float* IR_2, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len_2, float* outputBuffer) {
+    /// start 
+    unsigned int ir_len = 8000;
+    std::ifstream inputFile("C:\\Users\\stefa\\Documentos\\AudioRenderingV2\\build\\obj_raytracer\\ir_1D.txt"); // Replace "your_file.txt" with your file name
+    if (!inputFile.is_open()) {
+        std::cerr << "Failed to open the file." << std::endl;
+    }
+    std::vector<float> h_IR;
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        std::stringstream ss(line);
+        std::string token;
+        while (std::getline(ss, token, ',')) {
+            float value = std::stof(token);
+            h_IR.push_back(value);
+        }
+    }
+    inputFile.close();
+    // Allocate memory on the GPU
+    float *IR;
+    cudaMalloc((void**)&IR, h_IR.size() * sizeof(float));
+    // Copy data from the host to the device
+    cudaMemcpy(IR, h_IR.data(), h_IR.size() * sizeof(float), cudaMemcpyHostToDevice);
+    /// end
+    
     const int threadsPerBlock = 256;
     int blocks;
-    const int batchSize = 1; // Number of batches
-    const int sampleRate = (samples_len / 4); //since samples is 2 seconds of 2 channel audio 
-    const int secondsToProcess = samples_len / sampleRate;
+    const int batchSize = 1; // Number of batches 
+    const int secondsToProcess = samples_len / sample_rate;
     const int segment_size_in_seconds = 2;
 
     // Allocate device memory for samples
     cufftComplex* sampleData;
-    cudaMalloc((void**)&sampleData, sampleRate * 2 * sizeof(cufftComplex));
+    cudaMalloc((void**)&sampleData, sample_rate * 2 * sizeof(cufftComplex));
     // Allocate device memory for IR
     cufftComplex* IRData;
     cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
@@ -168,16 +199,14 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
     // Set up FFT plans
     cufftHandle samplesPlan;
-    cufftPlan1d(&samplesPlan, sampleRate, CUFFT_C2C, batchSize);
+    cufftPlan1d(&samplesPlan, samples_len, CUFFT_C2C, batchSize);
     cufftHandle IRPlan;
-    cufftPlan1d(&IRPlan, ir_len, CUFFT_C2C, batchSize);
-    printf("init pronto\n");
+    cufftPlan1d(&IRPlan, ir_len, CUFFT_R2C, batchSize);
 
     // Do FFT on IR, which will be reused a lot
     blocks = (ir_len / threadsPerBlock) + 1;
-    load_complex_vector << <threadsPerBlock, blocks >> > (IRData, IR, ir_len);
     cudaDeviceSynchronize();
-    cufftExecC2C(IRPlan, IRData, IRData, CUFFT_FORWARD);
+    CHCK_CUFFT_RES(cufftExecR2C(IRPlan, IR, IRData));
 
     // Finally convolute, second by second
     /*
@@ -186,31 +215,26 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     Then we invert the total
     Full algorithm can be found on https://www.dspguide.com/ch18/2.htm
     */
-    blocks = (sampleRate * segment_size_in_seconds / threadsPerBlock) + 1;
+    blocks = ((sample_rate * segment_size_in_seconds) / threadsPerBlock) + 1;
     for (int second = 0; second < secondsToProcess; second++) {
         // First second is samples, rest is 0's (this is why we do seconds + 2 as the upper limit)
-        load_sample_segment_complex_vector << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, samples);
+        load_sample_segment_complex_vector << <threadsPerBlock, blocks >> > (second, sample_rate, segment_size_in_seconds, sampleData, samples);
         cudaDeviceSynchronize();
-        cufftExecC2C(samplesPlan, sampleData, sampleData, CUFFT_FORWARD);
-        multiply_samples_segment_and_ir << <threadsPerBlock, blocks >> > (second, sampleRate, segment_size_in_seconds, sampleData, resultData, IRData);
+        cufftHandle segmentPlan;
+        cufftPlan1d(&segmentPlan, sample_rate * segment_size_in_seconds, CUFFT_C2C, batchSize);
+        CHCK_CUFFT_RES(cufftExecC2C(segmentPlan, sampleData, sampleData, CUFFT_FORWARD));
+        multiply_samples_segment_and_ir << <threadsPerBlock, blocks >> > (second, sample_rate, segment_size_in_seconds, sampleData, resultData, IRData);
         cudaDeviceSynchronize();
     }
-    cudaDeviceSynchronize();
 
     printf("convolucion hecha\n");
 
     // Invert result
     cufftHandle inversePlan;
-    cufftPlan1d(&inversePlan, samples_len, CUFFT_C2C, batchSize);
-    cufftExecC2C(inversePlan, resultData, resultData, CUFFT_INVERSE);
+    cufftPlan1d(&inversePlan, samples_len, CUFFT_C2R, batchSize);
+    CHCK_CUFFT_RES(cufftExecC2R(inversePlan, resultData, outputBuffer));
     printf("inversion hecha\n");
     
-    // Move to output buffer
-
-    for (int i = 0; i < samples_len; i++) {
-        // outputBuffer[i] = resultData[i].x;
-        copy_from_gpu(&resultData[i].x, &outputBuffer[i], sizeof(float));
-    }
     // Clean up
     cufftDestroy(samplesPlan);
     cufftDestroy(IRPlan);
@@ -218,6 +242,7 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaFree(sampleData);
     cudaFree(IRData);
     cudaFree(resultData);
+    cudaFree(IR); //DELETE ME TEMP ONLY
 }
 
 void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {
