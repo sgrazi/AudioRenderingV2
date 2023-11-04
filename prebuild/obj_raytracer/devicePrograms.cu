@@ -71,16 +71,23 @@ extern "C" __global__ void __closesthit__radiance()
 
     glm::vec3 U = P2 - P1;
     glm::vec3 V = P3 - P1;
-    const glm::vec3 Ng = glm::vec3(U.y * V.z - U.z * V.y, U.z * V.x - U.x * V.z, U.x * V.y - U.y * V.x);
+    const glm::vec3 Ng = glm::normalize(glm::cross(U,V));
 
     const float u_barycentrics = optixGetTriangleBarycentrics().x;
     const float v_barycentrics = optixGetTriangleBarycentrics().y;
     const glm::vec3 P = (1.f - u_barycentrics - v_barycentrics) * P1 + u_barycentrics * P2 + v_barycentrics * P3;
+
+    prd.distance += distance(P, prd.prev_position);
+
+        // Get Ray Id
+    const int ix = optixGetLaunchIndex().x;
+    const int iy = optixGetLaunchIndex().y;
+    const int iz = optixGetLaunchIndex().z;
+
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;", P.x, P.y, P.z);
-        prd.distance += distance(P, prd.prev_position);
+        //printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;color(end+1) = %f;rebotes(end+1)= %d;", P.x, P.y, P.z, prd.distance, prd.recursion_depth);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         float *ir = optixLaunchParams.ir;
@@ -91,19 +98,14 @@ extern "C" __global__ void __closesthit__radiance()
         prd.recursion_depth = -1;
         break;
     case false:
-        // printf("HIT MATERIAL at: %f,%f,%f...\n", P.x, P.y, P.z);
-        //  material
-        float dot_product = prd.direction.x * Ng.x + prd.direction.y * Ng.y + prd.direction.z * Ng.z;
-        prd.direction = prd.direction - 2.0f * (dot_product)*Ng;
-        float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
-        prd.distance += dist_traveled;
+        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng)*Ng;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
         break;
     default:
         // ERROR
     }
-    prd.prev_position = P;
+    prd.prev_position = P + (1e-3f * prd.direction);
 }
 
 extern "C" __global__ void __anyhit__radiance()

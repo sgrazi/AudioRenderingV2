@@ -90,7 +90,7 @@ void audio(RtAudio *dac, AudioFile<float> *audio)
 
 void setTransmitter(glm::vec3 posTransmitter)
 {
-	std::string transmitterPath = "../../assets/models/sphere.obj";
+	std::string transmitterPath = "../../assets/models/sphere2.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(transmitterPath);
 	vector<Mesh> *transmitterVector = Context::get_transmitter();
