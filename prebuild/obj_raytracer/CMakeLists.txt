@@ -59,6 +59,8 @@ add_executable(obj_raytracer
   kernels.cuh
   Sphere.h
   Sphere.cpp
+  Context.h
+  Context.cpp
   # tinyxml2.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.c
@@ -70,6 +72,7 @@ target_link_libraries(obj_raytracer
   ${optix_LIBRARY}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDA_LIBRARY}
+  ${CUDA_CUFFT_LIBRARIES}
   # glfw and opengl, for display
   glfWindow
   glfw

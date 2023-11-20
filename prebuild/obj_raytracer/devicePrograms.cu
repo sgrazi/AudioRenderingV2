@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include "LaunchParams.h"
 #include "PRD.h"
+#include "curand_kernel.h"
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
 
@@ -57,48 +58,58 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
-
     const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
     const float3 wrd = optixGetWorldRayDirection();
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
     PRD &prd = *(PRD *)getPRD<PRD>();
 
+    const int primID = optixGetPrimitiveIndex();
+    const glm::ivec3 index = sbtData.index[primID];
+    const glm::vec3 P1 = sbtData.vertex[index.x];
+    const glm::vec3 P2 = sbtData.vertex[index.y];
+    const glm::vec3 P3 = sbtData.vertex[index.z];
+
+    glm::vec3 U = P2 - P1;
+    glm::vec3 V = P3 - P1;
+    const glm::vec3 Ng = glm::normalize(glm::cross(U,V));
+
+    const float u_barycentrics = optixGetTriangleBarycentrics().x;
+    const float v_barycentrics = optixGetTriangleBarycentrics().y;
+    const glm::vec3 P = (1.f - u_barycentrics - v_barycentrics) * P1 + u_barycentrics * P2 + v_barycentrics * P3;
+
+    prd.distance += distance(P, prd.prev_position);
+
+        // Get Ray Id
+    const int ix = optixGetLaunchIndex().x;
+    const int iy = optixGetLaunchIndex().y;
+    const int iz = optixGetLaunchIndex().z;
+
     switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
     {
     case true:
-        // receiver
-        const glm::vec3 dist_vec = sbtData.pos - prd.curr_position;
-        const float distance = fabs(dot(dist_vec, prd.direction));
-        prd.distance += distance;
-
-        float *histogram = optixLaunchParams.histogram;
+        //printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;color(end+1) = %f;rebotes(end+1)= %d;", P.x, P.y, P.z, prd.distance, prd.recursion_depth);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        if (array_pos < optixLaunchParams.histogram_length)
-            histogram[array_pos] += prd.remaining_factor;
+        float *ir = optixLaunchParams.ir;
+        if (array_pos < optixLaunchParams.ir_length)
+        {
+            atomicAdd(&ir[array_pos],prd.remaining_factor);
+        }
+        prd.recursion_depth = -1;
         break;
     case false:
-        // material
-        const int primID = optixGetPrimitiveIndex();
-        const glm::ivec3 index = sbtData.index[primID];
-        const glm::vec3 &A = sbtData.vertex[index.x];
-        const glm::vec3 &B = sbtData.vertex[index.y];
-        const glm::vec3 &C = sbtData.vertex[index.z];
-        const glm::vec3 Ng = normalize(cross(B - A, C - A));
-        prd.direction = prd.direction - 2.0f * (prd.direction * Ng) * Ng;
-        prd.curr_position = sbtData.pos;
-		float dist_traveled = optixGetRayTmax(); // returns the current path segment distance
-        prd.distance += dist_traveled;
+        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng)*Ng;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
         break;
     default:
         // ERROR
     }
+    prd.prev_position = P + (1e-3f * prd.direction);
 }
 
 extern "C" __global__ void __anyhit__radiance()
-{ /*! TO DO probably */
+{
 }
 
 extern "C" __global__ void __miss__radiance()
@@ -109,12 +120,12 @@ extern "C" __global__ void __miss__radiance()
 
 extern "C" __global__ void __raygen__renderFrame()
 {
-    
+
     // TODO, check if dimensions are three dimensional
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
-    const int x_rays = optixGetLaunchDimensions().x; 
+    const int x_rays = optixGetLaunchDimensions().x;
     const int y_rays = optixGetLaunchDimensions().y;
     const int z_rays = optixGetLaunchDimensions().z;
 
@@ -123,41 +134,50 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = 1.0f;
+    prd.remaining_factor = (optixLaunchParams.BASE_POWER) / (x_rays * y_rays * z_rays);
     prd.distance = 0;
-    prd.curr_position = optixLaunchParams.emitter_position;
+    prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
-    
-    // TODO distribution of rays should be uniform, to be tested
-    float offset = static_cast<float>(ix + iy * x_rays + iz * y_rays * x_rays) / static_cast<float>(x_rays * y_rays * z_rays);
-    double theta = 2 * M_PI * offset;
-    double phi = acos(1 - 2 * offset);
-    double dx = sin(phi) * cos(theta);
-    double dy = sin(phi) * sin(theta);
-    double dz = cos(phi);
-    prd.direction = {dx, dy, dz};
 
-    int i = 0;
-    gdt::vec3f rayOrigin(prd.curr_position.x, prd.curr_position.y, prd.curr_position.z);
-    gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
-    
-    while (prd.distance < optixLaunchParams.dist_thres &&
-           prd.remaining_factor > optixLaunchParams.energy_thres &&
-           prd.recursion_depth >= 0 &&
-           i < 10000) // por las dudas le pongo un tope
+    int tid = iz * x_rays * y_rays + iy * x_rays + ix;
+
+    curandState state;
+    curand_init((unsigned long long)clock64(), tid, 0, &state);
+
+    double dx = curand_uniform(&state) * 2.0f - 1.0f;
+    double dy = curand_uniform(&state) * 2.0f - 1.0f;
+    double dz = curand_uniform(&state) * 2.0f - 1.0f;
+    // it is bound to happen that some threads have (0,0,0) as their vector
+    if (dx != 0.0 || dy != 0.0 || dz != 0.0)
     {
-        i++;
-        optixTrace(optixLaunchParams.traversable,
-                   rayOrigin,
-                   rayDir,
-                   0.f,   // tmin
-                   1e20f, // tmax
-                   0.0f,  // rayTime
-                   OptixVisibilityMask(255),
-                   OPTIX_RAY_FLAG_DISABLE_ANYHIT, // OPTIX_RAY_FLAG_NONE,
-                   SURFACE_RAY_TYPE,              // SBT offset
-                   RAY_TYPE_COUNT,                // SBT stride
-                   SURFACE_RAY_TYPE,              // missSBTIndex
-                   u0, u1);
+        double length = std::sqrt(dx * dx + dy * dy + dz * dz);
+        dx /= length;
+        dy /= length;
+        dz /= length;
+
+        // printf("sending to %f,%f,%f...\n", dx, dy, dz);
+        prd.direction = {dx, dy, dz};
+        int i = 0;
+        while (prd.distance < optixLaunchParams.dist_thres &&
+               prd.remaining_factor > optixLaunchParams.energy_thres &&
+               prd.recursion_depth >= 0 &&
+               i < 60) // por las dudas le pongo un tope
+        {
+            i++;
+            gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
+            gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
+            optixTrace(optixLaunchParams.traversable,
+                       rayOrigin,
+                       rayDir,
+                       0.f,   // tmin
+                       1e20f, // tmax
+                       0.0f,  // rayTime
+                       OptixVisibilityMask(255),
+                       OPTIX_RAY_FLAG_DISABLE_ANYHIT, // OPTIX_RAY_FLAG_NONE,
+                       SURFACE_RAY_TYPE,              // SBT offset
+                       RAY_TYPE_COUNT,                // SBT stride
+                       SURFACE_RAY_TYPE,              // missSBTIndex
+                       u0, u1);
+        }
     }
 }

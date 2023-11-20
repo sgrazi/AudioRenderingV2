@@ -132,7 +132,7 @@ OptixModel *loadOBJ(const std::string &objFile)
                 mesh->diffuse = gdt::randomColor(materialID);
                 if (materialID >= 0)
                 {
-                    mesh->material_absorption = 0;//get_absorption(materialID, xml_dict);
+                    mesh->material_absorption = 0.1; // get_absorption(materialID, xml_dict);
                 }
             }
 
@@ -166,22 +166,26 @@ OptixModel *loadOBJ(const std::string &objFile)
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
 {
     std::set<int> uniqueValues;
+
     // moving the sphere
-    for (const auto& shape : sphere.shapes) {
+    for (const auto &shape : sphere.shapes)
+    {
         // shape.mesh.indices contains repeated indexes due to the shapes sharing indexes
         // this "for" will make sure that the same index is not overwritten multiple times
-        for (const auto& num : shape.mesh.indices) {
-            if (uniqueValues.find(num.vertex_index) == uniqueValues.end()) {
+        for (const auto &num : shape.mesh.indices)
+        {
+            if (uniqueValues.find(num.vertex_index) == uniqueValues.end())
+            {
                 uniqueValues.insert(num.vertex_index);
             }
         }
-        for (const auto& index : uniqueValues) {
+        for (const auto &index : uniqueValues)
+        {
 
             // Translate each vertex by (x, y, z)
             sphere.attributes.vertices[3 * index + 0] = cameraPosition.x + sphere.original_attributes.vertices[3 * index + 0];
             sphere.attributes.vertices[3 * index + 1] = cameraPosition.y + sphere.original_attributes.vertices[3 * index + 1];
             sphere.attributes.vertices[3 * index + 2] = cameraPosition.z + sphere.original_attributes.vertices[3 * index + 2];
-
         }
     }
 
@@ -195,7 +199,7 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
     for (int materialID : materialIDs)
     {
         std::map<tinyobj::index_t, int> knownVertices;
-        TriangleMesh* mesh = new TriangleMesh();
+        TriangleMesh *mesh = new TriangleMesh();
 
         for (int faceID = 0; faceID < sphere.shapes[0].mesh.material_ids.size(); faceID++)
         {
@@ -206,21 +210,23 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
             tinyobj::index_t idx2 = sphere.shapes[0].mesh.indices[3 * faceID + 2];
 
             vec3i idx(addVertex(mesh, sphere.attributes, idx0, knownVertices),
-                    addVertex(mesh, sphere.attributes, idx1, knownVertices),
-                    addVertex(mesh, sphere.attributes, idx2, knownVertices));
+                      addVertex(mesh, sphere.attributes, idx1, knownVertices),
+                      addVertex(mesh, sphere.attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
             // TO DO: check to see if we can remove this, we no longer need visuals
-            mesh->diffuse = (const vec3f&)sphere.materials[materialID].diffuse;
+            mesh->diffuse = (const vec3f &)sphere.materials[materialID].diffuse;
             mesh->diffuse = gdt::randomColor(materialID);
-            if (materialID >= 0) {
-                mesh->material_absorption = materialID;
-            }
+            mesh->material_absorption = -1;
         }
-        if (mesh->vertex.empty()) {
+        if (mesh->vertex.empty())
+        {
             delete mesh;
-        } else {
-            model->meshes.pop_back();
+        }
+        else
+        {
+            if (model->meshes.back()->material_absorption == -1)
+                model->meshes.pop_back();
             model->meshes.push_back(mesh);
         }
     }
-}   
+}

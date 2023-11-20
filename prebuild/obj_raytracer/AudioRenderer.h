@@ -6,6 +6,7 @@
 #include "kernels.cuh"
 #include <glm/glm.hpp>
 #include <unordered_map>
+#include <stdio.h>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -19,16 +20,18 @@ class AudioRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates modOptixModelpipeline, programs, SBT, etc. */
-    AudioRenderer(const OptixModel *model, int audio_length, int sample_rate);
+    AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate);
 
     /*! render one frame */
     void render();
 
-    void setPos(glm::vec3 pos);
+    void convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer);
+
+    void setEmitterPosInOptix(glm::vec3 pos);
 
     void setThresholds(float dist, float energy);
-    
-    void isHit();
+
+    void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
     // ------------------------------------------------------------------
