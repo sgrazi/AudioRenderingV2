@@ -7,6 +7,8 @@
 #include <thread>
 #include <filesystem>
 #include <fstream>
+#include <string>
+#include <sstream>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -19,6 +21,7 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
 #include "Context.h"
+#include "cJSON.h"
 // #include "tinyxml2.h"
 
 using namespace std;
@@ -316,43 +319,98 @@ int main(int argc, char **argv)
 		configJsonPath = argv[1];
 	}
 
+	// Read config file
+	ifstream f(configJsonPath);
+	string stringConfig;
+	if (f) {
+		ostringstream ss;
+		ss << f.rdbuf(); // reading data
+		stringConfig = ss.str();
+	}
+	cJSON* config = cJSON_Parse(stringConfig.c_str());
+
+	// Read config file
+
+	// Initial volume
+	const cJSON* cJSON_initial_volume = cJSON_GetObjectItem(config, "initial_volume");
+	float initial_volume = 1.0;
+	if (cJSON_IsNumber(cJSON_initial_volume))
+		initial_volume = cJSON_initial_volume->valuedouble;
+
+	// IR length in seconds
+	const cJSON* cJSON_ir_length_in_seconds = cJSON_GetObjectItem(config, "ir_length_in_seconds");
+	unsigned int ir_length_in_seconds = 2;
+	if (cJSON_IsNumber(cJSON_ir_length_in_seconds))
+		ir_length_in_seconds = round(cJSON_ir_length_in_seconds->valuedouble);
+
+	// Output channels
+	const cJSON* cJSON_output_channels = cJSON_GetObjectItem(config, "output_channels");
+	unsigned int output_channels = 2;
+	if (cJSON_IsNumber(cJSON_output_channels))
+		output_channels = round(cJSON_output_channels->valuedouble);
+
+	// Width
+	const cJSON* cJSON_width = cJSON_GetObjectItem(config, "width");
+	unsigned int width = 1366;
+	if (cJSON_IsNumber(cJSON_width))
+		width = round(cJSON_width->valuedouble);
+
+	// Width
+	const cJSON* cJSON_height = cJSON_GetObjectItem(config, "height");
+	unsigned int height = 768;
+	if (cJSON_IsNumber(cJSON_height))
+		height = round(cJSON_height->valuedouble);
+
+	// Scene file path
+	const cJSON* cJSON_scene_file_path = cJSON_GetObjectItem(config, "scene_file_path");
+	string scene_file_path = "../../assets/models/1D_U.obj";
+	if (cJSON_IsString(cJSON_scene_file_path))
+		scene_file_path = cJSON_scene_file_path->valuestring;
+
+	// Initial receiver pos
+	const cJSON* cJSON_initial_receiver_pos = cJSON_GetObjectItem(config, "initial_receiver_pos");
+	glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
+	if (cJSON_IsObject(cJSON_initial_receiver_pos)) {
+		cJSON* x = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "x");
+		cJSON* y = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "y");
+		cJSON* z = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "z");
+		if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
+			initial_receiver_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+	}
+
+	// Audio file path
+	const cJSON* cJSON_audio_file_path = cJSON_GetObjectItem(config, "audio_file_path");
+	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
+	if (cJSON_IsString(cJSON_audio_file_path))
+		audio_file_path = cJSON_audio_file_path->valuestring;
+
+	cJSON_Delete(config);
+
 	// Setup context
 
 	Context *context = Context::getInstance();
-	context->set_volume(0.0f);
-
-	unsigned int ir_length_in_seconds = 2;
+	context->set_volume(initial_volume);
 	context->set_ir_length_in_seconds(ir_length_in_seconds);
-
-	unsigned int output_channels = 2;
 	context->set_output_channels(output_channels);
-
-	unsigned int width = 1366;
 	context->set_scene_width(width);
-
-	unsigned int height = 768;
 	context->set_scene_height(height);
-
-	string file_path = "../../assets/models/1D_U.obj";
-	context->set_file_path(file_path);
+	context->set_file_path(scene_file_path);
 
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
 
-	glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
 	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
 
 	Sphere *sphere = new Sphere();
 	context->set_sphere(sphere);
 
-	OptixModel *scene = loadOBJ(file_path);
+	OptixModel *scene = loadOBJ(scene_file_path);
 	context->set_optix_model(scene);
 
 	RtAudio *dac = new RtAudio();
 
 	AudioFile<float> *audio_file = new AudioFile<float>;
-	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
 	try
 	{
 		audio_file->load(audio_file_path);
