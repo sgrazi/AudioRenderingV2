@@ -20,7 +20,7 @@ struct Material
 
 struct LaunchParams
 {
-    const float BASE_POWER = 31.62f;
+    const float BASE_POWER = 300.0f;
 
     int size_x;
     int size_y;

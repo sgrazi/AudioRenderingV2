@@ -135,6 +135,7 @@ __global__ void load_sample_segment(int second, unsigned int sampleRate, unsigne
     // loads one second of samples and (segment_size_in_seconds - 1) seconds of zeros
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     int sampleIndex = idx + second * sampleRate;
+
     if (idx < sampleRate * segment_size_in_seconds){
         if (idx < sampleRate) {
             segment[idx] = samples[sampleIndex];
@@ -158,6 +159,7 @@ __global__ void multiply_samples_segment_and_ir(int second, unsigned int sampleR
 __global__ void add_segment_to_result_buffer(int second, int sampleRate, int segmentLen, float* segment, float* output) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
 
+    // printf("SAMPLE SEGMENT: %d\n", segment);
     if (index < segmentLen) {
         int outputIndex = second * sampleRate + index;
         atomicAdd(&output[outputIndex], segment[index]);

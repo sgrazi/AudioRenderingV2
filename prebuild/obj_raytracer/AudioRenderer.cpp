@@ -539,7 +539,8 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
         // Write each element of the float array to the file, one per line
         for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
         {
-            outFile << h_outputBuffer[i] << std::endl;
+            outFile << h_outputBuffer[i] / 32000 << std::endl;
+            h_outputBuffer[i] = h_outputBuffer[i] / 32000;
         }
 
         // Close the file

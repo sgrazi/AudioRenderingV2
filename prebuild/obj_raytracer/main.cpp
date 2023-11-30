@@ -40,11 +40,17 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	AudioInfo *audioInfo = (AudioInfo *)userData;
 	float volume = Context::get_volume();
 	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
+	Context *context = Context::getInstance();
+	float* outputBufferConvolute = context->get_output_buffer();
+	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
+	// cout << outputBufferConvolute[0] << endl;
+	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= audioInfo->audio->samples.at(0).size())
 			break;
-		*buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
+		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
+		*buffer++ = outputBufferConvolute[i + nextStream] * volume;
 	}
 	return 0;
 }
@@ -262,14 +268,19 @@ void screen(AudioFile<float> *audio)
 	unsigned int output_channels = Context::get_output_channels();
 
 	AudioRenderer *renderer = Context::get_audio_renderer();
-	renderer->setThresholds(100.0, 0);
+	renderer->setThresholds(2000.0, 0);
 	renderer->setEmitterPosInOptix(initial_emitter_pos);
 	renderer->render();
 
+	Context *context = Context::getInstance();
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
 	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);
+	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
+	// cout << outputBuffer[0] << endl;
+	context->set_output_buffer(outputBuffer);
+	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -333,7 +344,7 @@ int main(int argc, char **argv)
 	unsigned int height = 768;
 	context->set_scene_height(height);
 
-	string file_path = "../../assets/models/1D_U.obj";
+	string file_path = "../../assets/models/cajaAbierta.obj";
 	context->set_file_path(file_path);
 
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
@@ -352,7 +363,7 @@ int main(int argc, char **argv)
 	RtAudio *dac = new RtAudio();
 
 	AudioFile<float> *audio_file = new AudioFile<float>;
-	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
+	string audio_file_path = "../../assets/sound_samples/A_Clapper_Board.wav";
 	try
 	{
 		audio_file->load(audio_file_path);
@@ -369,6 +380,11 @@ int main(int argc, char **argv)
 
 	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate);
 	context->set_audio_renderer(renderer);
+
+	size_t len_of_audio = audio_file->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float *outputBuffer = (float *)malloc(size_of_audio);
+	context->set_output_buffer(outputBuffer);
 
 	thread screen1(screen, audio_file);
 	thread audio1(audio, dac, audio_file);

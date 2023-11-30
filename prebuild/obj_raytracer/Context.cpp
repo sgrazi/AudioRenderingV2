@@ -52,6 +52,16 @@ uint32_t Context::get_sample_rate()
     return instance->sample_rate;
 }
 
+void Context::set_output_buffer(float* output_buffer)
+{
+    instance->outputBuffer = output_buffer;
+}
+
+float* Context::get_output_buffer()
+{
+    return instance->outputBuffer;
+}
+
 void Context::set_scene_width(unsigned int width)
 {
     instance->width = width;
