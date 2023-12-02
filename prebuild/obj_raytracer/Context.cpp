@@ -72,14 +72,34 @@ unsigned int Context::get_scene_height()
     return instance->height;
 }
 
-void Context::set_file_path(std::string file_path)
+void Context::set_scene_file_path(std::string scene_file_path)
 {
-    instance->file_path = file_path;
+    instance->scene_file_path = scene_file_path;
 }
 
-std::string Context::get_file_path()
+std::string Context::get_scene_file_path()
 {
-    return instance->file_path;
+    return instance->scene_file_path;
+}
+
+void Context::set_audio_file_path(std::string audio_file_path)
+{
+    instance->audio_file_path = audio_file_path;
+}
+
+std::string Context::get_audio_file_path()
+{
+    return instance->audio_file_path;
+}
+
+void Context::set_material_file_path(std::string material_file_path)
+{
+    instance->material_file_path = material_file_path;
+}
+
+std::string Context::get_material_file_path()
+{
+    return instance->material_file_path;
 }
 
 void Context::set_sphere(Sphere* sphere)
@@ -132,4 +152,48 @@ void Context::set_transmitter(std::vector<Mesh>* transmitterVector)
 std::vector<Mesh>* Context::get_transmitter()
 {
     return instance->transmitterVector;
+}
+
+void Context::set_base_power(float base_power) {
+    instance->base_power = base_power;
+}
+
+float Context::get_base_power() {
+    return instance->base_power;
+}
+
+void Context::set_ray_distance_threshold(float ray_distance_threshold) {
+    instance->ray_distance_threshold = ray_distance_threshold;
+}
+
+float Context::get_ray_distance_threshold() {
+    return instance->ray_distance_threshold;
+}
+
+void Context::set_ray_energy_threshold(float ray_energy_threshold) {
+    instance->ray_energy_threshold = ray_energy_threshold;
+}
+
+float Context::get_ray_energy_threshold() {
+    return instance->ray_energy_threshold;
+}
+
+void Context::set_ray_max_bounces(unsigned int ray_max_bounces)
+{
+    instance->ray_max_bounces = ray_max_bounces;
+}
+
+unsigned int Context::get_ray_max_bounces()
+{
+    return instance->ray_max_bounces;
+}
+
+void Context::set_initial_emitter_pos(glm::vec3 initial_emitter_pos)
+{
+    instance->initial_emitter_pos = initial_emitter_pos;
+}
+	
+glm::vec3 Context::get_initial_emitter_pos()
+{
+    return instance->initial_emitter_pos;
 }

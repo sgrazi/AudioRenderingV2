@@ -134,7 +134,7 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = (optixLaunchParams.BASE_POWER) / (x_rays * y_rays * z_rays);
+    prd.remaining_factor = (optixLaunchParams.base_power) / (x_rays * y_rays * z_rays);
     prd.distance = 0;
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
@@ -157,13 +157,11 @@ extern "C" __global__ void __raygen__renderFrame()
 
         // printf("sending to %f,%f,%f...\n", dx, dy, dz);
         prd.direction = {dx, dy, dz};
-        int i = 0;
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
-               i < 60) // por las dudas le pongo un tope
+               prd.recursion_depth < optixLaunchParams.max_bounces)
         {
-            i++;
             gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
             gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
             optixTrace(optixLaunchParams.traversable,

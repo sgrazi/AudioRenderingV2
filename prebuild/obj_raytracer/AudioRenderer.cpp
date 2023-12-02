@@ -523,28 +523,6 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer);
-
-    // temporal, guardar h_outputBuffer en archivo
-    std::ofstream outFile("output.txt");
-
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    else
-    {
-        std::cout << "wrote result to file" << std::endl;
-
-        // Write each element of the float array to the file, one per line
-        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-        {
-            outFile << h_outputBuffer[i] << std::endl;
-        }
-
-        // Close the file
-        outFile.close();
-    }
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -552,10 +530,16 @@ void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
     launchParams.emitter_position = pos;
 }
 
-void AudioRenderer::setThresholds(float dist, float energy)
+void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
 {
     launchParams.dist_thres = dist;
     launchParams.energy_thres = energy;
+    launchParams.max_bounces = max_bounces;
+}
+
+void AudioRenderer::setBasePower(float base_power)
+{
+    launchParams.base_power = base_power;
 }
 
 void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)

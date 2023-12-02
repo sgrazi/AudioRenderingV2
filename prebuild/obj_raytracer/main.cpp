@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <stdexcept>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -22,10 +23,9 @@
 #include "AudioRenderer.h"
 #include "Context.h"
 #include "cJSON.h"
-// #include "tinyxml2.h"
 
 using namespace std;
-glm::vec3 initial_emitter_pos(0, 1, 0);
+
 struct AudioInfo
 {
 	AudioFile<float> *audio;
@@ -93,7 +93,7 @@ void audio(RtAudio *dac, AudioFile<float> *audio)
 
 void setTransmitter(glm::vec3 posTransmitter)
 {
-	std::string transmitterPath = "../../assets/models/sphere2.obj";
+	std::string transmitterPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(transmitterPath);
 	vector<Mesh> *transmitterVector = Context::get_transmitter();
@@ -180,7 +180,7 @@ void screen(AudioFile<float> *audio)
 	// Get context
 	unsigned int width = Context::get_scene_width();
 	unsigned int height = Context::get_scene_height();
-	string file_path = Context::get_file_path();
+	string scene_file_path = Context::get_scene_file_path();
 
 	GLFWwindow *window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
 	if (window == NULL)
@@ -198,8 +198,8 @@ void screen(AudioFile<float> *audio)
 
 	// Load obj && initialize Loader
 	objl::Loader loader;
-	bool load_res = loader.LoadFile(file_path);
-	setTransmitter(initial_emitter_pos);
+	bool load_res = loader.LoadFile(scene_file_path);
+	setTransmitter(Context::get_initial_emitter_pos());
 	vector<Mesh> lights;
 	vector<Mesh> objects;
 	if (load_res)
@@ -265,8 +265,9 @@ void screen(AudioFile<float> *audio)
 	unsigned int output_channels = Context::get_output_channels();
 
 	AudioRenderer *renderer = Context::get_audio_renderer();
-	renderer->setThresholds(100.0, 0);
-	renderer->setEmitterPosInOptix(initial_emitter_pos);
+	renderer->setBasePower(Context::get_base_power());
+	renderer->setThresholds(Context::get_ray_distance_threshold(), Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->render();
 
 	size_t len_of_audio = audio->samples[0].size();
@@ -321,68 +322,124 @@ int main(int argc, char **argv)
 
 	// Read config file
 	ifstream f(configJsonPath);
-	string stringConfig;
-	if (f) {
-		ostringstream ss;
-		ss << f.rdbuf(); // reading data
-		stringConfig = ss.str();
+	if (!f) {
+		throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
+	}
+	
+	ostringstream ss;
+	ss << f.rdbuf(); // reading data
+	string stringConfig = ss.str();
+	if (stringConfig.empty()) {
+		throw std::runtime_error("Error: File is empty or read operation failed");
 	}
 	cJSON* config = cJSON_Parse(stringConfig.c_str());
-
-	// Read config file
-
-	// Initial volume
-	const cJSON* cJSON_initial_volume = cJSON_GetObjectItem(config, "initial_volume");
-	float initial_volume = 1.0;
-	if (cJSON_IsNumber(cJSON_initial_volume))
-		initial_volume = cJSON_initial_volume->valuedouble;
-
-	// IR length in seconds
-	const cJSON* cJSON_ir_length_in_seconds = cJSON_GetObjectItem(config, "ir_length_in_seconds");
-	unsigned int ir_length_in_seconds = 2;
-	if (cJSON_IsNumber(cJSON_ir_length_in_seconds))
-		ir_length_in_seconds = round(cJSON_ir_length_in_seconds->valuedouble);
-
-	// Output channels
-	const cJSON* cJSON_output_channels = cJSON_GetObjectItem(config, "output_channels");
-	unsigned int output_channels = 2;
-	if (cJSON_IsNumber(cJSON_output_channels))
-		output_channels = round(cJSON_output_channels->valuedouble);
-
-	// Width
-	const cJSON* cJSON_width = cJSON_GetObjectItem(config, "width");
-	unsigned int width = 1366;
-	if (cJSON_IsNumber(cJSON_width))
-		width = round(cJSON_width->valuedouble);
-
-	// Width
-	const cJSON* cJSON_height = cJSON_GetObjectItem(config, "height");
-	unsigned int height = 768;
-	if (cJSON_IsNumber(cJSON_height))
-		height = round(cJSON_height->valuedouble);
-
-	// Scene file path
-	const cJSON* cJSON_scene_file_path = cJSON_GetObjectItem(config, "scene_file_path");
-	string scene_file_path = "../../assets/models/1D_U.obj";
-	if (cJSON_IsString(cJSON_scene_file_path))
-		scene_file_path = cJSON_scene_file_path->valuestring;
-
-	// Initial receiver pos
-	const cJSON* cJSON_initial_receiver_pos = cJSON_GetObjectItem(config, "initial_receiver_pos");
-	glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
-	if (cJSON_IsObject(cJSON_initial_receiver_pos)) {
-		cJSON* x = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "x");
-		cJSON* y = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "y");
-		cJSON* z = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "z");
-		if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
-			initial_receiver_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+	if (!config) {
+	    throw std::runtime_error("Error: JSON parsing failed for the provided string");
 	}
 
-	// Audio file path
-	const cJSON* cJSON_audio_file_path = cJSON_GetObjectItem(config, "audio_file_path");
+	// renderer_parameters
+	const cJSON* cJSON_renderer_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
+	// defaults
+	float initial_volume = 1.0f;
+	unsigned int output_channels = 2;
+	unsigned int ir_length_in_seconds = 2;
+	unsigned int width = 1366;
+	unsigned int height = 768;
+	if (cJSON_IsObject(cJSON_renderer_parameters)) {
+		cJSON* cJSON_initial_volume = cJSON_GetObjectItem(cJSON_renderer_parameters, "initial_volume");
+		if (cJSON_IsNumber(cJSON_initial_volume))
+			initial_volume = cJSON_initial_volume->valuedouble;
+
+		const cJSON* cJSON_output_channels = cJSON_GetObjectItem(cJSON_renderer_parameters, "output_channels");
+		if (cJSON_IsNumber(cJSON_output_channels))
+			output_channels = round(cJSON_output_channels->valuedouble);
+
+		const cJSON* cJSON_ir_length_in_seconds = cJSON_GetObjectItem(cJSON_renderer_parameters, "ir_length_in_seconds");
+		if (cJSON_IsNumber(cJSON_ir_length_in_seconds))
+			ir_length_in_seconds = round(cJSON_ir_length_in_seconds->valuedouble);
+
+		const cJSON* cJSON_width = cJSON_GetObjectItem(cJSON_renderer_parameters, "width");
+		if (cJSON_IsNumber(cJSON_width))
+			width = round(cJSON_width->valuedouble);
+
+		const cJSON* cJSON_height = cJSON_GetObjectItem(cJSON_renderer_parameters, "height");
+		if (cJSON_IsNumber(cJSON_height))
+			height = round(cJSON_height->valuedouble);
+	}
+	// scene_parameters
+	const cJSON* cJSON_scene_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
+	// defaults
+	string scene_file_path = "../../assets/models/1D_U.obj";
 	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
-	if (cJSON_IsString(cJSON_audio_file_path))
-		audio_file_path = cJSON_audio_file_path->valuestring;
+	string materials_file_path = "";
+	glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
+	glm::vec3 initial_emitter_pos(0, 0, 0);
+	if (cJSON_IsObject(cJSON_scene_parameters)) {
+		const cJSON* cJSON_scene_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "scene_file_path");
+		if (cJSON_IsString(cJSON_scene_file_path))
+			scene_file_path = cJSON_scene_file_path->valuestring;
+
+		const cJSON* cJSON_audio_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "audio_file_path");
+		if (cJSON_IsString(cJSON_audio_file_path))
+			audio_file_path = cJSON_audio_file_path->valuestring;
+
+		const cJSON* cJSON_materials_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "materials_file_path");
+		if (cJSON_IsString(cJSON_materials_file_path))
+			materials_file_path = cJSON_materials_file_path->valuestring;
+
+		const cJSON* cJSON_initial_receiver_pos = cJSON_GetObjectItem(cJSON_scene_parameters, "initial_receiver_pos");
+		if (cJSON_IsObject(cJSON_initial_receiver_pos)) {
+			cJSON* x = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "x");
+			cJSON* y = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "y");
+			cJSON* z = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "z");
+			if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
+				initial_receiver_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+		}
+
+		const cJSON* cJSON_initial_emitter_pos = cJSON_GetObjectItem(cJSON_scene_parameters, "initial_emitter_pos");
+		if (cJSON_IsObject(cJSON_initial_emitter_pos)) {
+			cJSON* x = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "x");
+			cJSON* y = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "y");
+			cJSON* z = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "z");
+			if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
+				initial_emitter_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+		}
+	}
+
+	// pathtracer_parameters
+	const cJSON* cJSON_pathtracer_parameters = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "renderer_parameters");
+	// defaults
+	float base_power = 100.f; 
+	glm::vec3 rays(100, 100, 100);
+    float ray_distance_threshold = 100.f;
+    float ray_energy_threshold = 0.f;
+    unsigned int ray_max_bounces = 10;
+	if (cJSON_IsObject(cJSON_pathtracer_parameters)) {
+		cJSON* cJSON_base_power = cJSON_GetObjectItem(cJSON_renderer_parameters, "base_power");
+		if (cJSON_IsNumber(cJSON_base_power))
+			base_power = cJSON_base_power->valuedouble;
+
+		const cJSON* cJSON_rays_size = cJSON_GetObjectItem(cJSON_scene_parameters, "rays");
+		if (cJSON_IsObject(cJSON_rays_size)) {
+			cJSON* x = cJSON_GetObjectItem(cJSON_rays_size, "x");
+			cJSON* y = cJSON_GetObjectItem(cJSON_rays_size, "y");
+			cJSON* z = cJSON_GetObjectItem(cJSON_rays_size, "z");
+			if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
+				rays = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+		}
+		
+		cJSON* cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_distance_threshold");
+		if (cJSON_IsNumber(cJSON_ray_distance_threshold))
+			ray_distance_threshold = cJSON_ray_distance_threshold->valuedouble;
+		
+		cJSON* cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_energy_threshold");
+		if (cJSON_IsNumber(cJSON_ray_energy_threshold))
+			ray_energy_threshold = cJSON_ray_energy_threshold->valuedouble;
+		
+		const cJSON* cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_max_bounces");
+		if (cJSON_IsNumber(cJSON_ray_max_bounces))
+			ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
+	}
 
 	cJSON_Delete(config);
 
@@ -394,22 +451,21 @@ int main(int argc, char **argv)
 	context->set_output_channels(output_channels);
 	context->set_scene_width(width);
 	context->set_scene_height(height);
-	context->set_file_path(scene_file_path);
-
+	context->set_scene_file_path(scene_file_path);
+	context->set_audio_file_path(audio_file_path);
+	context->set_material_file_path(materials_file_path);
+	context->set_ray_distance_threshold(ray_distance_threshold);
+	context->set_ray_energy_threshold(ray_energy_threshold);
+	context->set_initial_emitter_pos(initial_emitter_pos);
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
-
 	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
-
 	Sphere *sphere = new Sphere();
 	context->set_sphere(sphere);
-
 	OptixModel *scene = loadOBJ(scene_file_path);
 	context->set_optix_model(scene);
-
 	RtAudio *dac = new RtAudio();
-
 	AudioFile<float> *audio_file = new AudioFile<float>;
 	try
 	{
