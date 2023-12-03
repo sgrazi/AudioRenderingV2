@@ -20,7 +20,7 @@ class AudioRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates modOptixModelpipeline, programs, SBT, etc. */
-    AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate);
+    AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate, std::vector<Material> materials);
 
     /*! render one frame */
     void render();
@@ -115,6 +115,7 @@ protected:
 
     /*! the model we are going to trace rays against */
     const OptixModel *model;
+    const std::vector<Material> materials;
 
     /*! one buffer per input mesh */
     std::vector<CUDABuffer> vertexBuffer;

@@ -30,9 +30,25 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
     TriangleMeshSBTData data;
 };
 
+float getMaterialAbsorption(std::string materialName, std::vector<Material> materials) {
+    std::cout << materialName << std::endl;
+
+    if (materialName == "receiver") {
+        return -1;
+    }
+
+    for (auto &material : materials) {
+        if (material.name == materialName) {
+            return material.mat_absorption;
+        }
+    }
+    // return default absorption
+    return 0.1;
+}
+
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate):model(model)
+AudioRenderer::AudioRenderer(const OptixModel* model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate, std::vector<Material> materials) :model(model), materials(materials)
 {
     initOptix();
 
@@ -54,8 +70,9 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     launchParams.size_y = 100;
     launchParams.size_z = 100;
     launchParams.traversable = buildAccel();
-    int ir_lenght = buffer_size_in_seconds * output_channels * sample_rate;
-    launchParams.ir_length = ir_lenght;
+
+    int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
+    launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
     fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
@@ -426,8 +443,8 @@ void AudioRenderer::buildSBT()
         HitgroupRecord rec;
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-        rec.data.color = gdt2glm(model->meshes[meshID]->diffuse);
-        rec.data.mat_absorption = model->meshes[meshID]->material_absorption;
+        rec.data.material_name = model->meshes[meshID]->material_name;
+        rec.data.mat_absorption = getMaterialAbsorption(rec.data.material_name, this->materials);
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
@@ -519,6 +536,11 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     cudaDeviceSynchronize();
     // copy result to host
     copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
+
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+    {
+        h_outputBuffer[i] = h_outputBuffer[i] / 32000;
+    }
 
     // free
     cudaFree(d_inputBuffer);

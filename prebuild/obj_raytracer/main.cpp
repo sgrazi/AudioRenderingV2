@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 
 	if (argc < 2)
 	{
-		configJsonPath = "config.json";
+		configJsonPath = "./config.json";
 	}
 	else
 	{
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
 			height = round(cJSON_height->valuedouble);
 	}
 	// scene_parameters
-	const cJSON* cJSON_scene_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
+	const cJSON* cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
 	// defaults
 	string scene_file_path = "../../assets/models/1D_U.obj";
 	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
@@ -407,13 +407,14 @@ int main(int argc, char **argv)
 	}
 
 	// pathtracer_parameters
-	const cJSON* cJSON_pathtracer_parameters = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "renderer_parameters");
+	const cJSON* cJSON_pathtracer_parameters = cJSON_GetObjectItem(config, "pathtracer_parameters");
 	// defaults
 	float base_power = 100.f; 
 	glm::vec3 rays(100, 100, 100);
     float ray_distance_threshold = 100.f;
     float ray_energy_threshold = 0.f;
     unsigned int ray_max_bounces = 10;
+	vector<Material> materials;
 	if (cJSON_IsObject(cJSON_pathtracer_parameters)) {
 		cJSON* cJSON_base_power = cJSON_GetObjectItem(cJSON_renderer_parameters, "base_power");
 		if (cJSON_IsNumber(cJSON_base_power))
@@ -439,6 +440,22 @@ int main(int argc, char **argv)
 		const cJSON* cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_max_bounces");
 		if (cJSON_IsNumber(cJSON_ray_max_bounces))
 			ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
+
+		const cJSON* cJSON_materials = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "materials");
+		const cJSON* cJSON_material = NULL;
+		if (cJSON_IsArray(cJSON_materials)) {
+			cJSON_ArrayForEach(cJSON_material, cJSON_materials) {
+				Material material = Material();
+				cJSON* name = cJSON_GetObjectItem(cJSON_material, "name");
+				cJSON* mat_absorption = cJSON_GetObjectItem(cJSON_material, "mat_absorption");
+				if (cJSON_IsString(name) && cJSON_IsNumber(mat_absorption)) {
+					material.name = name->valuestring;
+					material.mat_absorption = mat_absorption->valuedouble;
+					// Add material to material list;
+					materials.push_back(material);
+				}
+			}
+		}
 	}
 
 	cJSON_Delete(config);
@@ -481,7 +498,7 @@ int main(int argc, char **argv)
 
 	placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
 
-	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate);
+	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate, materials);
 	context->set_audio_renderer(renderer);
 
 	thread screen1(screen, audio_file);
