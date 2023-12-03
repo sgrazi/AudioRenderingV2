@@ -18,6 +18,7 @@ private:
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
+	float* outputBuffer;
 
 	std::string scene_file_path;
 	std::string audio_file_path;

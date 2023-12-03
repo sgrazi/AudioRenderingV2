@@ -84,27 +84,27 @@ extern "C" __global__ void __closesthit__radiance()
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
 
-    switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
-    {
-    case true:
+    printf("%f", sbtData.mat_absorption);
+
+    if (sbtData.mat_absorption < 0) {
+        // we identify the receiver with a negative absorption
+        printf("hit;");
         //printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;color(end+1) = %f;rebotes(end+1)= %d;", P.x, P.y, P.z, prd.distance, prd.recursion_depth);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        float *ir = optixLaunchParams.ir;
+        float* ir = optixLaunchParams.ir;
         if (array_pos < optixLaunchParams.ir_length)
         {
-            atomicAdd(&ir[array_pos],prd.remaining_factor);
+            atomicAdd(&ir[array_pos], prd.remaining_factor);
         }
         prd.recursion_depth = -1;
-        break;
-    case false:
-        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng)*Ng;
+    }
+    else {
+        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng) * Ng;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
-        break;
-    default:
-        // ERROR
     }
+        
     prd.prev_position = P + (1e-3f * prd.direction);
 }
 

@@ -543,7 +543,7 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
 
     for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
     {
-        h_outputBuffer[i] = h_outputBuffer[i] / 32000;
+        h_outputBuffer[i] = h_outputBuffer[i] / 3200;
     }
 
     // free

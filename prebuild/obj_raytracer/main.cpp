@@ -496,6 +496,8 @@ int main(int argc, char **argv)
 	context->set_material_file_path(materials_file_path);
 	context->set_ray_distance_threshold(ray_distance_threshold);
 	context->set_ray_energy_threshold(ray_energy_threshold);
+	context->set_ray_max_bounces(ray_max_bounces);
+	context->set_base_power(base_power);
 	context->set_initial_emitter_pos(initial_emitter_pos);
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
