@@ -15,7 +15,7 @@ def plot_numbers_from_file(filepath):
    plt.plot(x_values, y_values)
    plt.xlabel('Time')
    plt.ylabel('Value')
-   plt.title('IR')
+   plt.title('Convolute')
 
    # 16k sample rate
    # Calculate the number of data points and the x-tick positions for 250ms intervals

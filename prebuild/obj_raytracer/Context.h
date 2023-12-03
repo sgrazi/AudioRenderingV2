@@ -74,6 +74,8 @@ public:
 
 	static void set_initial_emitter_pos(glm::vec3 initial_emitter_pos);
 	static glm::vec3 get_initial_emitter_pos();
+	static void set_output_buffer(float *output_buffer);
+	static float *get_output_buffer();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

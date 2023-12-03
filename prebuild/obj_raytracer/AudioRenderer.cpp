@@ -30,15 +30,19 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
     TriangleMeshSBTData data;
 };
 
-float getMaterialAbsorption(std::string materialName, std::vector<Material> materials) {
+float getMaterialAbsorption(std::string materialName, std::vector<Material> materials)
+{
     std::cout << materialName << std::endl;
 
-    if (materialName == "receiver") {
+    if (materialName == "receiver")
+    {
         return -1;
     }
 
-    for (auto &material : materials) {
-        if (material.name == materialName) {
+    for (auto &material : materials)
+    {
+        if (material.name == materialName)
+        {
             return material.mat_absorption;
         }
     }
@@ -48,7 +52,7 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel* model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate, std::vector<Material> materials) :model(model), materials(materials)
+AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate, std::vector<Material> materials) : model(model), materials(materials)
 {
     initOptix();
 
