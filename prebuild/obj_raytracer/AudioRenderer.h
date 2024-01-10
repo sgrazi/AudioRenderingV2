@@ -29,7 +29,9 @@ public:
 
     void setEmitterPosInOptix(glm::vec3 pos);
 
-    void setThresholds(float dist, float energy);
+    void setThresholds(float dist, float energy, unsigned int max_bounces);
+
+    void setBasePower(float base_power);
 
     void getIROnHostMem(float *h_ir, size_t ir_size);
 

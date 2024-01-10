@@ -7,28 +7,38 @@
 #include "OptixModel.h"
 #include <vector>
 
-class Context {
+class Context
+{
 private:
-    static Context* instance;
-    Context();
-	
-	unsigned int ir_length_in_seconds = 2; 
+	static Context *instance;
+	Context();
+
+	float volume;
+	unsigned int ir_length_in_seconds = 2;
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
-	float volume;
-	std::string file_path;
-	uint32_t sample_rate;
-	Sphere* sphere;
-	std::vector<Mesh>* transmitterVector;
-	OptixModel* scene;
-	AudioRenderer* renderer;
-	Camera* camera;
 
+	std::string scene_file_path;
+	std::string audio_file_path;
+	std::string material_file_path;
+
+	float base_power;
+	float ray_distance_threshold;
+	float ray_energy_threshold;
+	unsigned int ray_max_bounces;
+	glm::vec3 initial_emitter_pos;
+
+	uint32_t sample_rate;
+	Sphere *sphere;
+	std::vector<Mesh> *transmitterVector;
+	OptixModel *scene;
+	AudioRenderer *renderer;
+	Camera *camera;
 
 public:
-    static Context* getInstance();
-    void showMessage();
+	static Context *getInstance();
+	void showMessage();
 
 	// ------------------------------------ SOUND ------------------------------------
 
@@ -44,6 +54,27 @@ public:
 	static void set_sample_rate(uint32_t sample_rate);
 	static uint32_t get_sample_rate();
 
+	static void set_audio_file_path(std::string audio_file_path);
+	static std::string get_audio_file_path();
+
+	static void set_material_file_path(std::string material_file_path);
+	static std::string get_material_file_path();
+
+	static void set_base_power(float base_power);
+	static float get_base_power();
+
+	static void set_ray_distance_threshold(float ray_distance_threshold);
+	static float get_ray_distance_threshold();
+
+	static void set_ray_energy_threshold(float ray_energy_threshold);
+	static float get_ray_energy_threshold();
+
+	static void set_ray_max_bounces(uint32_t ray_max_bounces);
+	static uint32_t get_ray_max_bounces();
+
+	static void set_initial_emitter_pos(glm::vec3 initial_emitter_pos);
+	static glm::vec3 get_initial_emitter_pos();
+
 	// ------------------------------------ SCREEN ------------------------------------
 
 	static void set_scene_width(unsigned int width);
@@ -52,22 +83,21 @@ public:
 	static void set_scene_height(unsigned int height);
 	static unsigned int get_scene_height();
 
-	static void set_file_path(std::string file_path);
-	static std::string get_file_path();
+	static void set_scene_file_path(std::string scene_file_path);
+	static std::string get_scene_file_path();
 
-	static void set_sphere(Sphere* sphere);
-	static Sphere* get_sphere();
+	static void set_sphere(Sphere *sphere);
+	static Sphere *get_sphere();
 
-	static void set_optix_model(OptixModel* scene);
-	static OptixModel* get_optix_model();
+	static void set_optix_model(OptixModel *scene);
+	static OptixModel *get_optix_model();
 
-	static void set_audio_renderer(AudioRenderer* renderer);
-	static AudioRenderer* get_audio_renderer();
+	static void set_audio_renderer(AudioRenderer *renderer);
+	static AudioRenderer *get_audio_renderer();
 
-	static void set_camera(Camera* camera);
-	static Camera* get_camera();
+	static void set_camera(Camera *camera);
+	static Camera *get_camera();
 
-	static void set_transmitter(std::vector<Mesh>* transmitterVector);
-	static std::vector<Mesh>* get_transmitter();
+	static void set_transmitter(std::vector<Mesh> *transmitterVector);
+	static std::vector<Mesh> *get_transmitter();
 };
-

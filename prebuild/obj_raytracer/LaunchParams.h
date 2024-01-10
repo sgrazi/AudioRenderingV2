@@ -20,8 +20,6 @@ struct Material
 
 struct LaunchParams
 {
-    const float BASE_POWER = 31.62f;
-
     int size_x;
     int size_y;
     int size_z;
@@ -30,7 +28,8 @@ struct LaunchParams
 
     OptixTraversableHandle traversable;
 
-    float dist_thres, energy_thres;
+    float base_power, dist_thres, energy_thres;
+    unsigned int max_bounces;
 
     int sample_rate;
 
