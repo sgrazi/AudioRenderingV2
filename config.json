@@ -1,25 +1,33 @@
 {
-  "scenePath": "conference.obj",
-  "camera": {
-    "startPosition": {
-      "x": -170,
-      "y": 518,
-      "z": -465
-    },
-    "nearPlane": 0.1,
-    "farPlane": 10000,
-    "fov": 90
-  },
-  "light": {
-    "color": {
-      "r": 1.0,
-      "g": 1.0,
-      "b": 1.0
-    },
-    "position": {
-      "x": 100,
-      "y": 1000,
-      "z": 300
-    }
-  }
+	"initial_volume": 0.20,
+	"ir_length_in_seconds": 2,
+	"output_channels": 2,
+	"width": 1920,
+	"height": 1080,
+	"scene_file_path": "../../assets/models/2D_U.obj",
+	"initial_receiver_pos": {
+		"x": -0.478910,
+		"y": 2.336829,
+		"z": 5.008208
+	},
+	"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
+	"renderer_parameters": {
+		"materials": [
+			{
+				"id": 1,
+				"name": "low",
+				"mat_absorption": 0.1
+			},
+			{
+				"id": 2,
+				"name": "med",
+				"mat_absorption": 0.3
+			},
+			{
+				"id": 3,
+				"name": "high",
+				"mat_absorption": 0.6
+			}
+		]
+	}
 }
