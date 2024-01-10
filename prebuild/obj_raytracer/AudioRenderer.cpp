@@ -447,8 +447,7 @@ void AudioRenderer::buildSBT()
         HitgroupRecord rec;
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-        rec.data.material_name = model->meshes[meshID]->material_name;
-        rec.data.mat_absorption = getMaterialAbsorption(rec.data.material_name, this->materials);
+        rec.data.mat_absorption = getMaterialAbsorption(model->meshes[meshID]->material_name, this->materials);
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);

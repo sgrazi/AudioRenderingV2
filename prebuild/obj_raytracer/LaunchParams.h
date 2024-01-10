@@ -8,7 +8,6 @@ struct TriangleMeshSBTData
     glm::vec3 pos;
     glm::vec3 *vertex;
     glm::ivec3 *index;
-    std::string material_name;
     float mat_absorption;
 };
 
