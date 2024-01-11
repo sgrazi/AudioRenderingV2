@@ -42,9 +42,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
 	Context *context = Context::getInstance();
 	float* outputBufferConvolute = context->get_output_buffer();
-	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
-	// cout << outputBufferConvolute[0] << endl;
-	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= audioInfo->audio->samples.at(0).size())
@@ -268,7 +265,7 @@ void screen(AudioFile<float> *audio)
 	unsigned int output_channels = Context::get_output_channels();
 
 	AudioRenderer *renderer = Context::get_audio_renderer();
-	renderer->setThresholds(2000.0, 0);
+	renderer->setThresholds(100.0, 0);
 	renderer->setEmitterPosInOptix(initial_emitter_pos);
 	renderer->render();
 
@@ -277,10 +274,7 @@ void screen(AudioFile<float> *audio)
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
 	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, context->get_output_channels());
-	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
-	// cout << outputBuffer[0] << endl;
 	context->set_output_buffer(outputBuffer);
-	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
 
 	while (!glfwWindowShouldClose(window))
 	{
