@@ -276,7 +276,7 @@ void screen(AudioFile<float> *audio)
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, context->get_output_channels());
 	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
 	// cout << outputBuffer[0] << endl;
 	context->set_output_buffer(outputBuffer);
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 	RtAudio *dac = new RtAudio();
 
 	AudioFile<float> *audio_file = new AudioFile<float>;
-	string audio_file_path = "../../assets/sound_samples/A_Clapper_Board.wav";
+	string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
 	try
 	{
 		audio_file->load(audio_file_path);
