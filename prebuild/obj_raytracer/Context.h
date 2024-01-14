@@ -24,6 +24,8 @@ private:
 	OptixModel* scene;
 	AudioRenderer* renderer;
 	Camera* camera;
+	float* outputBuffer;
+	size_t output_buffer_size;
 
 
 public:
@@ -43,6 +45,12 @@ public:
 
 	static void set_sample_rate(uint32_t sample_rate);
 	static uint32_t get_sample_rate();
+
+	static void set_output_buffer(float* output_buffer);
+	static float* get_output_buffer();
+
+	static void set_output_buffer_len(size_t output_buffer_size);
+	static size_t get_output_buffer_len();
 
 	// ------------------------------------ SCREEN ------------------------------------
 
