@@ -25,6 +25,7 @@ private:
 	AudioRenderer* renderer;
 	Camera* camera;
 	float* outputBuffer;
+	size_t output_buffer_size;
 
 
 public:
@@ -47,6 +48,9 @@ public:
 
 	static void set_output_buffer(float* output_buffer);
 	static float* get_output_buffer();
+
+	static void set_output_buffer_len(size_t output_buffer_size);
+	static size_t get_output_buffer_len();
 
 	// ------------------------------------ SCREEN ------------------------------------
 
