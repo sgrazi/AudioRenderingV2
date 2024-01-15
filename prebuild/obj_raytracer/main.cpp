@@ -45,12 +45,9 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
 	Context *context = Context::getInstance();
 	float *outputBufferConvolute = context->get_output_buffer();
-	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
-	// cout << outputBufferConvolute[0] << endl;
-	// cout << "ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA" << endl;
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
-		if (i + nextStream >= audioInfo->audio->samples.at(0).size())
+		if (i + nextStream >= context->get_output_buffer_len())
 			break;
 		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
 		*buffer++ = outputBufferConvolute[i + nextStream] * volume;
@@ -280,11 +277,9 @@ void screen(AudioFile<float> *audio)
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer);
-	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
-	// cout << outputBuffer[0] << endl;
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, context->get_output_channels());
 	context->set_output_buffer(outputBuffer);
-	// cout << "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE" << endl;
+	context->set_output_buffer_len(size_of_audio);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -530,6 +525,7 @@ int main(int argc, char **argv)
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	float *outputBuffer = (float *)malloc(size_of_audio);
 	context->set_output_buffer(outputBuffer);
+	context->set_output_buffer_len(size_of_audio);
 
 	thread screen1(screen, audio_file);
 	thread audio1(audio, dac, audio_file);

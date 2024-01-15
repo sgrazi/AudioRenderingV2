@@ -523,7 +523,7 @@ void AudioRenderer::render()
     }
 }
 
-void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer)
+void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels)
 {
     // move inputBuffer to device
     float *d_inputBuffer;
@@ -548,6 +548,29 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer);
+
+    // temporal, guardar h_outputBuffer en archivo
+    std::ofstream outFile("output.txt");
+
+    // Check if the file is opened successfully
+    if (!outFile.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    else
+    {
+        std::cout << "wrote result to file" << std::endl;
+
+        // Write each element of the float array to the file, one per line
+        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+        {
+            outFile << h_outputBuffer[i] / (launchParams.ir_length / num_channels) << std::endl;
+            h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
+        }
+
+        // Close the file
+        outFile.close();
+    }
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
