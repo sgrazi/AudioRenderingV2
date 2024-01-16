@@ -30,9 +30,29 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
     TriangleMeshSBTData data;
 };
 
+float getMaterialAbsorption(std::string materialName, std::vector<Material> materials)
+{
+    std::cout << materialName << std::endl;
+
+    if (materialName == "receiver")
+    {
+        return -1;
+    }
+
+    for (auto &material : materials)
+    {
+        if (material.name == materialName)
+        {
+            return material.mat_absorption;
+        }
+    }
+    // return default absorption
+    return 0.1;
+}
+
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate):model(model)
+AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_in_seconds, int output_channels, int sample_rate, std::vector<Material> materials) : model(model), materials(materials)
 {
     initOptix();
 
@@ -54,8 +74,9 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     launchParams.size_y = 100;
     launchParams.size_z = 100;
     launchParams.traversable = buildAccel();
-    int ir_lenght = buffer_size_in_seconds * output_channels * sample_rate;
-    launchParams.ir_length = ir_lenght;
+
+    int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
+    launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
     fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
@@ -426,8 +447,7 @@ void AudioRenderer::buildSBT()
         HitgroupRecord rec;
         // all meshes use the same code, so all same hit group
         OPTIX_CHECK(optixSbtRecordPackHeader(hitgroupPGs[0], &rec));
-        rec.data.color = gdt2glm(model->meshes[meshID]->diffuse);
-        rec.data.mat_absorption = model->meshes[meshID]->material_absorption;
+        rec.data.mat_absorption = getMaterialAbsorption(model->meshes[meshID]->material_name, this->materials);
         rec.data.vertex = (glm::vec3 *)vertexBuffer[meshID].d_pointer();
         rec.data.index = (glm::ivec3 *)indexBuffer[meshID].d_pointer();
         hitgroupRecords.push_back(rec);
@@ -481,26 +501,6 @@ void AudioRenderer::render()
     float *host = NULL;
     host = new float[launchParams.ir_length];
     copy_from_gpu(launchParams.ir, host, launchParams.ir_length * sizeof(float));
-    std::ofstream outFile("output_ir.txt");
-
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    else
-    {
-        std::cout << "wrote ir to file" << std::endl;
-
-        // Write each element of the float array to the file, one per line
-        for (int i = 0; i < launchParams.ir_length; ++i)
-        {
-            outFile << host[i] << std::endl;
-        }
-
-        // Close the file
-        outFile.close();
-    }
 }
 
 void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels)
@@ -520,32 +520,13 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     // copy result to host
     copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
 
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i) {
+        h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
+    }
+
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer);
-
-    // temporal, guardar h_outputBuffer en archivo
-    std::ofstream outFile("output.txt");
-
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    else
-    {
-        std::cout << "wrote result to file" << std::endl;
-
-        // Write each element of the float array to the file, one per line
-        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-        {
-            outFile << h_outputBuffer[i] / (launchParams.ir_length / num_channels) << std::endl;
-            h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
-        }
-
-        // Close the file
-        outFile.close();
-    }
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -553,10 +534,16 @@ void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
     launchParams.emitter_position = pos;
 }
 
-void AudioRenderer::setThresholds(float dist, float energy)
+void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
 {
     launchParams.dist_thres = dist;
     launchParams.energy_thres = energy;
+    launchParams.max_bounces = max_bounces;
+}
+
+void AudioRenderer::setBasePower(float base_power)
+{
+    launchParams.base_power = base_power;
 }
 
 void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)

@@ -1,7 +1,7 @@
 #include "Sphere.h"
 
 Sphere::Sphere() {
-    const std::string objFile = "../../assets/models/sphere2.obj";
+    const std::string objFile = "../../assets/models/sphere.obj";
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/'));
     tinyobj::attrib_t attributes;
     std::vector<tinyobj::shape_t> shapes;

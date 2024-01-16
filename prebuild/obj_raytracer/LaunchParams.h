@@ -1,10 +1,10 @@
 #pragma once
 #include "optix7.h"
 #include <glm/glm.hpp>
+#include <string>
 
 struct TriangleMeshSBTData
 {
-    glm::vec3 color;
     glm::vec3 pos;
     glm::vec3 *vertex;
     glm::ivec3 *index;
@@ -13,9 +13,8 @@ struct TriangleMeshSBTData
 
 struct Material
 {
-    int id;
-    const char *name;
-    float ac_absorption;
+    std::string name;
+    float mat_absorption;
 };
 
 struct LaunchParams
@@ -30,7 +29,8 @@ struct LaunchParams
 
     OptixTraversableHandle traversable;
 
-    float dist_thres, energy_thres;
+    float base_power, dist_thres, energy_thres;
+    unsigned int max_bounces;
 
     int sample_rate;
 

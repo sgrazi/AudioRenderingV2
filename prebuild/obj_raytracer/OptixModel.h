@@ -2,7 +2,7 @@
 #include "gdt/math/AffineSpace.h"
 #include "Sphere.h"
 // #include "tinyxml2.h"
-#include <vector>
+#include <string>
 
 using namespace gdt;
 
@@ -14,7 +14,7 @@ struct TriangleMesh
     std::vector<vec3i> index;
 
     // material data:
-    vec3f diffuse;
+    std::string material_name;
     float material_absorption;
 };
 

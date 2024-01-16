@@ -84,27 +84,23 @@ extern "C" __global__ void __closesthit__radiance()
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
 
-    switch (sbtData.mat_absorption < 0) // we identify the receiver with a negative absorption
-    {
-    case true:
-        //printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;color(end+1) = %f;rebotes(end+1)= %d;", P.x, P.y, P.z, prd.distance, prd.recursion_depth);
+    if (sbtData.mat_absorption < 0) {
+        // we identify the receiver with a negative absorption
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        float *ir = optixLaunchParams.ir;
+        float* ir = optixLaunchParams.ir;
         if (array_pos < optixLaunchParams.ir_length)
         {
-            atomicAdd(&ir[array_pos],prd.remaining_factor);
+            atomicAdd(&ir[array_pos], prd.remaining_factor);
         }
         prd.recursion_depth = -1;
-        break;
-    case false:
-        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng)*Ng;
+    }
+    else {
+        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng) * Ng;
         prd.remaining_factor *= (1 - sbtData.mat_absorption);
         prd.recursion_depth++;
-        break;
-    default:
-        // ERROR
     }
+        
     prd.prev_position = P + (1e-3f * prd.direction);
 }
 
@@ -134,7 +130,7 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = (optixLaunchParams.BASE_POWER) / (x_rays * y_rays * z_rays);
+    prd.remaining_factor = (optixLaunchParams.base_power) / (x_rays * y_rays * z_rays);
     prd.distance = 0;
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
@@ -157,13 +153,11 @@ extern "C" __global__ void __raygen__renderFrame()
 
         // printf("sending to %f,%f,%f...\n", dx, dy, dz);
         prd.direction = {dx, dy, dz};
-        int i = 0;
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
-               i < 60) // por las dudas le pongo un tope
+               prd.recursion_depth < optixLaunchParams.max_bounces)
         {
-            i++;
             gdt::vec3f rayOrigin(prd.prev_position.x, prd.prev_position.y, prd.prev_position.z);
             gdt::vec3f rayDir(prd.direction.x, prd.direction.y, prd.direction.z);
             optixTrace(optixLaunchParams.traversable,
