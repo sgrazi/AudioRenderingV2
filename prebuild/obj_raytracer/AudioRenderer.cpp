@@ -501,26 +501,6 @@ void AudioRenderer::render()
     float *host = NULL;
     host = new float[launchParams.ir_length];
     copy_from_gpu(launchParams.ir, host, launchParams.ir_length * sizeof(float));
-    std::ofstream outFile("output_ir.txt");
-
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    else
-    {
-        std::cout << "wrote ir to file" << std::endl;
-
-        // Write each element of the float array to the file, one per line
-        for (int i = 0; i < launchParams.ir_length; ++i)
-        {
-            outFile << host[i] << std::endl;
-        }
-
-        // Close the file
-        outFile.close();
-    }
 }
 
 void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels)
@@ -540,37 +520,13 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     // copy result to host
     copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
 
-    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-    {
-        h_outputBuffer[i] = h_outputBuffer[i] / 3200;
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i) {
+        h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
     }
 
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer);
-
-    // temporal, guardar h_outputBuffer en archivo
-    std::ofstream outFile("output.txt");
-
-    // Check if the file is opened successfully
-    if (!outFile.is_open())
-    {
-        std::cerr << "Error opening the file." << std::endl;
-    }
-    else
-    {
-        std::cout << "wrote result to file" << std::endl;
-
-        // Write each element of the float array to the file, one per line
-        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-        {
-            outFile << h_outputBuffer[i] / (launchParams.ir_length / num_channels) << std::endl;
-            h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
-        }
-
-        // Close the file
-        outFile.close();
-    }
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)

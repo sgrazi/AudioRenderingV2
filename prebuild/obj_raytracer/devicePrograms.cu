@@ -84,12 +84,8 @@ extern "C" __global__ void __closesthit__radiance()
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
 
-    printf("%f", sbtData.mat_absorption);
-
     if (sbtData.mat_absorption < 0) {
         // we identify the receiver with a negative absorption
-        printf("hit;");
-        //printf("x(end+1) = %f;y(end+1) = %f;z(end+1) = %f;color(end+1) = %f;rebotes(end+1)= %d;", P.x, P.y, P.z, prd.distance, prd.recursion_depth);
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         float* ir = optixLaunchParams.ir;

@@ -276,8 +276,8 @@ void screen(AudioFile<float> *audio)
 	Context *context = Context::getInstance();
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer = (float *)malloc(size_of_audio);
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, context->get_output_channels());
+	float* outputBuffer = context->get_output_buffer();
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, output_channels);
 	context->set_output_buffer(outputBuffer);
 	context->set_output_buffer_len(size_of_audio);
 
