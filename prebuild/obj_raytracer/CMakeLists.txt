@@ -59,6 +59,8 @@ add_executable(obj_raytracer
   kernels.cuh
   Sphere.h
   Sphere.cpp
+  HalfSphere.h
+  HalfSphere.cpp
   Context.h
   Context.cpp
   cJSON.c

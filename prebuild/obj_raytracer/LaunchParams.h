@@ -35,5 +35,6 @@ struct LaunchParams
     int sample_rate;
 
     int ir_length;
-    float *ir;
+    float *ir_left;
+    float *ir_right;
 };

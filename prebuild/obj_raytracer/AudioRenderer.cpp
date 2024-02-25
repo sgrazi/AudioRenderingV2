@@ -34,9 +34,14 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
 {
     std::cout << materialName << std::endl;
 
-    if (materialName == "receiver")
+    if (materialName == "receiver_left")
     {
         return -1;
+    }
+
+    if (materialName == "receiver_right")
+    {
+        return -2;
     }
 
     for (auto &material : materials)
@@ -78,8 +83,10 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
     launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
-    cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
-    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
+    cudaMalloc(&launchParams.ir_left, launchParams.ir_length * sizeof(float));
+    cudaMalloc(&launchParams.ir_right, launchParams.ir_length * sizeof(float));
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
     cudaDeviceSynchronize();
 
     std::cout << " setting up optix pipeline ..." << std::endl;
@@ -470,7 +477,8 @@ void AudioRenderer::render()
     launchParamsBuffer.free();
 
     launchParams.traversable = buildAccel();
-    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
     cudaDeviceSynchronize();
 
     createPipeline();
@@ -498,35 +506,72 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 
     /////////
-    float *host = NULL;
-    host = new float[launchParams.ir_length];
-    copy_from_gpu(launchParams.ir, host, launchParams.ir_length * sizeof(float));
+    float *host_left = NULL;
+    float *host_right = NULL;
+    float *host_aux = NULL;
+
+    host_left = new float[launchParams.ir_length];
+    host_right = new float[launchParams.ir_length];
+    host_aux = new float[launchParams.ir_length];
+
+    copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
+    copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
+
+    // for (int i = 0; i < launchParams.ir_length; i++) {
+    //     host_aux[i] = host_left[i];
+    //     host_left[i] = host_left[i] + 0.2 * host_right[i];
+    //     host_right[i] = 0;
+    // }
+
+    copy_to_gpu(host_left, launchParams.ir_left, launchParams.ir_length * sizeof(float));
+    copy_to_gpu(host_right, launchParams.ir_right, launchParams.ir_length * sizeof(float));
 }
 
-void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels)
+void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
 {
+
+    //LEFT
     // move inputBuffer to device
-    float *d_inputBuffer;
-    cudaMalloc(&d_inputBuffer, h_inputBufferSize);
-    copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
+    float *d_inputBuffer_left;
+    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
 
     // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
-    float *d_outputBuffer = NULL;
+    float *d_outputBuffer_left = NULL;
+    cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
+
+    //RIGHT
+    // move inputBuffer to device
+    float *d_inputBuffer_right;
+    cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
+
+    // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
+    float *d_outputBuffer_right = NULL;
+    cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
+
     size_t outputSize = h_inputBufferSize;
-    cudaMalloc(&d_outputBuffer, h_inputBufferSize);
+
     // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
-    convolute_fourier_in_gpu(d_inputBuffer, launchParams.ir, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer);
+    convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
     // copy result to host
-    copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
+    copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
+    copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
 
     for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i) {
-        h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
+        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
+        // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
+        h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
     }
 
     // free
-    cudaFree(d_inputBuffer);
-    cudaFree(d_outputBuffer);
+    cudaFree(d_inputBuffer_left);
+    cudaFree(d_outputBuffer_left);
+
+    cudaFree(d_inputBuffer_right);
+    cudaFree(d_outputBuffer_right);
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -546,7 +591,7 @@ void AudioRenderer::setBasePower(float base_power)
     launchParams.base_power = base_power;
 }
 
-void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)
-{
-    copy_from_gpu(launchParams.ir, h_ir, ir_size);
-}
+// void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)
+// {
+//     copy_from_gpu(launchParams.ir, h_ir, ir_size);
+// }

@@ -25,7 +25,7 @@ public:
     /*! render one frame */
     void render();
 
-    void convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels);
+    void convolute(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer_left, float* h_outputBuffer_right, unsigned int num_channels);
 
     void setEmitterPosInOptix(glm::vec3 pos);
 
@@ -33,7 +33,7 @@ public:
 
     void setBasePower(float base_power);
 
-    void getIROnHostMem(float *h_ir, size_t ir_size);
+    // void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
     // ------------------------------------------------------------------

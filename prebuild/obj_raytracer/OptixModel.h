@@ -36,4 +36,6 @@ OptixModel *loadOBJ(const std::string &objFile);
 
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition);
 
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left);
+
 // float get_absorption(int material_id, tinyxml2::XMLDocument &xml_dict);

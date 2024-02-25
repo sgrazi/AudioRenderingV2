@@ -23,6 +23,7 @@
 #include "AudioRenderer.h"
 #include "Context.h"
 #include "cJSON.h"
+#include "HalfSphere.h"
 
 using namespace std;
 
@@ -44,13 +45,19 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	float volume = Context::get_volume();
 	int nextStream = (int)(streamTime * audioInfo->audio->getSampleRate()) % audioInfo->audio->samples.at(0).size();
 	Context *context = Context::getInstance();
-	float *outputBufferConvolute = context->get_output_buffer();
+	float *outputBufferConvolute_left = context->get_output_buffer_left();
+	float *outputBufferConvolute_right = context->get_output_buffer_right();
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
 			break;
 		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
-		*buffer++ = outputBufferConvolute[i + nextStream] * volume;
+		if (i % 2 == 0)
+		{
+			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100;
+		} else {
+			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100;
+		}
 	}
 	return 0;
 }
@@ -276,9 +283,26 @@ void screen(AudioFile<float> *audio)
 	Context *context = Context::getInstance();
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float* outputBuffer = context->get_output_buffer();
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer, output_channels);
-	context->set_output_buffer(outputBuffer);
+	// float* outputBuffer = context->get_output_buffer();
+	float *outputBuffer_left = context->get_output_buffer_left();
+	float *outputBuffer_right = context->get_output_buffer_right();;
+
+    std::cout << "ENTRO A CONVOLUTE" << std::endl;
+
+	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+
+    std::cout << "SALGO DE CONVOLUTE" << std::endl;
+
+	// for (int i = 0; i < size_of_audio; i+=2) {
+	// for (int i = 0; i < size_of_audio; i++) {
+		// outputBuffer[i] = outputBuffer_left[i];
+		// outputBuffer[i + 1] = outputBuffer_right[i];
+	// }
+
+    std::cout << "PASE EL FOR" << std::endl;
+
+	context->set_output_buffer_left(outputBuffer_left);
+	context->set_output_buffer_right(outputBuffer_right);
 	context->set_output_buffer_len(size_of_audio);
 
 	while (!glfwWindowShouldClose(window))
@@ -319,7 +343,7 @@ int main(int argc, char **argv)
 
 	if (argc < 2)
 	{
-		configJsonPath = "./config.json";
+		configJsonPath = "C:/Users/Agustin/Documents/AudioRenderingV2/config.json";
 	}
 	else
 	{
@@ -496,9 +520,11 @@ int main(int argc, char **argv)
 	context->set_initial_emitter_pos(initial_emitter_pos);
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
-	Camera *camera = new Camera(width, height, initial_receiver_pos);
+	Camera *camera = new Camera(width, height, glm::vec3(-0.038377, 0.599941, 17.403301));
 	context->set_camera(camera);
-	Sphere *sphere = new Sphere();
+	HalfSphere *leftSide = new HalfSphere("../../assets/models/leftHalf.obj");
+	HalfSphere *rightSide = new HalfSphere("../../assets/models/rightHalf.obj");
+	Sphere *sphere = new Sphere(leftSide, rightSide);
 	context->set_sphere(sphere);
 	OptixModel *scene = loadOBJ(scene_file_path);
 	context->set_optix_model(scene);
@@ -523,8 +549,10 @@ int main(int argc, char **argv)
 
 	size_t len_of_audio = audio_file->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer = (float *)malloc(size_of_audio);
-	context->set_output_buffer(outputBuffer);
+	float *outputBuffer_left = (float *)malloc(size_of_audio);
+	float *outputBuffer_right = (float *)malloc(size_of_audio);
+	context->set_output_buffer_left(outputBuffer_left);
+	context->set_output_buffer_right(outputBuffer_right);
 	context->set_output_buffer_len(size_of_audio);
 
 	thread screen1(screen, audio_file);

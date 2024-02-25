@@ -18,7 +18,8 @@ private:
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
-	float *outputBuffer;
+	float *outputBuffer_left;
+	float *outputBuffer_right;
 
 	size_t output_buffer_size;
 
@@ -77,8 +78,12 @@ public:
 
 	static void set_initial_emitter_pos(glm::vec3 initial_emitter_pos);
 	static glm::vec3 get_initial_emitter_pos();
-	static void set_output_buffer(float *output_buffer);
-	static float *get_output_buffer();
+
+	static void set_output_buffer_left(float *output_buffer_left);
+	static float *get_output_buffer_left();
+
+	static void set_output_buffer_right(float *output_buffer_right);
+	static float *get_output_buffer_right();
 
 	static void set_output_buffer_len(size_t output_buffer_size);
 	static size_t get_output_buffer_len();

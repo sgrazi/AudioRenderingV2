@@ -57,14 +57,24 @@ uint32_t Context::get_sample_rate()
     return instance->sample_rate;
 }
 
-void Context::set_output_buffer(float *output_buffer)
+void Context::set_output_buffer_left(float *output_buffer_left)
 {
-    instance->outputBuffer = output_buffer;
+    instance->outputBuffer_left = output_buffer_left;
 }
 
-float *Context::get_output_buffer()
+float *Context::get_output_buffer_left()
 {
-    return instance->outputBuffer;
+    return instance->outputBuffer_left;
+}
+
+void Context::set_output_buffer_right(float *output_buffer_right)
+{
+    instance->outputBuffer_right = output_buffer_right;
+}
+
+float *Context::get_output_buffer_right()
+{
+    return instance->outputBuffer_right;
 }
 
 void Context::set_output_buffer_len(size_t output_buffer_size)
