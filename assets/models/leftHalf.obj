@@ -1,7 +1,6 @@
 # Blender 3.6.2
 # www.blender.org
 mtllib leftHalf.mtl
-o Sphere
 v 0.000000 -0.557179 -0.861384
 v -0.000000 -0.832544 -0.584951
 v -0.000000 -0.981161 -0.224183

@@ -1,7 +1,6 @@
 # Blender 3.6.2
 # www.blender.org
 mtllib rightHalf.mtl
-o Sphere
 v -0.000000 0.556350 0.886551
 v -0.000000 0.831990 0.610393
 v -0.000000 0.980968 0.249774

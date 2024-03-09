@@ -517,10 +517,11 @@ int main(int argc, char **argv)
 	context->set_ray_energy_threshold(ray_energy_threshold);
 	context->set_ray_max_bounces(ray_max_bounces);
 	context->set_base_power(base_power);
+	// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
 	context->set_initial_emitter_pos(initial_emitter_pos);
 	vector<Mesh> *transmitterVector = new vector<Mesh>;
 	context->set_transmitter(transmitterVector);
-	Camera *camera = new Camera(width, height, glm::vec3(-0.038377, 0.599941, 17.403301));
+	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
 	HalfSphere *leftSide = new HalfSphere("../../assets/models/leftHalf.obj");
 	HalfSphere *rightSide = new HalfSphere("../../assets/models/rightHalf.obj");

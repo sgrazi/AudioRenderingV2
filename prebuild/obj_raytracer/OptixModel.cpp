@@ -163,8 +163,8 @@ OptixModel *loadOBJ(const std::string &objFile)
 
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
 {
-    place_receiver_half(sphere.get_left_side(), model, cameraPosition, true);
     place_receiver_half(sphere.get_right_side(), model, cameraPosition, false);
+    place_receiver_half(sphere.get_left_side(), model, cameraPosition, true);
 }
 
 void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left) {

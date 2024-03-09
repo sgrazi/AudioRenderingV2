@@ -468,24 +468,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-    vertexBuffer.clear();
-    indexBuffer.clear();
-    asBuffer.free();
-    raygenRecordsBuffer.free();
-    missRecordsBuffer.free();
-    hitgroupRecordsBuffer.free();
-    launchParamsBuffer.free();
+    // vertexBuffer.clear();
+    // indexBuffer.clear();
+    // asBuffer.free();
+    // raygenRecordsBuffer.free();
+    // missRecordsBuffer.free();
+    // hitgroupRecordsBuffer.free();
+    // launchParamsBuffer.free();
 
-    launchParams.traversable = buildAccel();
-    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
-    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
-    cudaDeviceSynchronize();
+    // launchParams.traversable = buildAccel();
+    // fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    // fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+    // cudaDeviceSynchronize();
 
-    createPipeline();
+    // createPipeline();
 
-    buildSBT();
+    // buildSBT();
 
-    launchParamsBuffer.alloc(sizeof(launchParams));
+    // launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -517,11 +517,33 @@ void AudioRenderer::render()
     copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
     copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
 
-    // for (int i = 0; i < launchParams.ir_length; i++) {
-    //     host_aux[i] = host_left[i];
-    //     host_left[i] = host_left[i] + 0.2 * host_right[i];
-    //     host_right[i] = 0;
-    // }
+    for (int i = 0; i < launchParams.ir_length; i++) {
+        host_aux[i] = host_left[i];
+        host_left[i] = host_left[i] + 0.2 * host_right[i];
+        host_right[i] = host_right[i] + 0.2 * host_aux[i];
+    }
+
+    std::ofstream outFileLeft("output_ir_left.txt");
+    std::ofstream outFileRight("output_ir_right.txt");
+    if (!outFileLeft.is_open() && !outFileRight.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    else
+    {
+        std::cout << "wrote ir to file" << std::endl;
+
+        // Write each element of the float array to the file, one per line
+        for (int i = 0; i < launchParams.ir_length; ++i)
+        {
+            outFileLeft << host_left[i] << std::endl;
+            outFileRight << host_right[i] << std::endl;
+        }
+
+        // Close the file
+        outFileLeft.close();
+        outFileRight.close();
+    }
 
     copy_to_gpu(host_left, launchParams.ir_left, launchParams.ir_length * sizeof(float));
     copy_to_gpu(host_right, launchParams.ir_right, launchParams.ir_length * sizeof(float));
@@ -564,6 +586,28 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
         h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
         // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
+    }
+
+    std::ofstream outFileLeft("output_convolute_left.txt");
+    std::ofstream outFileRight("output_convolute_right.txt");
+    if (!outFileLeft.is_open() && !outFileRight.is_open())
+    {
+        std::cerr << "Error opening the file." << std::endl;
+    }
+    else
+    {
+        std::cout << "wrote ir to file" << std::endl;
+
+        // Write each element of the float array to the file, one per line
+        for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+        {
+            outFileLeft << h_outputBuffer_left[i] << std::endl;
+            outFileRight << h_outputBuffer_right[i] << std::endl;
+        }
+
+        // Close the file
+        outFileLeft.close();
+        outFileRight.close();
     }
 
     // free
