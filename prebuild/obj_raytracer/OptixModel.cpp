@@ -237,11 +237,6 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
                 // Delete left sphere
                 model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -1; }), model
                     ->meshes.end());
-                std::cout << "COMIENZA ALGO RARO" << std::endl;
-                for (TriangleMesh* meshita : model->meshes) {
-                    std::cout << (meshita->material_absorption) << std::endl;
-                }
-                std::cout << "TERMINA ESTO RARO" << std::endl;
             }
             else {
                 // Delete right sphere
@@ -249,12 +244,6 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
                     ->meshes.end());
             }
             model->meshes.push_back(mesh);
-
-            std::cout << "RARO - " << is_left << std::endl;
-            for (TriangleMesh* meshita : model->meshes) {
-                std::cout << (meshita->material_absorption) << std::endl;
-            }
-            std::cout << "RARO 2" << std::endl;
         }
     }
 }

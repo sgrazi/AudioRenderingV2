@@ -54,11 +54,11 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
 		if (i % 2 == 0)
 		{
-			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100;
+			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100 * volume;
 		}
 		else
 		{
-			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100;
+			*buffer++ = 0.0f;//outputBufferConvolute_right[i + nextStream] * 100 * volume;
 		}
 	}
 	return 0;

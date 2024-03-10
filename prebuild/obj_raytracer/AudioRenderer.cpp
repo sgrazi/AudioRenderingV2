@@ -508,11 +508,14 @@ void AudioRenderer::render()
     /////////
     float *host_left = NULL;
     float *host_right = NULL;
-    float *host_aux = NULL;
 
     host_left = new float[launchParams.ir_length];
     host_right = new float[launchParams.ir_length];
-    host_aux = new float[launchParams.ir_length];
+
+    /*bool zeroLeft = checkArrayZero(launchParams.ir_left, launchParams.ir_length);
+    bool zeroRight = checkArrayZero(launchParams.ir_right, launchParams.ir_length);
+
+    std::cout << "hola: " << zeroLeft << " - " << zeroRight << std::endl;*/
 
     copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
     copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
@@ -543,7 +546,7 @@ void AudioRenderer::render()
     bool only_zeros_right = true;
     for (int i = 0; i < launchParams.ir_length; i++)
     {
-        if (host_left[i] != 0)
+        if (host_left[i] != 0.0f)
         {
             only_zeros_left = false;
             break;
@@ -551,7 +554,7 @@ void AudioRenderer::render()
     };
     for (int i = 0; i < launchParams.ir_length; i++)
     {
-        if (host_right[i] != 0)
+        if (host_right[i] != 0.0f)
         {
             only_zeros_right = false;
             break;
@@ -587,8 +590,10 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     size_t outputSize = h_inputBufferSize;
 
     // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
-
+    std::cout << "left" << std::endl;
     convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    cudaDeviceSynchronize();
+    std::cout << "right" << std::endl;
     convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
     // copy result to host
