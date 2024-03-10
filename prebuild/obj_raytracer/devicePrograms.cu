@@ -83,16 +83,17 @@ extern "C" __global__ void __closesthit__radiance()
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
-
+    float* ir_right = optixLaunchParams.ir_right;
+    float* ir_left = optixLaunchParams.ir_left;
     if (sbtData.mat_absorption == -1) 
     {
         // we identify the receiver with a negative absorption
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        float* ir_left = optixLaunchParams.ir_left;
-        if (array_pos < optixLaunchParams.ir_length)
-        {
+        
+        if (array_pos < optixLaunchParams.ir_length) {
             atomicAdd(&ir_left[array_pos], prd.remaining_factor);
+            atomicAdd(&ir_right[array_pos], prd.remaining_factor * 0.2);
         }
         prd.recursion_depth = -1;
     }
@@ -101,10 +102,10 @@ extern "C" __global__ void __closesthit__radiance()
         // we identify the receiver with a negative absorption
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        float* ir_right = optixLaunchParams.ir_right;
         if (array_pos < optixLaunchParams.ir_length)
         {
             atomicAdd(&ir_right[array_pos], prd.remaining_factor);
+            atomicAdd(&ir_left [array_pos] , prd.remaining_factor * 0.2);
         }
         prd.recursion_depth = -1;
     }

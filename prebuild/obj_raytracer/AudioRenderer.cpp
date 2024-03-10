@@ -468,24 +468,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-    // vertexBuffer.clear();
-    // indexBuffer.clear();
-    // asBuffer.free();
-    // raygenRecordsBuffer.free();
-    // missRecordsBuffer.free();
-    // hitgroupRecordsBuffer.free();
-    // launchParamsBuffer.free();
+     vertexBuffer.clear();
+     indexBuffer.clear();
+     asBuffer.free();
+     raygenRecordsBuffer.free();
+     missRecordsBuffer.free();
+     hitgroupRecordsBuffer.free();
+     launchParamsBuffer.free();
 
-    // launchParams.traversable = buildAccel();
-    // fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
-    // fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
-    // cudaDeviceSynchronize();
+     launchParams.traversable = buildAccel();
+     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+     cudaDeviceSynchronize();
 
-    // createPipeline();
+     createPipeline();
 
-    // buildSBT();
+     buildSBT();
 
-    // launchParamsBuffer.alloc(sizeof(launchParams));
+     launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -517,12 +517,6 @@ void AudioRenderer::render()
     copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
     copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
 
-    for (int i = 0; i < launchParams.ir_length; i++) {
-        host_aux[i] = host_left[i];
-        host_left[i] = host_left[i] + 0.2 * host_right[i];
-        host_right[i] = host_right[i] + 0.2 * host_aux[i];
-    }
-
     std::ofstream outFileLeft("output_ir_left.txt");
     std::ofstream outFileRight("output_ir_right.txt");
     if (!outFileLeft.is_open() && !outFileRight.is_open())
@@ -545,15 +539,33 @@ void AudioRenderer::render()
         outFileRight.close();
     }
 
-    copy_to_gpu(host_left, launchParams.ir_left, launchParams.ir_length * sizeof(float));
-    copy_to_gpu(host_right, launchParams.ir_right, launchParams.ir_length * sizeof(float));
+    bool only_zeros_left = true;
+    bool only_zeros_right = true;
+    for (int i = 0; i < launchParams.ir_length; i++)
+    {
+        if (host_left[i] != 0)
+        {
+            only_zeros_left = false;
+            break;
+        }
+    };
+    for (int i = 0; i < launchParams.ir_length; i++)
+    {
+        if (host_right[i] != 0)
+        {
+            only_zeros_right = false;
+            break;
+        }
+    };
+    printf("only_zeros_left = %d\n", only_zeros_left);
+    printf("only_zeros_right = %d\n", only_zeros_right);
 }
 
 void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
 {
 
-    //LEFT
-    // move inputBuffer to device
+    // LEFT
+    //  move inputBuffer to device
     float *d_inputBuffer_left;
     cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
@@ -562,8 +574,8 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     float *d_outputBuffer_left = NULL;
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
 
-    //RIGHT
-    // move inputBuffer to device
+    // RIGHT
+    //  move inputBuffer to device
     float *d_inputBuffer_right;
     cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
@@ -575,6 +587,7 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     size_t outputSize = h_inputBufferSize;
 
     // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
+
     convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
     convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
@@ -582,7 +595,8 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
     copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
 
-    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i) {
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+    {
         h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
         // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);

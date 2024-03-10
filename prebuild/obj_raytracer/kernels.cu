@@ -166,12 +166,47 @@ __global__ void add_segment_to_result_buffer(int second, int sampleRate, int seg
     }
 }
 
+__global__ void isAllZeros(float* arr, int size, int* result) {
+    int index = threadIdx.x + blockIdx.x * blockDim.x;
+    if (index < size) {
+        if (arr[index] != 0.0f) {
+            atomicExch(result, 1); // Set result to 1 if any element is not zero
+        }
+    }
+}
+
+
 void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len, float* outputBuffer) {
     const int threadsPerBlock = 256;
     int blocks;
     const int batchSize = 1; // Number of batches 
     const int secondsToProcess = samples_len / sample_rate;
     const int segment_size_in_seconds = 2;
+    
+    int* d_result; // Device result
+    int h_result = 0; // Host result
+
+    // Calculate grid and block sizes
+    int blockSize = 256; // Number of threads per block
+    int numBlocks = (ir_len + blockSize - 1) / blockSize;
+    cudaMalloc(&d_result, sizeof(int));
+
+    // Launch the kernel
+    isAllZeros << <numBlocks, blockSize >> > (IR, ir_len, d_result);
+
+    // Copy the result back to host
+    cudaMemcpy(&h_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
+
+    // Check the result
+    if (h_result == 0) {
+        printf("All elements are zero.\n");
+    }
+    else {
+        printf("There is at least one element that is not zero.\n");
+    }
+
+    // Free GPU memory
+    cudaFree(d_result);
 
     // Allocate device memory for samples
     float* sampleSegment;

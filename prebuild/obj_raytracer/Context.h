@@ -6,6 +6,7 @@
 #include "AudioRenderer.h"
 #include "OptixModel.h"
 #include <vector>
+#include "AudioFile.h"
 
 class Context
 {
@@ -14,6 +15,7 @@ private:
 	Context();
 
 	float volume;
+	AudioFile<float>* audio_file;
 	unsigned int ir_length_in_seconds = 2;
 	unsigned int output_channels;
 	unsigned int width;
@@ -45,6 +47,9 @@ public:
 	void showMessage();
 
 	// ------------------------------------ SOUND ------------------------------------
+
+	static void set_audio_file(AudioFile<float>* audio_file);
+	static AudioFile<float>* get_audio_file();
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();

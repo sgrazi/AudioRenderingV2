@@ -17,6 +17,16 @@ void Context::showMessage()
     std::cout << "Singleton Context class instance created!" << std::endl;
 }
 
+void Context::set_audio_file(AudioFile<float>* audio_file)
+{
+    instance->audio_file = audio_file;
+}
+
+AudioFile<float>* Context::get_audio_file()
+{
+    return instance->audio_file;
+}
+
 void Context::set_ir_length_in_seconds(unsigned int ir_length_in_seconds)
 {
     instance->ir_length_in_seconds = ir_length_in_seconds;

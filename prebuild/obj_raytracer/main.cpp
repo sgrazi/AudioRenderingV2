@@ -55,14 +55,16 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		if (i % 2 == 0)
 		{
 			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100;
-		} else {
+		}
+		else
+		{
 			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100;
 		}
 	}
 	return 0;
 }
 
-int audioPlay(RtAudio *dac, AudioFile<float> *audio)
+int audioPlay(RtAudio *dac)
 {
 	if (dac->getDeviceCount() < 1)
 	{
@@ -71,11 +73,12 @@ int audioPlay(RtAudio *dac, AudioFile<float> *audio)
 	}
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = dac->getDefaultOutputDevice();
-	parameters.nChannels = 2; // tienq ue machear con los channels del audio
-	parameters.firstChannel = 0;
+	parameters.nChannels = 2;		 // tiene que matchear con los channels del audio
+	parameters.firstChannel = 0; // Default audio output
 
-	// send AudioFile info to screen thread??? (audio_length, sample_rate)
 	// TODO -> check number of channels.
+
+	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
 	unsigned int bufferFrames = 256; // 256 sample frames
@@ -89,11 +92,11 @@ int audioPlay(RtAudio *dac, AudioFile<float> *audio)
 	return 0;
 }
 
-void audio(RtAudio *dac, AudioFile<float> *audio)
+void audio(RtAudio *dac)
 {
 	try
 	{
-		audioPlay(dac, audio);
+		audioPlay(dac);
 	}
 	catch (const std::exception &e)
 	{
@@ -175,11 +178,22 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	{
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
+
+		AudioFile<float> *audio = Context::get_audio_file();
+		size_t len_of_audio = audio->samples[0].size();
+		size_t size_of_audio = sizeof(float) * len_of_audio;
+		float* output_buffer_left = Context::get_output_buffer_left();
+		float *output_buffer_right = Context::get_output_buffer_right();
+
+		renderer->convolute(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
+		Context::set_output_buffer_left(output_buffer_left);
+		Context::set_output_buffer_right(output_buffer_right);
+		Context::set_output_buffer_len(size_of_audio);
 		cout << "Rendered" << endl;
 	}
 }
 
-void screen(AudioFile<float> *audio)
+void screen()
 {
 	glfwInit();
 
@@ -253,15 +267,6 @@ void screen(AudioFile<float> *audio)
 	// Enables the Depth Buffer
 	glEnable(GL_DEPTH_TEST);
 
-	// Camera camera(width, height, glm::vec3(0.0f, 0.0f, 0.0f));
-
-	// load material properties
-	// tinyxml2::XMLDocument doc;
-	// if (doc.LoadFile("../models/materials.xml") != tinyxml2::XML_SUCCESS)
-	// {
-	// 	throw std::runtime_error("Failed to load material XML file");
-	// }
-
 	// Create Optix mesh of same .obj
 	OptixModel *scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
@@ -280,30 +285,31 @@ void screen(AudioFile<float> *audio)
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->render();
 
-	Context *context = Context::getInstance();
+	AudioFile<float> *audio = Context::get_audio_file();
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
 	// float* outputBuffer = context->get_output_buffer();
-	float *outputBuffer_left = context->get_output_buffer_left();
-	float *outputBuffer_right = context->get_output_buffer_right();;
+	float *outputBuffer_left = Context::get_output_buffer_left();
+	float *outputBuffer_right = Context::get_output_buffer_right();
+	;
 
-    std::cout << "ENTRO A CONVOLUTE" << std::endl;
+	std::cout << "ENTRO A CONVOLUTE" << std::endl;
 
 	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
-    std::cout << "SALGO DE CONVOLUTE" << std::endl;
+	std::cout << "SALGO DE CONVOLUTE" << std::endl;
 
 	// for (int i = 0; i < size_of_audio; i+=2) {
 	// for (int i = 0; i < size_of_audio; i++) {
-		// outputBuffer[i] = outputBuffer_left[i];
-		// outputBuffer[i + 1] = outputBuffer_right[i];
+	// outputBuffer[i] = outputBuffer_left[i];
+	// outputBuffer[i + 1] = outputBuffer_right[i];
 	// }
 
-    std::cout << "PASE EL FOR" << std::endl;
+	std::cout << "PASE EL FOR" << std::endl;
 
-	context->set_output_buffer_left(outputBuffer_left);
-	context->set_output_buffer_right(outputBuffer_right);
-	context->set_output_buffer_len(size_of_audio);
+	Context::set_output_buffer_left(outputBuffer_left);
+	Context::set_output_buffer_right(outputBuffer_right);
+	Context::set_output_buffer_len(size_of_audio);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -539,6 +545,7 @@ int main(int argc, char **argv)
 	{
 		return 1;
 	}
+	context->set_audio_file(audio_file);
 
 	uint32_t sample_rate = audio_file->getSampleRate();
 	context->set_sample_rate(sample_rate);
@@ -556,8 +563,8 @@ int main(int argc, char **argv)
 	context->set_output_buffer_right(outputBuffer_right);
 	context->set_output_buffer_len(size_of_audio);
 
-	thread screen1(screen, audio_file);
-	thread audio1(audio, dac, audio_file);
+	thread screen1(screen);
+	thread audio1(audio, dac);
 
 	screen1.join();
 	audio1.detach();

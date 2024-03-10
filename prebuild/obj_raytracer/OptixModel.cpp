@@ -163,8 +163,8 @@ OptixModel *loadOBJ(const std::string &objFile)
 
 void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
 {
-    place_receiver_half(sphere.get_right_side(), model, cameraPosition, false);
     place_receiver_half(sphere.get_left_side(), model, cameraPosition, true);
+    place_receiver_half(sphere.get_right_side(), model, cameraPosition, false);
 }
 
 void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left) {
@@ -233,9 +233,28 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
         }
         else
         {
-            if (model->meshes.back()->material_absorption == -1)
-                model->meshes.pop_back();
+            if (is_left) {
+                // Delete left sphere
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -1; }), model
+                    ->meshes.end());
+                std::cout << "COMIENZA ALGO RARO" << std::endl;
+                for (TriangleMesh* meshita : model->meshes) {
+                    std::cout << (meshita->material_absorption) << std::endl;
+                }
+                std::cout << "TERMINA ESTO RARO" << std::endl;
+            }
+            else {
+                // Delete right sphere
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -2; }), model
+                    ->meshes.end());
+            }
             model->meshes.push_back(mesh);
+
+            std::cout << "RARO - " << is_left << std::endl;
+            for (TriangleMesh* meshita : model->meshes) {
+                std::cout << (meshita->material_absorption) << std::endl;
+            }
+            std::cout << "RARO 2" << std::endl;
         }
     }
 }
