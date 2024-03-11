@@ -58,7 +58,7 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		}
 		else
 		{
-			*buffer++ = 0.0f;//outputBufferConvolute_right[i + nextStream] * 100 * volume;
+			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100 * volume;
 		}
 	}
 	return 0;

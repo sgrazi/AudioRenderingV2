@@ -570,21 +570,21 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     // LEFT
     //  move inputBuffer to device
     float *d_inputBuffer_left;
-    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
-    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
-
-    // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
-    float *d_outputBuffer_left = NULL;
-    cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
+    float *d_inputBuffer_right;
 
     // RIGHT
     //  move inputBuffer to device
-    float *d_inputBuffer_right;
+    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
+
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
 
     // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
+    float *d_outputBuffer_left = NULL;
     float *d_outputBuffer_right = NULL;
+
+    cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
     size_t outputSize = h_inputBufferSize;
