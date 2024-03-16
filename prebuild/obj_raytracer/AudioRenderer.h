@@ -33,6 +33,10 @@ public:
 
     void setBasePower(float base_power);
 
+    void set_write_ir_to_file_flag(bool value);
+
+    void set_write_output_to_file_flag(bool value);
+
     // void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
@@ -123,4 +127,7 @@ protected:
     std::vector<CUDABuffer> indexBuffer;
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
+
+    bool write_ir_to_file_flag = false;
+    bool write_output_to_file_flag = false;
 };
