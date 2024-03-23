@@ -248,3 +248,18 @@ glm::vec3 Context::get_initial_emitter_pos()
 {
     return instance->initial_emitter_pos;
 }
+
+void Context::set_re_render_distance_threshold(float re_render_distance_threshold) {
+    instance->re_render_distance_threshold = re_render_distance_threshold;
+}
+
+float Context::get_re_render_distance_threshold() {
+    return instance->re_render_distance_threshold;
+}
+
+void Context::set_last_render_position(gdt::vec3f last_render_position) {
+    instance->last_render_position = last_render_position;
+}
+gdt::vec3f Context::get_last_render_position() {
+    return instance->last_render_position;
+}

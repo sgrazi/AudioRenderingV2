@@ -41,6 +41,8 @@ private:
 	OptixModel *scene;
 	AudioRenderer *renderer;
 	Camera *camera;
+	float re_render_distance_threshold;
+	gdt::vec3f last_render_position;
 
 public:
 	static Context *getInstance();
@@ -92,6 +94,12 @@ public:
 
 	static void set_output_buffer_len(size_t output_buffer_size);
 	static size_t get_output_buffer_len();
+
+	static void set_re_render_distance_threshold(float re_render_distance_threshold);
+	static float get_re_render_distance_threshold();
+
+	static void set_last_render_position(gdt::vec3f last_render_position);
+	static gdt::vec3f get_last_render_position();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

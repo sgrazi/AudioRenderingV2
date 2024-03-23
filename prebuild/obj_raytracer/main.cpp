@@ -33,6 +33,10 @@ struct AudioInfo
 	float *volumen;
 };
 
+float distanceP2P(gdt::vec3f p1, gdt::vec3f p2) {
+	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
+}
+
 int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		double streamTime, RtAudioStreamStatus status, void *userData)
 {
@@ -166,16 +170,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		renderer->setEmitterPosInOptix(cameraPosition);
 		cout << "Emitter set at: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
-	if (key == GLFW_KEY_Q)
-	{
-		Camera *camera = Context::get_camera();
-		Sphere sphere = *Context::get_sphere();
-		OptixModel *scene = Context::get_optix_model();
-		placeReceiver(sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
-		cout << "Receiver set at: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
-	}
 	if (key == GLFW_KEY_R)
 	{
+		Camera* camera = Context::get_camera();
+		Sphere sphere = *Context::get_sphere();
+		OptixModel* scene = Context::get_optix_model();
+		gdt::vec3f camera_central_position = gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z);
+		placeReceiver(sphere, scene, camera_central_position);
+
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
 
@@ -189,6 +191,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		Context::set_output_buffer_left(output_buffer_left);
 		Context::set_output_buffer_right(output_buffer_right);
 		Context::set_output_buffer_len(size_of_audio);
+		Context::set_last_render_position(camera_central_position);
 		cout << "Rendered" << endl;
 	}
 	if (key == GLFW_KEY_P)
@@ -295,16 +298,17 @@ void screen()
 	AudioFile<float> *audio = Context::get_audio_file();
 	size_t len_of_audio = audio->samples[0].size();
 	size_t size_of_audio = sizeof(float) * len_of_audio;
-	// float* outputBuffer = context->get_output_buffer();
 	float *outputBuffer_left = Context::get_output_buffer_left();
 	float *outputBuffer_right = Context::get_output_buffer_right();
-	;
 
 	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
 	Context::set_output_buffer_left(outputBuffer_left);
 	Context::set_output_buffer_right(outputBuffer_right);
 	Context::set_output_buffer_len(size_of_audio);
+
+	gdt::vec3f last_render_position = Context::get_last_render_position();
+	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -320,6 +324,14 @@ void screen()
 		camera.updateMatrix(90.0f, 0.1f, 10000.0f);
 		camera.Matrix(shaderProgram, "camMatrix");
 		Context::set_camera(&camera);
+
+		gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
+			placeReceiver(sphere, scene, camera_central_point);
+			renderer->render();
+			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+			last_render_position = camera_central_point;
+		}
 
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
@@ -384,6 +396,7 @@ int main(int argc, char **argv)
 		unsigned int height = 768;
 		bool write_ir_to_file_on_render = false;
 		bool write_output_to_file_on_render = false;
+		float re_render_distance_threshold = 3;
 		if (cJSON_IsObject(cJSON_renderer_parameters))
 		{
 			cJSON *cJSON_initial_volume = cJSON_GetObjectItem(cJSON_renderer_parameters, "initial_volume");
@@ -413,6 +426,10 @@ int main(int argc, char **argv)
 			const cJSON *cJSON_write_output_to_file_on_render = cJSON_GetObjectItem(cJSON_renderer_parameters, "write_first_output_to_file");
 			if (cJSON_IsBool(cJSON_write_output_to_file_on_render))
 				write_output_to_file_on_render = cJSON_IsTrue(cJSON_write_output_to_file_on_render);
+			
+			const cJSON *cJSON_re_render_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_distance_threshold");
+			if (cJSON_IsBool(cJSON_re_render_distance_threshold))
+				re_render_distance_threshold = cJSON_IsTrue(cJSON_re_render_distance_threshold);
 				
 		}
 		// scene_parameters
@@ -538,6 +555,10 @@ int main(int argc, char **argv)
 		context->set_transmitter(transmitterVector);
 		Camera *camera = new Camera(width, height, initial_receiver_pos);
 		context->set_camera(camera);
+
+		gdt::vec3f last_render_position = gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z);
+		context->set_last_render_position(last_render_position);
+
 		HalfSphere *leftSide = new HalfSphere("../../assets/models/leftHalf.obj");
 		HalfSphere *rightSide = new HalfSphere("../../assets/models/rightHalf.obj");
 		Sphere *sphere = new Sphere(leftSide, rightSide);
@@ -573,6 +594,7 @@ int main(int argc, char **argv)
 		context->set_output_buffer_left(outputBuffer_left);
 		context->set_output_buffer_right(outputBuffer_right);
 		context->set_output_buffer_len(size_of_audio);
+		context->set_re_render_distance_threshold(re_render_distance_threshold);
 
 		thread screen1(screen);
 		thread audio1(audio, dac);

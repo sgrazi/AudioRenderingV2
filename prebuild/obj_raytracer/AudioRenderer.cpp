@@ -543,27 +543,6 @@ void AudioRenderer::render()
         }
         this->set_write_ir_to_file_flag(false);
     }
-
-    // bool only_zeros_left = true;
-    // bool only_zeros_right = true;
-    // for (int i = 0; i < launchParams.ir_length; i++)
-    // {
-    //     if (host_left[i] != 0.0f)
-    //     {
-    //         only_zeros_left = false;
-    //         break;
-    //     }
-    // };
-    // for (int i = 0; i < launchParams.ir_length; i++)
-    // {
-    //     if (host_right[i] != 0.0f)
-    //     {
-    //         only_zeros_right = false;
-    //         break;
-    //     }
-    // };
-    // printf("only_zeros_left = %d\n", only_zeros_left);
-    // printf("only_zeros_right = %d\n", only_zeros_right);
 }
 
 void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
@@ -667,8 +646,3 @@ void AudioRenderer::set_write_output_to_file_flag(bool value)
 {
     this->write_output_to_file_flag = value;
 }
-
-// void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)
-// {
-//     copy_from_gpu(launchParams.ir, h_ir, ir_size);
-// }
