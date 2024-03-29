@@ -176,7 +176,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		Sphere sphere = *Context::get_sphere();
 		OptixModel* scene = Context::get_optix_model();
 		gdt::vec3f camera_central_position = gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z);
-		placeReceiver(sphere, scene, camera_central_position);
+		placeReceiver(sphere, scene, camera_central_position, camera->globalAngle);
 
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
@@ -281,7 +281,7 @@ void screen()
 	OptixModel *scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
 	Camera camera = *Context::get_camera();
-	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z));
+	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z), camera.globalAngle);
 
 	// AudioRenderer
 	uint32_t sample_rate = Context::get_sample_rate();
@@ -309,6 +309,7 @@ void screen()
 
 	gdt::vec3f last_render_position = Context::get_last_render_position();
 	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
+	glm::vec3 last_orientation = camera.Orientation;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -324,10 +325,16 @@ void screen()
 		camera.updateMatrix(90.0f, 0.1f, 10000.0f);
 		camera.Matrix(shaderProgram, "camMatrix");
 		Context::set_camera(&camera);
-
 		gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+		if (last_orientation != camera.Orientation) {
+			camera.calculate_global_angle();
+			last_orientation = camera.Orientation;
+			printf("anguloide %f\n", camera.globalAngle);
+		}
+
 		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
-			placeReceiver(sphere, scene, camera_central_point);
+			placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
 			renderer->render();
 			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 			last_render_position = camera_central_point;
@@ -580,7 +587,7 @@ int main(int argc, char **argv)
 		uint32_t sample_rate = audio_file->getSampleRate();
 		context->set_sample_rate(sample_rate);
 
-		placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
+		placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z), camera->globalAngle);
 
 		AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate, materials);
 		renderer->set_write_output_to_file_flag(write_output_to_file_on_render);

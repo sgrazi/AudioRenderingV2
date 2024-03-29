@@ -161,13 +161,13 @@ OptixModel *loadOBJ(const std::string &objFile)
 //     }
 // }
 
-void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
+void placeReceiver(Sphere sphere, OptixModel* model, vec3f cameraPosition, float rotation)
 {
-    place_receiver_half(sphere.get_left_side(), model, cameraPosition, true);
-    place_receiver_half(sphere.get_right_side(), model, cameraPosition, false);
+    place_receiver_half(sphere.get_left_side(), model, cameraPosition, true, rotation);
+    place_receiver_half(sphere.get_right_side(), model, cameraPosition, false, rotation);
 }
 
-void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left) {
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation) {
     std::set<int> uniqueValues;
 
     // moving the side
@@ -185,10 +185,23 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
         for (const auto &index : uniqueValues)
         {
 
+            // Asumiendo que rotation está en grados, conviértelo a radianes
+            float angleRadians = glm::radians(rotation);
+
+            // Crea una matriz de transformación que incluya la rotación
+            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angleRadians, glm::vec3(0, 1, 0));
+
+            // Aplicar la rotación
+            glm::vec4 vert = glm::vec4(side.original_attributes.vertices[3 * index + 0],
+                side.original_attributes.vertices[3 * index + 1],
+                side.original_attributes.vertices[3 * index + 2],
+                1.0);
+            vert = rotationMatrix * vert;
+
             // Translate each vertex by (x, y, z)
-            side.attributes.vertices[3 * index + 0] = cameraPosition.x + side.original_attributes.vertices[3 * index + 0];
-            side.attributes.vertices[3 * index + 1] = cameraPosition.y + side.original_attributes.vertices[3 * index + 1];
-            side.attributes.vertices[3 * index + 2] = cameraPosition.z + side.original_attributes.vertices[3 * index + 2];
+            side.attributes.vertices[3 * index + 0] = cameraPosition.x + vert.x;
+            side.attributes.vertices[3 * index + 1] = cameraPosition.y + vert.y;
+            side.attributes.vertices[3 * index + 2] = cameraPosition.z + vert.z;
         }
     }
 
