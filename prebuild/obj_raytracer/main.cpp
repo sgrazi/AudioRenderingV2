@@ -24,8 +24,25 @@
 #include "Context.h"
 #include "cJSON.h"
 #include "HalfSphere.h"
+#include "CircularBuffer.h"
 
 using namespace std;
+#define SAMPLE_TYPE double
+
+struct audioPaths {
+    void* ptr;
+    int size;
+};
+
+struct audioCallbackData {
+    int bufferFrames;
+    int pos;
+    int samplesRecordBufferSize;
+    CircularBuffer<SAMPLE_TYPE>* samplesRecordBuffer;
+    audioPaths* paths;
+    float volume;
+};
+
 
 struct AudioInfo
 {
@@ -68,6 +85,32 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
+int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+	double streamTime, RtAudioStreamStatus status, void *data)
+{
+	if (status) std::cout << "Stream over/underflow detected." << std::endl;
+
+	// double *buffer = (double *)outputBuffer;
+
+	audioCallbackData *renderData = (audioCallbackData *)data;
+	memset(outputBuffer, 0, renderData->bufferFrames * sizeof(SAMPLE_TYPE));
+	renderData->samplesRecordBuffer->insert((SAMPLE_TYPE*)inputBuffer, renderData->bufferFrames);
+	if (renderData->samplesRecordBuffer->full) {
+		unsigned int RvIndex;
+
+		for (int i = 0; i < renderData->bufferFrames; i++) {
+			SAMPLE_TYPE output_value = 0;
+			for (int j = 0; j < renderData->samplesRecordBufferSize - i; j++) {
+				output_value += renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i - j);
+			}
+			RvIndex = (renderData->bufferFrames * 2) - 1 - (i * 2);
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = output_value * renderData->volume;
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = output_value * renderData->volume;
+		}
+	}
+	return 0;
+}
+
 int audioPlay(RtAudio *dac)
 {
 	if (dac->getDeviceCount() < 1)
@@ -85,6 +128,8 @@ int audioPlay(RtAudio *dac)
 	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
+		std::cout << "\nSAMPLE RATE\n";
+		std::cout << sampleRate << '\n';
 	unsigned int bufferFrames = 256; // 256 sample frames
 
 	AudioInfo *audioInfo = new AudioInfo;
@@ -96,11 +141,63 @@ int audioPlay(RtAudio *dac)
 	return 0;
 }
 
-void audio(RtAudio *dac)
+void audioMicPlay(RtAudio *dac) {
+    // Init audio stream
+    dac = new RtAudio();
+
+    if (dac->getDeviceCount() < 1) {
+        std::cout << "\nNo audio devices found!\n";
+        exit(0);
+    }
+
+    unsigned int bufferFrames = 256, input_channels = 1, output_channels = 2;
+    unsigned int sampleRate = 8000;
+
+    RtAudio::StreamParameters inputParameters;
+    inputParameters.deviceId = dac->getDefaultInputDevice();
+    inputParameters.nChannels = input_channels;
+    inputParameters.firstChannel = 0;
+
+    RtAudio::StreamParameters outputParameters;
+    outputParameters.deviceId = dac->getDefaultOutputDevice();
+    outputParameters.nChannels = output_channels;
+    outputParameters.firstChannel = 0;
+
+    RtAudio::StreamOptions options;
+
+    // Calculate buffer size in bytes
+    unsigned int bufferBytes = bufferFrames * input_channels * sizeof(SAMPLE_TYPE);
+
+    // Create audioData struct on the heap
+    audioCallbackData* audioData = new audioCallbackData;
+    audioData->bufferFrames = bufferFrames * input_channels;
+    audioData->pos = 0;
+    audioData->samplesRecordBufferSize = sampleRate * input_channels;
+    audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(audioData->samplesRecordBufferSize);
+    audioData->paths = new audioPaths();
+    audioData->paths->ptr = NULL;
+    audioData->paths->size = 0;
+    audioData->volume = 30.0f;
+
+    std::cout << "\nLLAMO OPEN STREAM\n";
+    RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData, &options);
+
+    std::cout << "\nLLAMO OPEN START STREAM\n";
+    checkError = dac->startStream();
+}
+
+void audio(RtAudio *dac, bool isMic)
 {
 	try
 	{
-		audioPlay(dac);
+		if (isMic) 
+		{
+			audioMicPlay(dac);
+		}
+		else
+		{
+			audioPlay(dac);
+		}
 	}
 	catch (const std::exception &e)
 	{
@@ -597,7 +694,7 @@ int main(int argc, char **argv)
 		context->set_re_render_distance_threshold(re_render_distance_threshold);
 
 		thread screen1(screen);
-		thread audio1(audio, dac);
+		thread audio1(audio, dac, true);
 
 		screen1.join();
 		audio1.detach();
