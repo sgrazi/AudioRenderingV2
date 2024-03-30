@@ -93,7 +93,9 @@ extern "C" __global__ void __closesthit__radiance()
         
         if (array_pos < optixLaunchParams.ir_length) {
             atomicAdd(&ir_left[array_pos], prd.remaining_factor);
-            atomicAdd(&ir_right[array_pos], prd.remaining_factor * 0.2);
+            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+            atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * 0.4);
         }
         prd.recursion_depth = -1;
     }
@@ -105,7 +107,9 @@ extern "C" __global__ void __closesthit__radiance()
         if (array_pos < optixLaunchParams.ir_length)
         {
             atomicAdd(&ir_right[array_pos], prd.remaining_factor);
-            atomicAdd(&ir_left [array_pos] , prd.remaining_factor * 0.2);
+            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+            atomicAdd(&ir_left [array_pos + delay] , prd.remaining_factor * 0.4);
         }
         prd.recursion_depth = -1;
     }
