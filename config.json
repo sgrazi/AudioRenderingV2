@@ -11,7 +11,7 @@
 	},
 	"scene_parameters": {
 		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
-		"scene_file_path": "../../assets/models/planaso2.obj",
+		"scene_file_path": "../../assets/models/planaso.obj",
 		"materials_file_path": "",
 		"initial_receiver_pos": {
 			"x": -4.5,

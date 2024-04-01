@@ -168,11 +168,10 @@ void placeReceiver(Sphere sphere, OptixModel* model, vec3f cameraPosition, float
 }
 
 void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation) {
-    std::set<int> uniqueValues;
-
     // moving the side
     for (const auto &shape : side.shapes)
     {
+        std::set<int> uniqueValues;
         // shape.mesh.indices contains repeated indexes due to the shapes sharing indexes
         // this "for" will make sure that the same index is not overwritten multiple times
         for (const auto &num : shape.mesh.indices)
@@ -185,13 +184,13 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
         for (const auto &index : uniqueValues)
         {
 
-            // Asumiendo que rotation está en grados, conviértelo a radianes
+            // Asumiendo que rotation estï¿½ en grados, conviï¿½rtelo a radianes
             float angleRadians = glm::radians(rotation);
 
-            // Crea una matriz de transformación que incluya la rotación
-            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), angleRadians, glm::vec3(0, 1, 0));
+            // Crea una matriz de transformaciï¿½n que incluya la rotaciï¿½n
+            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), -angleRadians, glm::vec3(0, 1, 0));
 
-            // Aplicar la rotación
+            // Aplicar la rotaciï¿½n
             glm::vec4 vert = glm::vec4(side.original_attributes.vertices[3 * index + 0],
                 side.original_attributes.vertices[3 * index + 1],
                 side.original_attributes.vertices[3 * index + 2],

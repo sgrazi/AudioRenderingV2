@@ -29,31 +29,15 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 }
 
 void Camera::calculate_global_angle() {
-	glm::vec3 normalToXYPlane = { 0, 0, 1 }; // Vector normal al plano XY
-	glm::vec3 aux_camera = this->Orientation;
-	// Calcula el coseno del ángulo usando el producto punto y las magnitudes
-	double cosTheta = glm::dot(normalToXYPlane, aux_camera) / (glm::sqrt(glm::dot(normalToXYPlane, normalToXYPlane)) * (glm::sqrt(glm::dot(aux_camera, aux_camera))));
+	 glm::vec3 aux_camera = this->Orientation;
+    
+    // Calculate the angle using atan2 with respect to the default orientation
+    float lookAngle = glm::degrees(atan2(aux_camera.z, aux_camera.x));
+    if (lookAngle < 0) {
+        lookAngle += 360.0f;
+    }
 
-	// Calcula el ángulo en radianes y lo convierte a grados
-	double angleRadians = acos(cosTheta);
-
-	double angleDegrees = angleRadians * (180.0 / M_PI);
-
-	float lookAngle;
-	if (aux_camera.x >= 0 && aux_camera.z >= 0) {
-		lookAngle = 90.0f - angleDegrees;
-	}
-	else if (aux_camera.x <= 0 && aux_camera.z >= 0) {
-		lookAngle = 90.0f + angleDegrees;
-	}
-	else if (aux_camera.x <= 0 && aux_camera.z <= 0) {
-		lookAngle = 90.0f + angleDegrees;
-	}
-	else if (aux_camera.x >= 0 && aux_camera.z <= 0) {
-		lookAngle = 450.0 - angleDegrees;
-	}
-
-	this->globalAngle = lookAngle;
+    this->globalAngle = lookAngle;
 }
 
 void Camera::Inputs(GLFWwindow* window)
