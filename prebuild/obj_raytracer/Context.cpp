@@ -263,3 +263,11 @@ void Context::set_last_render_position(gdt::vec3f last_render_position) {
 gdt::vec3f Context::get_last_render_position() {
     return instance->last_render_position;
 }
+
+void Context::set_re_render_angle_threshold(float re_render_angle_threshold) {
+    instance->re_render_angle_threshold = re_render_angle_threshold;
+}
+
+float Context::get_re_render_angle_threshold() {
+    return instance->re_render_angle_threshold;
+}

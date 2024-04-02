@@ -42,6 +42,7 @@ private:
 	AudioRenderer *renderer;
 	Camera *camera;
 	float re_render_distance_threshold;
+	float re_render_angle_threshold;
 	gdt::vec3f last_render_position;
 
 public:
@@ -100,6 +101,10 @@ public:
 
 	static void set_last_render_position(gdt::vec3f last_render_position);
 	static gdt::vec3f get_last_render_position();
+
+	static void set_re_render_angle_threshold(float re_render_angle_threshold);
+
+	static float get_re_render_angle_threshold();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

@@ -10,6 +10,7 @@
 #include <string>
 #include <sstream>
 #include <stdexcept>
+#include <mutex>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -26,6 +27,7 @@
 #include "HalfSphere.h"
 
 using namespace std;
+std::mutex _mutex;
 
 struct AudioInfo
 {
@@ -51,6 +53,7 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	Context *context = Context::getInstance();
 	float *outputBufferConvolute_left = context->get_output_buffer_left();
 	float *outputBufferConvolute_right = context->get_output_buffer_right();
+	_mutex.lock();
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
@@ -65,6 +68,7 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100 * volume;
 		}
 	}
+	_mutex.unlock();
 	return 0;
 }
 
@@ -172,6 +176,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_R)
 	{
+		_mutex.lock();
 		Camera* camera = Context::get_camera();
 		Sphere sphere = *Context::get_sphere();
 		OptixModel* scene = Context::get_optix_model();
@@ -192,6 +197,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		Context::set_output_buffer_right(output_buffer_right);
 		Context::set_output_buffer_len(size_of_audio);
 		Context::set_last_render_position(camera_central_position);
+		_mutex.unlock();
 		cout << "Rendered" << endl;
 	}
 	if (key == GLFW_KEY_P)
@@ -309,7 +315,9 @@ void screen()
 
 	gdt::vec3f last_render_position = Context::get_last_render_position();
 	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
+	float re_render_angle_threshold = Context::get_re_render_angle_threshold();
 	glm::vec3 last_orientation = camera.Orientation;
+	float last_angle = 0.0f;
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -330,14 +338,27 @@ void screen()
 		if (last_orientation != camera.Orientation) {
 			camera.calculate_global_angle();
 			last_orientation = camera.Orientation;
-			printf("anguloide %f\n", camera.globalAngle);
 		}
 
-		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
+		// Trigger re render if distance difference is greater than re_render_distance_threshold
+		bool distanceGreaterThanThreshold = distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold;
+
+		// Trigger re render if angle difference is greater than re_render_angle_threshold
+		float angleDiff = abs(last_angle - camera.globalAngle);
+		if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
+		bool angleGreaterThanThreshold = angleDiff > re_render_angle_threshold;
+
+		// Re render condition
+		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold;
+
+		if (reRenderCondition) {
+			last_angle = camera.globalAngle;
+			last_render_position = camera_central_point;
+			_mutex.lock();
 			placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
 			renderer->render();
 			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-			last_render_position = camera_central_point;
+			_mutex.unlock();
 		}
 
 		for (int i = 0; i < objects.size(); i++)
@@ -404,6 +425,7 @@ int main(int argc, char **argv)
 		bool write_ir_to_file_on_render = false;
 		bool write_output_to_file_on_render = false;
 		float re_render_distance_threshold = 3;
+		float re_render_angle_threshold = 5;
 		if (cJSON_IsObject(cJSON_renderer_parameters))
 		{
 			cJSON *cJSON_initial_volume = cJSON_GetObjectItem(cJSON_renderer_parameters, "initial_volume");
@@ -437,6 +459,10 @@ int main(int argc, char **argv)
 			const cJSON *cJSON_re_render_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_distance_threshold");
 			if (cJSON_IsBool(cJSON_re_render_distance_threshold))
 				re_render_distance_threshold = cJSON_IsTrue(cJSON_re_render_distance_threshold);
+
+			const cJSON* cJSON_re_render_angle_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_angle_threshold");
+			if (cJSON_IsBool(cJSON_re_render_angle_threshold))
+				re_render_angle_threshold = cJSON_IsTrue(cJSON_re_render_angle_threshold);
 				
 		}
 		// scene_parameters
@@ -602,6 +628,7 @@ int main(int argc, char **argv)
 		context->set_output_buffer_right(outputBuffer_right);
 		context->set_output_buffer_len(size_of_audio);
 		context->set_re_render_distance_threshold(re_render_distance_threshold);
+		context->set_re_render_angle_threshold(re_render_angle_threshold);
 
 		thread screen1(screen);
 		thread audio1(audio, dac);

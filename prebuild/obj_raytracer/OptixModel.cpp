@@ -2,7 +2,6 @@
 #include "AudioRenderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
-// #include "tinyxml2.h"
 // std
 #include <set>
 #include <map>
@@ -150,16 +149,6 @@ OptixModel *loadOBJ(const std::string &objFile)
     std::cout << "created a total of " << model->meshes.size() << " meshes" << std::endl;
     return model;
 }
-
-// float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
-// {
-//     tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
-//     for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
-//     {
-//         if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
-//             return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
-//     }
-// }
 
 void placeReceiver(Sphere sphere, OptixModel* model, vec3f cameraPosition, float rotation)
 {
