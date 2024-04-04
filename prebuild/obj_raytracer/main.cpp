@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <mutex>
 #include <stdexcept>
 #include "OBJ_Loader.h"
 #include "VAO.h"
@@ -28,6 +29,8 @@
 
 using namespace std;
 #define SAMPLE_TYPE double
+
+std::mutex outputBufferMutex;
 
 struct audioPaths {
     void* ptr;
@@ -100,12 +103,11 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 		for (int i = 0; i < renderData->bufferFrames; i++) {
 			SAMPLE_TYPE output_value = 0;
-			for (int j = 0; j < renderData->samplesRecordBufferSize - i; j++) {
-				output_value += renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i - j);
-			}
+			outputBufferMutex.lock();
 			RvIndex = (renderData->bufferFrames * 2) - 1 - (i * 2);
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = output_value * renderData->volume;
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = output_value * renderData->volume;
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
+			outputBufferMutex.unlock();
 		}
 	}
 	return 0;
