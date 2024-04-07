@@ -1,12 +1,14 @@
 #pragma once
 #include <iostream>
+#include <string>
+#include <vector>
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Camera.h"
 #include "AudioRenderer.h"
 #include "OptixModel.h"
-#include <vector>
 #include "AudioFile.h"
+#include "cJSON.h"
 
 class Context
 {
@@ -47,7 +49,7 @@ private:
 
 public:
 	static Context *getInstance();
-	void showMessage();
+	static bool loadContext(cJSON* config);
 
 	// ------------------------------------ SOUND ------------------------------------
 
