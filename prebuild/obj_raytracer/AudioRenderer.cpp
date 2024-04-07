@@ -32,11 +32,15 @@ struct __align__(OPTIX_SBT_RECORD_ALIGNMENT) HitgroupRecord
 
 float getMaterialAbsorption(std::string materialName, std::vector<Material> materials)
 {
-    std::cout << materialName << std::endl;
 
-    if (materialName == "receiver")
+    if (materialName == "receiver_left")
     {
         return -1;
+    }
+
+    if (materialName == "receiver_right")
+    {
+        return -2;
     }
 
     for (auto &material : materials)
@@ -78,8 +82,10 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
     launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
-    cudaMalloc(&launchParams.ir, launchParams.ir_length * sizeof(float));
-    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
+    cudaMalloc(&launchParams.ir_left, launchParams.ir_length * sizeof(float));
+    cudaMalloc(&launchParams.ir_right, launchParams.ir_length * sizeof(float));
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
     cudaDeviceSynchronize();
 
     std::cout << " setting up optix pipeline ..." << std::endl;
@@ -461,23 +467,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-    vertexBuffer.clear();
-    indexBuffer.clear();
-    asBuffer.free();
-    raygenRecordsBuffer.free();
-    missRecordsBuffer.free();
-    hitgroupRecordsBuffer.free();
-    launchParamsBuffer.free();
+     vertexBuffer.clear();
+     indexBuffer.clear();
+     asBuffer.free();
+     raygenRecordsBuffer.free();
+     missRecordsBuffer.free();
+     hitgroupRecordsBuffer.free();
+     launchParamsBuffer.free();
 
-    launchParams.traversable = buildAccel();
-    fillWithZeroesKernel(launchParams.ir, launchParams.ir_length);
-    cudaDeviceSynchronize();
+     launchParams.traversable = buildAccel();
+     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+     cudaDeviceSynchronize();
 
-    createPipeline();
+     createPipeline();
 
-    buildSBT();
+     buildSBT();
 
-    launchParamsBuffer.alloc(sizeof(launchParams));
+     launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -498,35 +505,119 @@ void AudioRenderer::render()
     CUDA_SYNC_CHECK();
 
     /////////
-    float *host = NULL;
-    host = new float[launchParams.ir_length];
-    copy_from_gpu(launchParams.ir, host, launchParams.ir_length * sizeof(float));
+    float *host_left = NULL;
+    float *host_right = NULL;
+
+    host_left = new float[launchParams.ir_length];
+    host_right = new float[launchParams.ir_length];
+
+    /*bool zeroLeft = checkArrayZero(launchParams.ir_left, launchParams.ir_length);
+    bool zeroRight = checkArrayZero(launchParams.ir_right, launchParams.ir_length);
+
+    std::cout << "hola: " << zeroLeft << " - " << zeroRight << std::endl;*/
+
+    copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
+    copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
+
+    if (this->write_ir_to_file_flag) {
+        std::ofstream outFileLeft("output_ir_left.txt");
+        std::ofstream outFileRight("output_ir_right.txt");
+        if (!outFileLeft.is_open() && !outFileRight.is_open())
+        {
+            std::cerr << "Error opening the file." << std::endl;
+        }
+        else
+        {
+            std::cout << "Wrote IR to file" << std::endl;
+
+            // Write each element of the float array to the file, one per line
+            for (int i = 0; i < launchParams.ir_length; ++i)
+            {
+                outFileLeft << host_left[i] << std::endl;
+                outFileRight << host_right[i] << std::endl;
+            }
+
+            // Close the file
+            outFileLeft.close();
+            outFileRight.close();
+        }
+        this->set_write_ir_to_file_flag(false);
+    }
 }
 
-void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels)
+void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
 {
-    // move inputBuffer to device
-    float *d_inputBuffer;
-    cudaMalloc(&d_inputBuffer, h_inputBufferSize);
-    copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
+
+    // LEFT
+    //  move inputBuffer to device
+    float *d_inputBuffer_left;
+    float *d_inputBuffer_right;
+
+    // RIGHT
+    //  move inputBuffer to device
+    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
+    cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
+
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
 
     // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
-    float *d_outputBuffer = NULL;
+    float *d_outputBuffer_left = NULL;
+    float *d_outputBuffer_right = NULL;
+
+    cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
+    cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
+
     size_t outputSize = h_inputBufferSize;
-    cudaMalloc(&d_outputBuffer, h_inputBufferSize);
+
     // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
-    convolute_fourier_in_gpu(d_inputBuffer, launchParams.ir, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer);
+
+    convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    cudaDeviceSynchronize();
+    convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
     // copy result to host
-    copy_from_gpu(d_outputBuffer, h_outputBuffer, outputSize);
+    copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
+    copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
 
-    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i) {
-        h_outputBuffer[i] = h_outputBuffer[i] / (launchParams.ir_length / num_channels);
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+    {
+        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
+        // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
+        h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
+    }
+
+    if (this->write_output_to_file_flag){
+        std::ofstream outFileLeft("output_convolute_left.txt");
+        std::ofstream outFileRight("output_convolute_right.txt");
+        if (!outFileLeft.is_open() && !outFileRight.is_open())
+        {
+            std::cerr << "Error opening the file." << std::endl;
+        }
+        else
+        {
+            std::cout << "Wrote output to file" << std::endl;
+
+            // Write each element of the float array to the file, one per line
+            for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+            {
+                outFileLeft << h_outputBuffer_left[i] << std::endl;
+                outFileRight << h_outputBuffer_right[i] << std::endl;
+            }
+
+            // Close the file
+            outFileLeft.close();
+            outFileRight.close();
+        }
+        this->set_write_output_to_file_flag(false);
     }
 
     // free
-    cudaFree(d_inputBuffer);
-    cudaFree(d_outputBuffer);
+    cudaFree(d_inputBuffer_left);
+    cudaFree(d_outputBuffer_left);
+
+    cudaFree(d_inputBuffer_right);
+    cudaFree(d_outputBuffer_right);
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
@@ -546,7 +637,12 @@ void AudioRenderer::setBasePower(float base_power)
     launchParams.base_power = base_power;
 }
 
-void AudioRenderer::getIROnHostMem(float *h_ir, size_t ir_size)
+void AudioRenderer::set_write_ir_to_file_flag(bool value)
 {
-    copy_from_gpu(launchParams.ir, h_ir, ir_size);
+    this->write_ir_to_file_flag = value;
+}
+
+void AudioRenderer::set_write_output_to_file_flag(bool value)
+{
+    this->write_output_to_file_flag = value;
 }

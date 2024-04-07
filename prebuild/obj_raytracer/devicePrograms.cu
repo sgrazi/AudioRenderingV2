@@ -83,15 +83,33 @@ extern "C" __global__ void __closesthit__radiance()
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
-
-    if (sbtData.mat_absorption < 0) {
+    float* ir_right = optixLaunchParams.ir_right;
+    float* ir_left = optixLaunchParams.ir_left;
+    if (sbtData.mat_absorption == -1) 
+    {
         // we identify the receiver with a negative absorption
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        float* ir = optixLaunchParams.ir;
+        
+        if (array_pos < optixLaunchParams.ir_length) {
+            atomicAdd(&ir_left[array_pos], prd.remaining_factor);
+            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+            atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * 0.4);
+        }
+        prd.recursion_depth = -1;
+    }
+    if (sbtData.mat_absorption == -2) 
+    {
+        // we identify the receiver with a negative absorption
+        float elapsed_time = prd.distance / SPEED_OF_SOUND;
+        int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
         if (array_pos < optixLaunchParams.ir_length)
         {
-            atomicAdd(&ir[array_pos], prd.remaining_factor);
+            atomicAdd(&ir_right[array_pos], prd.remaining_factor);
+            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+            atomicAdd(&ir_left [array_pos + delay] , prd.remaining_factor * 0.4);
         }
         prd.recursion_depth = -1;
     }

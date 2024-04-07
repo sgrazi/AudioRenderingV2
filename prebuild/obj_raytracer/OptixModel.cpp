@@ -2,7 +2,6 @@
 #include "AudioRenderer.h"
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "3rdParty/tiny_obj_loader.h"
-// #include "tinyxml2.h"
 // std
 #include <set>
 #include <map>
@@ -151,23 +150,17 @@ OptixModel *loadOBJ(const std::string &objFile)
     return model;
 }
 
-// float get_absorption(int material_id, tinyxml2::XMLDocument &doc)
-// {
-//     tinyxml2::XMLElement *materialsNode = doc.FirstChildElement("materials");
-//     for (tinyxml2::XMLElement *materialNode = materialsNode->FirstChildElement("material"); materialNode; materialNode = materialNode->NextSiblingElement("material"))
-//     {
-//         if (std::stoi(materialNode->FirstChildElement("id")->GetText()) == material_id)
-//             return std::stof(materialNode->FirstChildElement("ac_absorption")->GetText());
-//     }
-// }
-
-void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
+void placeReceiver(Sphere sphere, OptixModel* model, vec3f cameraPosition, float rotation)
 {
-    std::set<int> uniqueValues;
+    place_receiver_half(sphere.get_left_side(), model, cameraPosition, true, rotation);
+    place_receiver_half(sphere.get_right_side(), model, cameraPosition, false, rotation);
+}
 
-    // moving the sphere
-    for (const auto &shape : sphere.shapes)
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation) {
+    // moving the side
+    for (const auto &shape : side.shapes)
     {
+        std::set<int> uniqueValues;
         // shape.mesh.indices contains repeated indexes due to the shapes sharing indexes
         // this "for" will make sure that the same index is not overwritten multiple times
         for (const auto &num : shape.mesh.indices)
@@ -180,15 +173,28 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
         for (const auto &index : uniqueValues)
         {
 
+            // Asumiendo que rotation est� en grados, convi�rtelo a radianes
+            float angleRadians = glm::radians(rotation);
+
+            // Crea una matriz de transformaci�n que incluya la rotaci�n
+            glm::mat4 rotationMatrix = glm::rotate(glm::mat4(1.0f), -angleRadians, glm::vec3(0, 1, 0));
+
+            // Aplicar la rotaci�n
+            glm::vec4 vert = glm::vec4(side.original_attributes.vertices[3 * index + 0],
+                side.original_attributes.vertices[3 * index + 1],
+                side.original_attributes.vertices[3 * index + 2],
+                1.0);
+            vert = rotationMatrix * vert;
+
             // Translate each vertex by (x, y, z)
-            sphere.attributes.vertices[3 * index + 0] = cameraPosition.x + sphere.original_attributes.vertices[3 * index + 0];
-            sphere.attributes.vertices[3 * index + 1] = cameraPosition.y + sphere.original_attributes.vertices[3 * index + 1];
-            sphere.attributes.vertices[3 * index + 2] = cameraPosition.z + sphere.original_attributes.vertices[3 * index + 2];
+            side.attributes.vertices[3 * index + 0] = cameraPosition.x + vert.x;
+            side.attributes.vertices[3 * index + 1] = cameraPosition.y + vert.y;
+            side.attributes.vertices[3 * index + 2] = cameraPosition.z + vert.z;
         }
     }
 
     std::set<int> materialIDs;
-    for (auto faceMatID : sphere.shapes[0].mesh.material_ids)
+    for (auto faceMatID : side.shapes[0].mesh.material_ids)
     {
         materialIDs.insert(faceMatID);
     }
@@ -199,20 +205,28 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
         std::map<tinyobj::index_t, int> knownVertices;
         TriangleMesh *mesh = new TriangleMesh();
 
-        for (int faceID = 0; faceID < sphere.shapes[0].mesh.material_ids.size(); faceID++)
+        for (int faceID = 0; faceID < side.shapes[0].mesh.material_ids.size(); faceID++)
         {
-            if (sphere.shapes[0].mesh.material_ids[faceID] != materialID)
+            if (side.shapes[0].mesh.material_ids[faceID] != materialID)
                 continue;
-            tinyobj::index_t idx0 = sphere.shapes[0].mesh.indices[3 * faceID + 0];
-            tinyobj::index_t idx1 = sphere.shapes[0].mesh.indices[3 * faceID + 1];
-            tinyobj::index_t idx2 = sphere.shapes[0].mesh.indices[3 * faceID + 2];
+            tinyobj::index_t idx0 = side.shapes[0].mesh.indices[3 * faceID + 0];
+            tinyobj::index_t idx1 = side.shapes[0].mesh.indices[3 * faceID + 1];
+            tinyobj::index_t idx2 = side.shapes[0].mesh.indices[3 * faceID + 2];
 
-            vec3i idx(addVertex(mesh, sphere.attributes, idx0, knownVertices),
-                      addVertex(mesh, sphere.attributes, idx1, knownVertices),
-                      addVertex(mesh, sphere.attributes, idx2, knownVertices));
+            vec3i idx(addVertex(mesh, side.attributes, idx0, knownVertices),
+                      addVertex(mesh, side.attributes, idx1, knownVertices),
+                      addVertex(mesh, side.attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
-            mesh->material_name = "receiver";
-            mesh->material_absorption = -1;
+            if (is_left) 
+            {
+                mesh->material_name = "receiver_left";
+                mesh->material_absorption = -1;
+            } 
+            else 
+            {
+                mesh->material_name = "receiver_right";
+                mesh->material_absorption = -2;
+            }
         }
         if (mesh->vertex.empty())
         {
@@ -220,9 +234,18 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition)
         }
         else
         {
-            if (model->meshes.back()->material_absorption == -1)
-                model->meshes.pop_back();
+            if (is_left) {
+                // Delete left sphere
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -1; }), model
+                    ->meshes.end());
+            }
+            else {
+                // Delete right sphere
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -2; }), model
+                    ->meshes.end());
+            }
             model->meshes.push_back(mesh);
         }
     }
 }
+

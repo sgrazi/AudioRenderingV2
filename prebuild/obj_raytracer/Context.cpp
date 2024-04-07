@@ -17,6 +17,16 @@ void Context::showMessage()
     std::cout << "Singleton Context class instance created!" << std::endl;
 }
 
+void Context::set_audio_file(AudioFile<float>* audio_file)
+{
+    instance->audio_file = audio_file;
+}
+
+AudioFile<float>* Context::get_audio_file()
+{
+    return instance->audio_file;
+}
+
 void Context::set_ir_length_in_seconds(unsigned int ir_length_in_seconds)
 {
     instance->ir_length_in_seconds = ir_length_in_seconds;
@@ -57,14 +67,24 @@ uint32_t Context::get_sample_rate()
     return instance->sample_rate;
 }
 
-void Context::set_output_buffer(float *output_buffer)
+void Context::set_output_buffer_left(float *output_buffer_left)
 {
-    instance->outputBuffer = output_buffer;
+    instance->outputBuffer_left = output_buffer_left;
 }
 
-float *Context::get_output_buffer()
+float *Context::get_output_buffer_left()
 {
-    return instance->outputBuffer;
+    return instance->outputBuffer_left;
+}
+
+void Context::set_output_buffer_right(float *output_buffer_right)
+{
+    instance->outputBuffer_right = output_buffer_right;
+}
+
+float *Context::get_output_buffer_right()
+{
+    return instance->outputBuffer_right;
 }
 
 void Context::set_output_buffer_len(size_t output_buffer_size)
@@ -227,4 +247,27 @@ void Context::set_initial_emitter_pos(glm::vec3 initial_emitter_pos)
 glm::vec3 Context::get_initial_emitter_pos()
 {
     return instance->initial_emitter_pos;
+}
+
+void Context::set_re_render_distance_threshold(float re_render_distance_threshold) {
+    instance->re_render_distance_threshold = re_render_distance_threshold;
+}
+
+float Context::get_re_render_distance_threshold() {
+    return instance->re_render_distance_threshold;
+}
+
+void Context::set_last_render_position(gdt::vec3f last_render_position) {
+    instance->last_render_position = last_render_position;
+}
+gdt::vec3f Context::get_last_render_position() {
+    return instance->last_render_position;
+}
+
+void Context::set_re_render_angle_threshold(float re_render_angle_threshold) {
+    instance->re_render_angle_threshold = re_render_angle_threshold;
+}
+
+float Context::get_re_render_angle_threshold() {
+    return instance->re_render_angle_threshold;
 }

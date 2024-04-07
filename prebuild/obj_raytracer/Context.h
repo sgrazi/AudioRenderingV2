@@ -6,6 +6,7 @@
 #include "AudioRenderer.h"
 #include "OptixModel.h"
 #include <vector>
+#include "AudioFile.h"
 
 class Context
 {
@@ -14,11 +15,13 @@ private:
 	Context();
 
 	float volume;
+	AudioFile<float>* audio_file;
 	unsigned int ir_length_in_seconds = 2;
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
-	float *outputBuffer;
+	float *outputBuffer_left;
+	float *outputBuffer_right;
 
 	size_t output_buffer_size;
 
@@ -38,12 +41,18 @@ private:
 	OptixModel *scene;
 	AudioRenderer *renderer;
 	Camera *camera;
+	float re_render_distance_threshold;
+	float re_render_angle_threshold;
+	gdt::vec3f last_render_position;
 
 public:
 	static Context *getInstance();
 	void showMessage();
 
 	// ------------------------------------ SOUND ------------------------------------
+
+	static void set_audio_file(AudioFile<float>* audio_file);
+	static AudioFile<float>* get_audio_file();
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();
@@ -77,11 +86,25 @@ public:
 
 	static void set_initial_emitter_pos(glm::vec3 initial_emitter_pos);
 	static glm::vec3 get_initial_emitter_pos();
-	static void set_output_buffer(float *output_buffer);
-	static float *get_output_buffer();
+
+	static void set_output_buffer_left(float *output_buffer_left);
+	static float *get_output_buffer_left();
+
+	static void set_output_buffer_right(float *output_buffer_right);
+	static float *get_output_buffer_right();
 
 	static void set_output_buffer_len(size_t output_buffer_size);
 	static size_t get_output_buffer_len();
+
+	static void set_re_render_distance_threshold(float re_render_distance_threshold);
+	static float get_re_render_distance_threshold();
+
+	static void set_last_render_position(gdt::vec3f last_render_position);
+	static gdt::vec3f get_last_render_position();
+
+	static void set_re_render_angle_threshold(float re_render_angle_threshold);
+
+	static float get_re_render_angle_threshold();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

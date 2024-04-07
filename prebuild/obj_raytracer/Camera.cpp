@@ -28,6 +28,18 @@ void Camera::Matrix(Shader& shader, const char* uniform)
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
+void Camera::calculate_global_angle() {
+	 glm::vec3 aux_camera = this->Orientation;
+    
+    // Calculate the angle using atan2 with respect to the default orientation
+    float lookAngle = glm::degrees(atan2(aux_camera.z, aux_camera.x));
+    if (lookAngle < 0) {
+        lookAngle += 360.0f;
+    }
+
+    this->globalAngle = lookAngle;
+}
+
 void Camera::Inputs(GLFWwindow* window)
 {
 	// Handles key inputs

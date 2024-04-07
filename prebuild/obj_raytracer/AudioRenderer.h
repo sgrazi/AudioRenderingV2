@@ -25,7 +25,7 @@ public:
     /*! render one frame */
     void render();
 
-    void convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer, unsigned int num_channels);
+    void convolute(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer_left, float* h_outputBuffer_right, unsigned int num_channels);
 
     void setEmitterPosInOptix(glm::vec3 pos);
 
@@ -33,7 +33,11 @@ public:
 
     void setBasePower(float base_power);
 
-    void getIROnHostMem(float *h_ir, size_t ir_size);
+    void set_write_ir_to_file_flag(bool value);
+
+    void set_write_output_to_file_flag(bool value);
+
+    // void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
     // ------------------------------------------------------------------
@@ -123,4 +127,7 @@ protected:
     std::vector<CUDABuffer> indexBuffer;
     //! buffer that keeps the (final, compacted) accel structure
     CUDABuffer asBuffer;
+
+    bool write_ir_to_file_flag = false;
+    bool write_output_to_file_flag = false;
 };
