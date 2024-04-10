@@ -27,7 +27,6 @@
 #include "HalfSphere.h"
 
 using namespace std;
-std::mutex _mutex;
 
 struct AudioInfo
 {
@@ -39,10 +38,28 @@ float distanceP2P(gdt::vec3f p1, gdt::vec3f p2) {
 	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
 }
 
+void full_render(std::mutex* output_buffer_mutex) {
+	AudioRenderer* renderer = Context::get_audio_renderer();
+	OptixModel* scene = Context::get_optix_model();
+	Sphere sphere = *Context::get_sphere();
+	Camera camera = *Context::get_camera();
+	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+	AudioFile<float>* audio = Context::get_audio_file();
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float* outputBuffer_left = Context::get_output_buffer_left();
+	float* outputBuffer_right = Context::get_output_buffer_right();
+	unsigned int output_channels = Context::get_output_channels();
+	renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+
+	Context::set_is_rendering(false);
+};
+
 int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		double streamTime, RtAudioStreamStatus status, void *userData)
 {
-	unsigned int i, j;
+	unsigned int i;
 	double *buffer = (double *)outputBuffer;
 	if (status)
 		std::cout << "Stream underflow detected!" << std::endl;
@@ -53,7 +70,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	Context *context = Context::getInstance();
 	float *outputBufferConvolute_left = context->get_output_buffer_left();
 	float *outputBufferConvolute_right = context->get_output_buffer_right();
-	_mutex.lock();
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
@@ -68,7 +84,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100 * volume;
 		}
 	}
-	_mutex.unlock();
 	return 0;
 }
 
@@ -176,7 +191,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_R)
 	{
-		_mutex.lock();
 		Camera* camera = Context::get_camera();
 		Sphere sphere = *Context::get_sphere();
 		OptixModel* scene = Context::get_optix_model();
@@ -197,7 +211,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		Context::set_output_buffer_right(output_buffer_right);
 		Context::set_output_buffer_len(size_of_audio);
 		Context::set_last_render_position(camera_central_position);
-		_mutex.unlock();
 		cout << "Rendered" << endl;
 	}
 	if (key == GLFW_KEY_P)
@@ -209,7 +222,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 }
 
-void screen()
+void screen(std::mutex* output_buffer_mutex)
 {
 	glfwInit();
 
@@ -318,6 +331,7 @@ void screen()
 	float re_render_angle_threshold = Context::get_re_render_angle_threshold();
 	glm::vec3 last_orientation = camera.Orientation;
 	float last_angle = 0.0f;
+	Context::set_is_rendering(false);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -351,14 +365,12 @@ void screen()
 		// Re render condition
 		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold;
 
-		if (reRenderCondition) {
+		if (reRenderCondition && !Context::get_is_rendering()) {
+			Context::set_is_rendering(true);
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			_mutex.lock();
-			placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
-			renderer->render();
-			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-			_mutex.unlock();
+			thread rendering_thread(full_render, output_buffer_mutex);
+			rendering_thread.detach();
 		}
 
 		for (int i = 0; i < objects.size(); i++)
@@ -404,8 +416,9 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
+		std::mutex* output_buffer_mutex = new std::mutex();
 		RtAudio* dac = new RtAudio();
-		thread screen1(screen);
+		thread screen1(screen, output_buffer_mutex);
 		thread audio1(audio, dac);
 
 		screen1.join();

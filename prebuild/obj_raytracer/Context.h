@@ -46,6 +46,7 @@ private:
 	float re_render_distance_threshold;
 	float re_render_angle_threshold;
 	gdt::vec3f last_render_position;
+	bool is_rendering;
 
 public:
 	static Context *getInstance();
@@ -133,4 +134,7 @@ public:
 
 	static void set_transmitter(std::vector<Mesh> *transmitterVector);
 	static std::vector<Mesh> *get_transmitter();
+	
+	static void set_is_rendering(bool is_rendering);
+	static bool get_is_rendering();
 };

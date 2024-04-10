@@ -469,6 +469,7 @@ float Context::get_re_render_distance_threshold() {
 void Context::set_last_render_position(gdt::vec3f last_render_position) {
     instance->last_render_position = last_render_position;
 }
+
 gdt::vec3f Context::get_last_render_position() {
     return instance->last_render_position;
 }
@@ -479,4 +480,12 @@ void Context::set_re_render_angle_threshold(float re_render_angle_threshold) {
 
 float Context::get_re_render_angle_threshold() {
     return instance->re_render_angle_threshold;
+}
+
+void Context::set_is_rendering(bool is_rendering) {
+	instance->is_rendering = is_rendering;
+}
+
+bool Context::get_is_rendering() {
+	return instance->is_rendering;
 }
