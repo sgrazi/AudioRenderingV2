@@ -467,24 +467,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-     vertexBuffer.clear();
-     indexBuffer.clear();
-     asBuffer.free();
-     raygenRecordsBuffer.free();
-     missRecordsBuffer.free();
-     hitgroupRecordsBuffer.free();
-     launchParamsBuffer.free();
+    vertexBuffer.clear();
+    indexBuffer.clear();
+    asBuffer.free();
+    raygenRecordsBuffer.free();
+    missRecordsBuffer.free();
+    hitgroupRecordsBuffer.free();
+    launchParamsBuffer.free();
 
-     launchParams.traversable = buildAccel();
-     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
-     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
-     cudaDeviceSynchronize();
+    launchParams.traversable = buildAccel();
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+    cudaDeviceSynchronize();
 
-     createPipeline();
+    createPipeline();
 
-     buildSBT();
+    buildSBT();
 
-     launchParamsBuffer.alloc(sizeof(launchParams));
+    launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -519,7 +519,8 @@ void AudioRenderer::render()
     copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
     copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
 
-    if (this->write_ir_to_file_flag) {
+    if (this->write_ir_to_file_flag)
+    {
         std::ofstream outFileLeft("output_ir_left.txt");
         std::ofstream outFileRight("output_ir_right.txt");
         if (!outFileLeft.is_open() && !outFileRight.is_open())
@@ -587,7 +588,8 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
     }
 
-    if (this->write_output_to_file_flag){
+    if (this->write_output_to_file_flag)
+    {
         std::ofstream outFileLeft("output_convolute_left.txt");
         std::ofstream outFileRight("output_convolute_right.txt");
         if (!outFileLeft.is_open() && !outFileRight.is_open())
@@ -625,6 +627,11 @@ void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
     launchParams.emitter_position = pos;
 }
 
+void AudioRenderer::setSphereCenterInOptix(glm::vec3 center)
+{
+    launchParams.sphere_center = center;
+}
+
 void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
 {
     launchParams.dist_thres = dist;
@@ -645,4 +652,14 @@ void AudioRenderer::set_write_ir_to_file_flag(bool value)
 void AudioRenderer::set_write_output_to_file_flag(bool value)
 {
     this->write_output_to_file_flag = value;
+}
+
+void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right, unsigned int output_channels)
+{
+    mutex->lock();
+    placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
+    this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
+    this->render();
+    this->convolute(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+    mutex->unlock();
 }

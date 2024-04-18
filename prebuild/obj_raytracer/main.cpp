@@ -27,7 +27,6 @@
 #include "HalfSphere.h"
 
 using namespace std;
-std::mutex _mutex;
 
 struct AudioInfo
 {
@@ -39,10 +38,28 @@ float distanceP2P(gdt::vec3f p1, gdt::vec3f p2) {
 	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
 }
 
+void full_render(std::mutex* output_buffer_mutex) {
+	AudioRenderer* renderer = Context::get_audio_renderer();
+	OptixModel* scene = Context::get_optix_model();
+	Sphere sphere = *Context::get_sphere();
+	Camera camera = *Context::get_camera();
+	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+	AudioFile<float>* audio = Context::get_audio_file();
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float* outputBuffer_left = Context::get_output_buffer_left();
+	float* outputBuffer_right = Context::get_output_buffer_right();
+	unsigned int output_channels = Context::get_output_channels();
+	renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+
+	Context::set_is_rendering(false);
+};
+
 int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		double streamTime, RtAudioStreamStatus status, void *userData)
 {
-	unsigned int i, j;
+	unsigned int i;
 	double *buffer = (double *)outputBuffer;
 	if (status)
 		std::cout << "Stream underflow detected!" << std::endl;
@@ -53,7 +70,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	Context *context = Context::getInstance();
 	float *outputBufferConvolute_left = context->get_output_buffer_left();
 	float *outputBufferConvolute_right = context->get_output_buffer_right();
-	_mutex.lock();
 	for (i = 0; i < nBufferFrames * 2; i++)
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
@@ -68,7 +84,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 			*buffer++ = outputBufferConvolute_right[i + nextStream] * 100 * volume;
 		}
 	}
-	_mutex.unlock();
 	return 0;
 }
 
@@ -176,7 +191,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_R)
 	{
-		_mutex.lock();
 		Camera* camera = Context::get_camera();
 		Sphere sphere = *Context::get_sphere();
 		OptixModel* scene = Context::get_optix_model();
@@ -197,7 +211,6 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		Context::set_output_buffer_right(output_buffer_right);
 		Context::set_output_buffer_len(size_of_audio);
 		Context::set_last_render_position(camera_central_position);
-		_mutex.unlock();
 		cout << "Rendered" << endl;
 	}
 	if (key == GLFW_KEY_P)
@@ -209,7 +222,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 }
 
-void screen()
+void screen(std::mutex* output_buffer_mutex)
 {
 	glfwInit();
 
@@ -299,6 +312,7 @@ void screen()
 	renderer->setBasePower(Context::get_base_power());
 	renderer->setThresholds(Context::get_ray_distance_threshold(), Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
+	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
 	renderer->render();
 
 	AudioFile<float> *audio = Context::get_audio_file();
@@ -318,6 +332,7 @@ void screen()
 	float re_render_angle_threshold = Context::get_re_render_angle_threshold();
 	glm::vec3 last_orientation = camera.Orientation;
 	float last_angle = 0.0f;
+	Context::set_is_rendering(false);
 
 	while (!glfwWindowShouldClose(window))
 	{
@@ -351,14 +366,12 @@ void screen()
 		// Re render condition
 		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold;
 
-		if (reRenderCondition) {
+		if (reRenderCondition && !Context::get_is_rendering()) {
+			Context::set_is_rendering(true);
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			_mutex.lock();
-			placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
-			renderer->render();
-			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-			_mutex.unlock();
+			thread rendering_thread(full_render, output_buffer_mutex);
+			rendering_thread.detach();
 		}
 
 		for (int i = 0; i < objects.size(); i++)
@@ -382,263 +395,38 @@ int main(int argc, char **argv)
 	try
 	{
 		// Initialize context
-		// Not currently being used, TO DO
 		string configJsonPath;
 
-		if (argc < 2)
-		{
-			configJsonPath = "../../config.json";
-		}
-		else
-		{
-			configJsonPath = argv[1];
-		}
+		if (argc < 2) configJsonPath = "../../config.json";
+		else configJsonPath = argv[1];
 
 		// Read config file
-		ifstream f(configJsonPath);
-		if (!f)
-		{
-			throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
-		}
+		ifstream file(configJsonPath);
+		if (!file) throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
 
 		ostringstream ss;
-		ss << f.rdbuf(); // reading data
+		ss << file.rdbuf(); // reading data
 		string stringConfig = ss.str();
-		if (stringConfig.empty())
-		{
-			throw std::runtime_error("Error: File is empty or read operation failed");
-		}
+		if (stringConfig.empty()) throw std::runtime_error("Error: File is empty or read operation failed");
+
 		cJSON *config = cJSON_Parse(stringConfig.c_str());
-		if (!config)
-		{
-			throw std::runtime_error("Error: JSON parsing failed for the provided string");
-		}
-
-		// renderer_parameters
-		const cJSON *cJSON_renderer_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
-		// defaults
-		float initial_volume = 1.0f;
-		unsigned int output_channels = 2;
-		unsigned int ir_length_in_seconds = 2;
-		unsigned int width = 1366;
-		unsigned int height = 768;
-		bool write_ir_to_file_on_render = false;
-		bool write_output_to_file_on_render = false;
-		float re_render_distance_threshold = 3;
-		float re_render_angle_threshold = 5;
-		if (cJSON_IsObject(cJSON_renderer_parameters))
-		{
-			cJSON *cJSON_initial_volume = cJSON_GetObjectItem(cJSON_renderer_parameters, "initial_volume");
-			if (cJSON_IsNumber(cJSON_initial_volume))
-				initial_volume = cJSON_initial_volume->valuedouble;
-
-			const cJSON *cJSON_output_channels = cJSON_GetObjectItem(cJSON_renderer_parameters, "output_channels");
-			if (cJSON_IsNumber(cJSON_output_channels))
-				output_channels = round(cJSON_output_channels->valuedouble);
-
-			const cJSON *cJSON_ir_length_in_seconds = cJSON_GetObjectItem(cJSON_renderer_parameters, "ir_length_in_seconds");
-			if (cJSON_IsNumber(cJSON_ir_length_in_seconds))
-				ir_length_in_seconds = round(cJSON_ir_length_in_seconds->valuedouble);
-
-			const cJSON *cJSON_width = cJSON_GetObjectItem(cJSON_renderer_parameters, "width");
-			if (cJSON_IsNumber(cJSON_width))
-				width = round(cJSON_width->valuedouble);
-
-			const cJSON *cJSON_height = cJSON_GetObjectItem(cJSON_renderer_parameters, "height");
-			if (cJSON_IsNumber(cJSON_height))
-				height = round(cJSON_height->valuedouble);
-
-			const cJSON *cJSON_write_ir_to_file_on_render = cJSON_GetObjectItem(cJSON_renderer_parameters, "write_first_ir_to_file");
-			if (cJSON_IsBool(cJSON_write_ir_to_file_on_render))
-				write_ir_to_file_on_render = cJSON_IsTrue(cJSON_write_ir_to_file_on_render);
-
-			const cJSON *cJSON_write_output_to_file_on_render = cJSON_GetObjectItem(cJSON_renderer_parameters, "write_first_output_to_file");
-			if (cJSON_IsBool(cJSON_write_output_to_file_on_render))
-				write_output_to_file_on_render = cJSON_IsTrue(cJSON_write_output_to_file_on_render);
-			
-			const cJSON *cJSON_re_render_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_distance_threshold");
-			if (cJSON_IsBool(cJSON_re_render_distance_threshold))
-				re_render_distance_threshold = cJSON_IsTrue(cJSON_re_render_distance_threshold);
-
-			const cJSON* cJSON_re_render_angle_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_angle_threshold");
-			if (cJSON_IsBool(cJSON_re_render_angle_threshold))
-				re_render_angle_threshold = cJSON_IsTrue(cJSON_re_render_angle_threshold);
-				
-		}
-		// scene_parameters
-		const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
-		// defaults
-		string scene_file_path = "../../assets/models/1D_U.obj";
-		string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
-		string materials_file_path = "";
-		glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
-		glm::vec3 initial_emitter_pos(0, 0, 0);
-		if (cJSON_IsObject(cJSON_scene_parameters))
-		{
-			const cJSON *cJSON_scene_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "scene_file_path");
-			if (cJSON_IsString(cJSON_scene_file_path))
-				scene_file_path = cJSON_scene_file_path->valuestring;
-
-			const cJSON *cJSON_audio_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "audio_file_path");
-			if (cJSON_IsString(cJSON_audio_file_path))
-				audio_file_path = cJSON_audio_file_path->valuestring;
-
-			const cJSON *cJSON_materials_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "materials_file_path");
-			if (cJSON_IsString(cJSON_materials_file_path))
-				materials_file_path = cJSON_materials_file_path->valuestring;
-
-			const cJSON *cJSON_initial_receiver_pos = cJSON_GetObjectItem(cJSON_scene_parameters, "initial_receiver_pos");
-			if (cJSON_IsObject(cJSON_initial_receiver_pos))
-			{
-				cJSON *x = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "x");
-				cJSON *y = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "y");
-				cJSON *z = cJSON_GetObjectItem(cJSON_initial_receiver_pos, "z");
-				if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
-					initial_receiver_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
-			}
-
-			const cJSON *cJSON_initial_emitter_pos = cJSON_GetObjectItem(cJSON_scene_parameters, "initial_emitter_pos");
-			if (cJSON_IsObject(cJSON_initial_emitter_pos))
-			{
-				cJSON *x = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "x");
-				cJSON *y = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "y");
-				cJSON *z = cJSON_GetObjectItem(cJSON_initial_emitter_pos, "z");
-				if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
-					initial_emitter_pos = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
-			}
-		}
-
-		// pathtracer_parameters
-		const cJSON *cJSON_pathtracer_parameters = cJSON_GetObjectItem(config, "pathtracer_parameters");
-		// defaults
-		float base_power = 100.f;
-		glm::vec3 rays(100, 100, 100);
-		float ray_distance_threshold = 100.f;
-		float ray_energy_threshold = 0.f;
-		unsigned int ray_max_bounces = 10;
-		vector<Material> materials;
-		if (cJSON_IsObject(cJSON_pathtracer_parameters))
-		{
-			cJSON *cJSON_base_power = cJSON_GetObjectItem(cJSON_renderer_parameters, "base_power");
-			if (cJSON_IsNumber(cJSON_base_power))
-				base_power = cJSON_base_power->valuedouble;
-
-			const cJSON *cJSON_rays_size = cJSON_GetObjectItem(cJSON_scene_parameters, "rays");
-			if (cJSON_IsObject(cJSON_rays_size))
-			{
-				cJSON *x = cJSON_GetObjectItem(cJSON_rays_size, "x");
-				cJSON *y = cJSON_GetObjectItem(cJSON_rays_size, "y");
-				cJSON *z = cJSON_GetObjectItem(cJSON_rays_size, "z");
-				if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
-					rays = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
-			}
-
-			cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_distance_threshold");
-			if (cJSON_IsNumber(cJSON_ray_distance_threshold))
-				ray_distance_threshold = cJSON_ray_distance_threshold->valuedouble;
-
-			cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_energy_threshold");
-			if (cJSON_IsNumber(cJSON_ray_energy_threshold))
-				ray_energy_threshold = cJSON_ray_energy_threshold->valuedouble;
-
-			const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_max_bounces");
-			if (cJSON_IsNumber(cJSON_ray_max_bounces))
-				ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
-
-			const cJSON *cJSON_materials = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "materials");
-			const cJSON *cJSON_material = NULL;
-			if (cJSON_IsArray(cJSON_materials))
-			{
-				cJSON_ArrayForEach(cJSON_material, cJSON_materials)
-				{
-					Material material = Material();
-					cJSON *name = cJSON_GetObjectItem(cJSON_material, "name");
-					cJSON *mat_absorption = cJSON_GetObjectItem(cJSON_material, "mat_absorption");
-					if (cJSON_IsString(name) && cJSON_IsNumber(mat_absorption))
-					{
-						material.name = name->valuestring;
-						material.mat_absorption = mat_absorption->valuedouble;
-						// Add material to material list;
-						materials.push_back(material);
-					}
-				}
-			}
-		}
+		if (!config) throw std::runtime_error("Error: JSON parsing failed for the provided string");
+		
+		bool is_context_loaded = Context::loadContext(config);
+		if (!is_context_loaded) throw std::runtime_error("Error: Context failed to load from config file");
 
 		cJSON_Delete(config);
 
-		// Setup context
-
-		Context *context = Context::getInstance();
-		context->set_volume(initial_volume);
-		context->set_ir_length_in_seconds(ir_length_in_seconds);
-		context->set_output_channels(output_channels);
-		context->set_scene_width(width);
-		context->set_scene_height(height);
-		context->set_scene_file_path(scene_file_path);
-		context->set_audio_file_path(audio_file_path);
-		context->set_material_file_path(materials_file_path);
-		context->set_ray_distance_threshold(ray_distance_threshold);
-		context->set_ray_energy_threshold(ray_energy_threshold);
-		context->set_ray_max_bounces(ray_max_bounces);
-		context->set_base_power(base_power);
-		// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
-		context->set_initial_emitter_pos(initial_emitter_pos);
-		vector<Mesh> *transmitterVector = new vector<Mesh>;
-		context->set_transmitter(transmitterVector);
-		Camera *camera = new Camera(width, height, initial_receiver_pos);
-		context->set_camera(camera);
-
-		gdt::vec3f last_render_position = gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z);
-		context->set_last_render_position(last_render_position);
-
-		HalfSphere *leftSide = new HalfSphere("../../assets/models/leftHalf.obj");
-		HalfSphere *rightSide = new HalfSphere("../../assets/models/rightHalf.obj");
-		Sphere *sphere = new Sphere(leftSide, rightSide);
-		context->set_sphere(sphere);
-		OptixModel *scene = loadOBJ(scene_file_path);
-		context->set_optix_model(scene);
-		RtAudio *dac = new RtAudio();
-		AudioFile<float> *audio_file = new AudioFile<float>;
-		try
-		{
-			audio_file->load(audio_file_path);
-		}
-		catch (const std::exception &)
-		{
-			return 1;
-		}
-		context->set_audio_file(audio_file);
-
-		uint32_t sample_rate = audio_file->getSampleRate();
-		context->set_sample_rate(sample_rate);
-
-		placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z), camera->globalAngle);
-
-		AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate, materials);
-		renderer->set_write_output_to_file_flag(write_output_to_file_on_render);
-		renderer->set_write_ir_to_file_flag(write_ir_to_file_on_render);
-		context->set_audio_renderer(renderer);
-
-		size_t len_of_audio = audio_file->samples[0].size();
-		size_t size_of_audio = sizeof(float) * len_of_audio;
-		float *outputBuffer_left = (float *)malloc(size_of_audio);
-		float *outputBuffer_right = (float *)malloc(size_of_audio);
-		context->set_output_buffer_left(outputBuffer_left);
-		context->set_output_buffer_right(outputBuffer_right);
-		context->set_output_buffer_len(size_of_audio);
-		context->set_re_render_distance_threshold(re_render_distance_threshold);
-		context->set_re_render_angle_threshold(re_render_angle_threshold);
-
-		thread screen1(screen);
+		std::mutex* output_buffer_mutex = new std::mutex();
+		RtAudio* dac = new RtAudio();
+		thread screen1(screen, output_buffer_mutex);
 		thread audio1(audio, dac);
 
 		screen1.join();
 		audio1.detach();
 		// Stop the stream
 		RtAudioErrorType checkError = dac->stopStream();
-		// if (dac.isStreamOpen())
-		dac->closeStream();
+		if (dac->isStreamOpen()) dac->closeStream();
 		delete dac;
 	}
 	catch (const exception &e)
