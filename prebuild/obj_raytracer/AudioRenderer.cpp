@@ -625,6 +625,11 @@ void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
     launchParams.emitter_position = pos;
 }
 
+void AudioRenderer::setSphereCenterInOptix(glm::vec3 center)
+{
+    launchParams.sphere_center = center;
+}
+
 void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
 {
     launchParams.dist_thres = dist;
@@ -650,6 +655,7 @@ void AudioRenderer::set_write_output_to_file_flag(bool value)
 void AudioRenderer::full_render_cycle(std::mutex* mutex, Sphere sphere, OptixModel* scene, gdt::vec3f camera_central_point, float camera_global_angle, float* audio_samples, size_t size_of_audio, float* outputBuffer_left, float* outputBuffer_right, unsigned int output_channels){
     mutex->lock();
     placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
+    this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
     this->render();
     this->convolute(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
     mutex->unlock();

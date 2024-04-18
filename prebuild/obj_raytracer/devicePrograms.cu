@@ -58,10 +58,10 @@ static __forceinline__ __device__ T *getPRD()
 
 extern "C" __global__ void __closesthit__radiance()
 {
-    const TriangleMeshSBTData &sbtData = *(const TriangleMeshSBTData *)optixGetSbtDataPointer();
+    const TriangleMeshSBTData& sbtData = *(const TriangleMeshSBTData*)optixGetSbtDataPointer();
     const float3 wrd = optixGetWorldRayDirection();
     const glm::vec3 rayDir = glm::vec3(wrd.x, wrd.y, wrd.z);
-    PRD &prd = *(PRD *)getPRD<PRD>();
+    PRD& prd = *(PRD*)getPRD<PRD>();
 
     const int primID = optixGetPrimitiveIndex();
     const glm::ivec3 index = sbtData.index[primID];
@@ -71,7 +71,7 @@ extern "C" __global__ void __closesthit__radiance()
 
     glm::vec3 U = P2 - P1;
     glm::vec3 V = P3 - P1;
-    const glm::vec3 Ng = glm::normalize(glm::cross(U,V));
+    const glm::vec3 Ng = glm::normalize(glm::cross(U, V));
 
     const float u_barycentrics = optixGetTriangleBarycentrics().x;
     const float v_barycentrics = optixGetTriangleBarycentrics().y;
@@ -79,18 +79,33 @@ extern "C" __global__ void __closesthit__radiance()
 
     prd.distance += distance(P, prd.prev_position);
 
-        // Get Ray Id
+    // Get Ray Id
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
     float* ir_right = optixLaunchParams.ir_right;
     float* ir_left = optixLaunchParams.ir_left;
-    if (sbtData.mat_absorption == -1) 
+    if (sbtData.mat_absorption < 0) {
+        
+        glm::vec3 normDirection = rayDir * (1.0f / sqrt(glm::dot(rayDir, rayDir)));
+
+        // Sphere radius hardcoded to 1m
+        float sphere_radius = 1;
+
+        glm::vec3 farPoint = P + normDirection * (2.0f * sphere_radius);
+        glm::vec3 ray = farPoint - prd.sphere_center;
+        float t = sqrt(glm::dot(ray,ray)) - sphere_radius;
+        glm::vec3 exitPoint = P + normDirection * t;
+
+        prd.remaining_factor *= sqrt(glm::dot((exitPoint - P), (exitPoint - P)));
+    }
+
+    if (sbtData.mat_absorption == -1)
     {
         // we identify the receiver with a negative absorption
         float elapsed_time = prd.distance / SPEED_OF_SOUND;
         int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        
+
         if (array_pos < optixLaunchParams.ir_length) {
             atomicAdd(&ir_left[array_pos], prd.remaining_factor);
             // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
@@ -148,10 +163,13 @@ extern "C" __global__ void __raygen__renderFrame()
     PRD prd;
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
-    prd.remaining_factor = (optixLaunchParams.base_power) / (x_rays * y_rays * z_rays);
+
+    // 2.09439510239 is the volume of the sphere divided by 2
+    prd.remaining_factor = (optixLaunchParams.base_power) / ((x_rays * y_rays * z_rays) * 2.09439510239) ;
     prd.distance = 0;
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
+    prd.sphere_center = optixLaunchParams.sphere_center;
 
     int tid = iz * x_rays * y_rays + iy * x_rays + ix;
 

@@ -26,6 +26,7 @@ struct LaunchParams
     int size_z;
 
     glm::vec3 emitter_position;
+    glm::vec3 sphere_center;
 
     OptixTraversableHandle traversable;
 
