@@ -366,3 +366,14 @@ FodyWeavers.xsd
 # Custom ignored files and folders
 
 build/
+
+# LaTeX doc
+doc/informe.aux
+doc/informe.fdb_latexmk
+doc/informe.fls
+doc/informe.log
+doc/informe.bbl
+doc/informe.blg
+doc/informe.synctex.gz
+doc/informe.out
+doc/informe.toc

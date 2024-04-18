@@ -9,7 +9,6 @@
 #include "OptixModel.h"
 #include "AudioFile.h"
 #include "cJSON.h"
-
 class Context
 {
 private:
@@ -17,7 +16,7 @@ private:
 	Context();
 
 	float volume;
-	AudioFile<float>* audio_file;
+	AudioFile<float> *audio_file;
 	unsigned int ir_length_in_seconds = 2;
 	unsigned int output_channels;
 	unsigned int width;
@@ -50,12 +49,12 @@ private:
 
 public:
 	static Context *getInstance();
-	static bool loadContext(cJSON* config);
+	static bool loadContext(cJSON *config);
 
 	// ------------------------------------ SOUND ------------------------------------
 
-	static void set_audio_file(AudioFile<float>* audio_file);
-	static AudioFile<float>* get_audio_file();
+	static void set_audio_file(AudioFile<float> *audio_file);
+	static AudioFile<float> *get_audio_file();
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();
@@ -134,7 +133,7 @@ public:
 
 	static void set_transmitter(std::vector<Mesh> *transmitterVector);
 	static std::vector<Mesh> *get_transmitter();
-	
+
 	static void set_is_rendering(bool is_rendering);
 	static bool get_is_rendering();
 };
