@@ -31,6 +31,7 @@ using namespace std;
 #define SAMPLE_TYPE double
 
 std::mutex outputBufferMutex;
+std::mutex inputputBufferMutex;
 
 struct audioPaths {
     void* ptr;
@@ -92,22 +93,34 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	double streamTime, RtAudioStreamStatus status, void *data)
 {
 	if (status) std::cout << "Stream over/underflow detected." << std::endl;
-
-	// double *buffer = (double *)outputBuffer;
-
+	Context *context = Context::getInstance();
 	audioCallbackData *renderData = (audioCallbackData *)data;
 	memset(outputBuffer, 0, renderData->bufferFrames * sizeof(SAMPLE_TYPE));
+	float* input_buffer = (float*)malloc(sizeof(float) * 2048);
+	float* outputBufferConvolute_left = (float*)malloc(sizeof(float) * 2048);
+	float* outputBufferConvolute_right = (float*)malloc(sizeof(float) * 2048);
+	// float *outputBufferConvolute_left = context->get_output_buffer_left();
+	// float *outputBufferConvolute_right = context->get_output_buffer_right();
 	renderData->samplesRecordBuffer->insert((SAMPLE_TYPE*)inputBuffer, renderData->bufferFrames);
+	AudioRenderer *renderer = Context::get_audio_renderer();
+
+	for (int i=0; i < renderData->bufferFrames; i++)
+    {
+        input_buffer[i] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
+        outputBufferConvolute_left[i] = 0;
+        outputBufferConvolute_right[i] = 0;
+    }
+
+	inputputBufferMutex.lock();
+	renderer->convolute(input_buffer, 2048 * sizeof(float), outputBufferConvolute_left, outputBufferConvolute_right, 2);
+	inputputBufferMutex.unlock();
+
 	if (renderData->samplesRecordBuffer->full) {
 		unsigned int RvIndex;
-
 		for (int i = 0; i < renderData->bufferFrames; i++) {
-			SAMPLE_TYPE output_value = 0;
-			outputBufferMutex.lock();
 			RvIndex = (renderData->bufferFrames * 2) - 1 - (i * 2);
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
-			outputBufferMutex.unlock();
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = outputBufferConvolute_left[i] * renderData->volume;
+			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = outputBufferConvolute_left[i] * renderData->volume;
 		}
 	}
 	return 0;
@@ -400,11 +413,11 @@ void screen()
 	float *outputBuffer_left = Context::get_output_buffer_left();
 	float *outputBuffer_right = Context::get_output_buffer_right();
 
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	// renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
-	Context::set_output_buffer_left(outputBuffer_left);
-	Context::set_output_buffer_right(outputBuffer_right);
-	Context::set_output_buffer_len(size_of_audio);
+	// Context::set_output_buffer_left(outputBuffer_left);
+	// Context::set_output_buffer_right(outputBuffer_right);
+	// Context::set_output_buffer_len(size_of_audio);
 
 	gdt::vec3f last_render_position = Context::get_last_render_position();
 	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
@@ -428,7 +441,7 @@ void screen()
 		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
 			placeReceiver(sphere, scene, camera_central_point);
 			renderer->render();
-			renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+			// renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 			last_render_position = camera_central_point;
 		}
 
@@ -696,7 +709,7 @@ int main(int argc, char **argv)
 		context->set_re_render_distance_threshold(re_render_distance_threshold);
 
 		thread screen1(screen);
-		thread audio1(audio, dac, true);
+		thread audio1(audio, dac, false); // true input, false audio
 
 		screen1.join();
 		audio1.detach();

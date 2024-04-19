@@ -51,7 +51,7 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
         }
     }
     // return default absorption
-    return 0.1;
+    return 0.2;
 }
 
 /*! constructor - performs all setup, including initializing
@@ -79,7 +79,7 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     launchParams.size_z = 100;
     launchParams.traversable = buildAccel();
 
-    int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
+    int ir_length = buffer_size_in_seconds * sample_rate;
     launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir_left, launchParams.ir_length * sizeof(float));
@@ -570,7 +570,8 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
 
     size_t outputSize = h_inputBufferSize;
 
-    // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
+    // convolute_input_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.ir_length, d_outputBuffer_left);
+    // cudaDeviceSynchronize();
 
     convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
     cudaDeviceSynchronize();
@@ -587,30 +588,30 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
     }
 
-    if (this->write_output_to_file_flag){
-        std::ofstream outFileLeft("output_convolute_left.txt");
-        std::ofstream outFileRight("output_convolute_right.txt");
-        if (!outFileLeft.is_open() && !outFileRight.is_open())
-        {
-            std::cerr << "Error opening the file." << std::endl;
-        }
-        else
-        {
-            std::cout << "Wrote output to file" << std::endl;
+    // if (this->write_output_to_file_flag){
+    //     std::ofstream outFileLeft("output_convolute_left.txt");
+    //     std::ofstream outFileRight("output_convolute_right.txt");
+    //     if (!outFileLeft.is_open() && !outFileRight.is_open())
+    //     {
+    //         std::cerr << "Error opening the file." << std::endl;
+    //     }
+    //     else
+    //     {
+    //         std::cout << "Wrote output to file" << std::endl;
 
-            // Write each element of the float array to the file, one per line
-            for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-            {
-                outFileLeft << h_outputBuffer_left[i] << std::endl;
-                outFileRight << h_outputBuffer_right[i] << std::endl;
-            }
+    //         // Write each element of the float array to the file, one per line
+    //         for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+    //         {
+    //             outFileLeft << h_outputBuffer_left[i] << std::endl;
+    //             outFileRight << h_outputBuffer_right[i] << std::endl;
+    //         }
 
-            // Close the file
-            outFileLeft.close();
-            outFileRight.close();
-        }
-        this->set_write_output_to_file_flag(false);
-    }
+    //         // Close the file
+    //         outFileLeft.close();
+    //         outFileRight.close();
+    //     }
+    //     this->set_write_output_to_file_flag(false);
+    // }
 
     // free
     cudaFree(d_inputBuffer_left);

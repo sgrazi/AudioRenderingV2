@@ -471,13 +471,13 @@ namespace objl
 				{
 					if (!meshname.empty())
 					{
-						std::cout
-							<< "\r- " << meshname
-							<< "\t| vertices > " << Positions.size()
-							<< "\t| texcoords > " << TCoords.size()
-							<< "\t| normals > " << Normals.size()
-							<< "\t| triangles > " << (Vertices.size() / 3)
-							<< (!MeshMatNames.empty() ? "\t| material: " + MeshMatNames.back() : "");
+						// std::cout
+						// 	<< "\r- " << meshname
+						// 	<< "\t| vertices > " << Positions.size()
+						// 	<< "\t| texcoords > " << TCoords.size()
+						// 	<< "\t| normals > " << Normals.size()
+						// 	<< "\t| triangles > " << (Vertices.size() / 3)
+						// 	<< (!MeshMatNames.empty() ? "\t| material: " + MeshMatNames.back() : "");
 					}
 				}
 #endif

@@ -217,6 +217,101 @@ bool checkArrayZero(float* IR, unsigned int ir_len) {
     
 }
 
+__global__ void copyData(float* src, float* dst, int size) {
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < size) {
+        dst[idx] = src[idx];
+    }
+}
+
+// Function to copy data from CUDA device memory to device memory
+void copyDeviceToDevice(float* src, float* dst, int size) {
+    // Define grid and block dimensions
+    int blockSize = 256;
+    int numBlocks = (size + blockSize - 1) / blockSize;
+
+    // Launch the kernel
+    copyData<<<numBlocks, blockSize>>>(src, dst, size);
+
+    // Ensure all memory operations are completed before returning
+    cudaDeviceSynchronize();
+}
+
+void convolute_input_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int ir_len, float* outputBuffer) {
+    
+    // int blockSize = 256;
+    // int numBlocks = (samples_len + blockSize - 1) / blockSize;
+    // copyData<<<numBlocks, blockSize>>>(samples, outputBuffer, samples_len);
+
+    const int threadsPerBlock = 256;
+    int blocks;
+    const int batchSize = 1; // Number of batches 
+    const int segmentLen = 512;
+    const int totalSegments = samples_len / segmentLen;
+
+    // CHANCHADA para recortar el IR
+    ir_len = 1024;
+    float* new_IR;
+    cudaMalloc((void**)&new_IR, 1024 * sizeof(float));
+    copyDeviceToDevice(IR, new_IR, 1024);
+    
+
+    
+    // Allocate device memory for samples
+    float* sampleSegment;
+    cudaMalloc((void**)&sampleSegment, segmentLen * 2 * sizeof(float));
+    cufftComplex* segmentData;
+    cudaMalloc((void**)&segmentData, segmentLen * 2 * sizeof(cufftComplex));
+    // Allocate device memory for IR
+    cufftComplex* IRData;
+    cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
+    // Set up FFT plans
+    cufftHandle segmentPlan;
+    cufftPlan1d(&segmentPlan, segmentLen * 2, CUFFT_R2C, batchSize);
+    cufftHandle IRPlan;
+    cufftPlan1d(&IRPlan, ir_len, CUFFT_R2C, batchSize);
+    // Invert result
+    cufftHandle inversePlan;
+    cufftPlan1d(&inversePlan, segmentLen * 2, CUFFT_C2R, batchSize);
+    // Do FFT on IR, which will be reused a lot
+    blocks = (ir_len / threadsPerBlock) + 1;
+    cudaDeviceSynchronize();
+    CHCK_CUFFT_RES(cufftExecR2C(IRPlan, new_IR, IRData));
+
+    // Finally convolute, second by second
+    /*
+    Basically we take each segment and we prolong it with 0's
+    Then we do FFT and sum each segment into the total
+    Then we invert the total
+    Full algorithm can be found on https://www.dspguide.com/ch18/2.htm
+    */
+    blocks = (segmentLen / threadsPerBlock) + 1;
+    for (int i = 0; i < totalSegments; i++) {
+        // First second is samples, rest is 0's (this is why we do seconds + 1 as the upper limit)
+        load_sample_segment << <blocks, threadsPerBlock >> > (i, segmentLen * 2, 2, sampleSegment, samples);
+        cudaDeviceSynchronize();
+        float* samplesSeg_host = new float[segmentLen];
+        delete[] samplesSeg_host;
+        // FFT on the loaded segment, and convolute it with IR
+        CHCK_CUFFT_RES(cufftExecR2C(segmentPlan, sampleSegment, segmentData));
+        multiply_samples_segment_and_ir << <blocks, threadsPerBlock >> > (i, segmentLen, 2, segmentData, IRData);
+        cudaDeviceSynchronize();
+        // Inverse on the result and save it to buffer
+        CHCK_CUFFT_RES(cufftExecC2R(inversePlan, segmentData, sampleSegment));
+        blocks = (segmentLen + threadsPerBlock - 1) / threadsPerBlock;
+        add_segment_to_result_buffer<<<blocks, threadsPerBlock>>>(i, segmentLen, segmentLen * 2, sampleSegment, outputBuffer);
+        cudaDeviceSynchronize();
+    }
+
+    // Clean up
+    cufftDestroy(segmentPlan);
+    cufftDestroy(IRPlan);
+    cufftDestroy(inversePlan);
+    cudaFree(sampleSegment);
+    cudaFree(segmentData);
+    cudaFree(IRData);
+}
+
 void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len, float* outputBuffer) {
     const int threadsPerBlock = 256;
     int blocks;
@@ -224,32 +319,6 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     const int secondsToProcess = samples_len / sample_rate;
     const int segment_size_in_seconds = 2;
     
-    //int* d_result; // Device result
-    //int h_result = 0; // Host result
-
-    //// Calculate grid and block sizes
-    //int blockSize = 256; // Number of threads per block
-    //int numBlocks = (ir_len + blockSize - 1) / blockSize;
-    //cudaMalloc(&d_result, sizeof(int));
-    //cudaMemcpy(d_result, &h_result, sizeof(int), cudaMemcpyHostToDevice);
-
-    //// Launch the kernel
-    //isAllZeros << <numBlocks, blockSize >> > (IR, ir_len, d_result);
-
-    //// Copy the result back to host
-    //cudaMemcpy(&h_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
-
-    //// Check the result
-    //if (h_result == 0) {
-    //    printf("All elements are zero.\n");
-    //}
-    //else {
-    //    printf("There is at least one element that is not zero.\n");
-    //}
-
-    //// Free GPU memory
-    //cudaFree(d_result);
-
     // Allocate device memory for samples
     float* sampleSegment;
     int segmentSize = sample_rate * segment_size_in_seconds * sizeof(float);
@@ -259,9 +328,6 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     // Allocate device memory for IR
     cufftComplex* IRData;
     cudaMalloc((void**)&IRData, ir_len * sizeof(cufftComplex));
-    // Allocate device memory for output
-    cufftComplex* resultData;
-    cudaMalloc((void**)&resultData, samples_len * sizeof(cufftComplex));
     // Set up FFT plans
     cufftHandle segmentPlan;
     cufftPlan1d(&segmentPlan, sample_rate * segment_size_in_seconds, CUFFT_R2C, batchSize);
@@ -274,36 +340,6 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     blocks = (ir_len / threadsPerBlock) + 1;
     cudaDeviceSynchronize();
     CHCK_CUFFT_RES(cufftExecR2C(IRPlan, IR, IRData));
-
-    //int* d_result; // Device result
-    //int h_result = 0; // Host result
-
-    //// Allocate memory on the GPU
-    //cudaMalloc(&d_result, sizeof(int));
-
-    //// Copy the host array to the device (GPU)
-    //cudaMemcpy(d_result, &h_result, sizeof(int), cudaMemcpyHostToDevice);
-
-    //// Calculate grid and block sizes
-    //int blockSize = 256; // Number of threads per block
-    //int numBlocks = (ir_len + blockSize - 1) / blockSize;
-
-    //// Launch the kernel
-    //isAllZerosComplex << <numBlocks, blockSize >> > (IRData, ir_len, d_result);
-
-    //// Copy the result back to host
-    //cudaMemcpy(&h_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
-
-    //// Check the result
-    //if (h_result == 0) {
-    //    printf("COMPLEX = All elements are zero.\n");
-    //}
-    //else {
-    //    printf("COMPLEX = There is at least one element that is not zero.\n");
-    //}
-
-    //cudaFree(d_result);
-
 
     // Finally convolute, second by second
     /*
@@ -347,12 +383,12 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaMemcpy(&h_result, d_result, sizeof(int), cudaMemcpyDeviceToHost);
 
     // Check the result
-    if (h_result == 0) {
-        printf("output = All elements are zero.\n");
-    }
-    else {
-        printf("output = There is at least one element that is not zero.\n");
-    }
+    // if (h_result == 0) {
+    //     printf("output = All elements are zero.\n");
+    // }
+    // else {
+    //     printf("output = There is at least one element that is not zero.\n");
+    // }
 
     cudaFree(d_result);
 
@@ -363,7 +399,6 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaFree(sampleSegment);
     cudaFree(segmentData);
     cudaFree(IRData);
-    cudaFree(resultData);
 }
 
 void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {

@@ -130,8 +130,6 @@ extern "C" __global__ void __miss__radiance()
 
 extern "C" __global__ void __raygen__renderFrame()
 {
-
-    // TODO, check if dimensions are three dimensional
     const int ix = optixGetLaunchIndex().x;
     const int iy = optixGetLaunchIndex().y;
     const int iz = optixGetLaunchIndex().z;
@@ -152,7 +150,7 @@ extern "C" __global__ void __raygen__renderFrame()
     int tid = iz * x_rays * y_rays + iy * x_rays + ix;
 
     curandState state;
-    curand_init((unsigned long long)clock64(), tid, 0, &state);
+    curand_init(tid, 0, 0, &state);
 
     double dx = curand_uniform(&state) * 2.0f - 1.0f;
     double dy = curand_uniform(&state) * 2.0f - 1.0f;
