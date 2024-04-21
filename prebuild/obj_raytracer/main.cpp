@@ -29,9 +29,10 @@
 
 using namespace std;
 #define SAMPLE_TYPE double
-
+#define inputSampleRate 44100 //inventando un sample rate de 44.1khz
+#define inputBufferLen 2048 //inventado too
 std::mutex outputBufferMutex;
-std::mutex inputputBufferMutex;
+std::mutex inputBufferMutex;
 
 struct audioPaths {
     void* ptr;
@@ -89,39 +90,36 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
+// nBufferFrames es inputBufferLen
+// len(inputBuffer) es inputBufferLen
+// len(outputBuffer) es inputBufferLen * 2
+
 int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	double streamTime, RtAudioStreamStatus status, void *data)
 {
 	if (status) std::cout << "Stream over/underflow detected." << std::endl;
 	Context *context = Context::getInstance();
 	audioCallbackData *renderData = (audioCallbackData *)data;
-	memset(outputBuffer, 0, renderData->bufferFrames * sizeof(SAMPLE_TYPE));
-	float* input_buffer = (float*)malloc(sizeof(float) * 2048);
-	float* outputBufferConvolute_left = (float*)malloc(sizeof(float) * 2048);
-	float* outputBufferConvolute_right = (float*)malloc(sizeof(float) * 2048);
-	// float *outputBufferConvolute_left = context->get_output_buffer_left();
-	// float *outputBufferConvolute_right = context->get_output_buffer_right();
+	// memset(outputBuffer, 0, renderData->bufferFrames * sizeof(SAMPLE_TYPE));
+	SAMPLE_TYPE* input_buffer = (SAMPLE_TYPE*)malloc(sizeof(SAMPLE_TYPE) * inputBufferLen);
 	renderData->samplesRecordBuffer->insert((SAMPLE_TYPE*)inputBuffer, renderData->bufferFrames);
 	AudioRenderer *renderer = Context::get_audio_renderer();
 
 	for (int i=0; i < renderData->bufferFrames; i++)
     {
         input_buffer[i] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
-        outputBufferConvolute_left[i] = 0;
-        outputBufferConvolute_right[i] = 0;
     }
 
-	inputputBufferMutex.lock();
-	renderer->convolute(input_buffer, 2048 * sizeof(float), outputBufferConvolute_left, outputBufferConvolute_right, 2);
-	inputputBufferMutex.unlock();
-
+	inputBufferMutex.lock();
+	renderer->convoluteLiveInput(input_buffer, inputBufferLen * sizeof(SAMPLE_TYPE), context->get_live_input_buffer());
+	inputBufferMutex.unlock();
+	
 	if (renderData->samplesRecordBuffer->full) {
-		unsigned int RvIndex;
-		for (int i = 0; i < renderData->bufferFrames; i++) {
-			RvIndex = (renderData->bufferFrames * 2) - 1 - (i * 2);
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex] = outputBufferConvolute_left[i] * renderData->volume;
-			((SAMPLE_TYPE*)outputBuffer)[RvIndex - 1] = outputBufferConvolute_left[i] * renderData->volume;
-		}
+		SAMPLE_TYPE* test = (SAMPLE_TYPE*)malloc(sizeof(SAMPLE_TYPE) * inputBufferLen * 2);
+		//la idea tomar primeros audioBufferLen samples del bc hacia el output buffer, mover el puntero correspondientemente
+		// TODO: arreglar takeFirstEntries, deberia de dejar 0 sobre las entradas que saco los valores
+		context->get_live_input_buffer()->takeFirstEntries(test, nBufferFrames * 2); // tomo 4096, se supone que convolute carga en el circularbuffer correctamente
+		memcpy(outputBuffer, test, sizeof(SAMPLE_TYPE) * inputBufferLen * 2);
 	}
 	return 0;
 }
@@ -165,8 +163,8 @@ void audioMicPlay(RtAudio *dac) {
         exit(0);
     }
 
-    unsigned int bufferFrames = 256, input_channels = 1, output_channels = 2;
-    unsigned int sampleRate = 8000;
+    unsigned int bufferFrames = inputBufferLen, input_channels = 1, output_channels = 2;
+    unsigned int sampleRate = inputSampleRate;
 
     RtAudio::StreamParameters inputParameters;
     inputParameters.deviceId = dac->getDefaultInputDevice();
@@ -185,7 +183,7 @@ void audioMicPlay(RtAudio *dac) {
 
     // Create audioData struct on the heap
     audioCallbackData* audioData = new audioCallbackData;
-    audioData->bufferFrames = bufferFrames * input_channels;
+    audioData->bufferFrames = inputBufferLen;
     audioData->pos = 0;
     audioData->samplesRecordBufferSize = sampleRate * input_channels;
     audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(audioData->samplesRecordBufferSize);
@@ -299,7 +297,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		float *output_buffer_left = Context::get_output_buffer_left();
 		float *output_buffer_right = Context::get_output_buffer_right();
 
-		renderer->convolute(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
 		Context::set_output_buffer_left(output_buffer_left);
 		Context::set_output_buffer_right(output_buffer_right);
 		Context::set_output_buffer_len(size_of_audio);
@@ -408,12 +406,12 @@ void screen()
 	renderer->render();
 
 	AudioFile<float> *audio = Context::get_audio_file();
-	size_t len_of_audio = audio->samples[0].size();
-	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer_left = Context::get_output_buffer_left();
-	float *outputBuffer_right = Context::get_output_buffer_right();
+	// size_t len_of_audio = audio->samples[0].size();
+	// size_t size_of_audio = sizeof(float) * len_of_audio;
+	// float *outputBuffer_left = Context::get_output_buffer_left();
+	// float *outputBuffer_right = Context::get_output_buffer_right();
 
-	// renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	// renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
 	// Context::set_output_buffer_left(outputBuffer_left);
 	// Context::set_output_buffer_right(outputBuffer_right);
@@ -441,7 +439,7 @@ void screen()
 		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
 			placeReceiver(sphere, scene, camera_central_point);
 			renderer->render();
-			// renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+			// renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 			last_render_position = camera_central_point;
 		}
 
@@ -548,7 +546,7 @@ int main(int argc, char **argv)
 		const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
 		// defaults
 		string scene_file_path = "../../assets/models/1D_U.obj";
-		string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
+		string audio_file_path;
 		string materials_file_path = "";
 		glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
 		glm::vec3 initial_emitter_pos(0, 0, 0);
@@ -679,16 +677,21 @@ int main(int argc, char **argv)
 		context->set_optix_model(scene);
 		RtAudio *dac = new RtAudio();
 		AudioFile<float> *audio_file = new AudioFile<float>;
-		try
-		{
-			audio_file->load(audio_file_path);
+		if (audio_file_path.empty()) {
+			try
+			{
+				audio_file->load(audio_file_path);
+				context->set_audio_file(audio_file);
+			}
+			catch (const std::exception &)
+			{
+				return 1;
+			}
+		} else {
+			CircularBuffer<SAMPLE_TYPE>* b = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 2); 
+			context->set_live_input_buffer(b);
 		}
-		catch (const std::exception &)
-		{
-			return 1;
-		}
-		context->set_audio_file(audio_file);
-
+		
 		uint32_t sample_rate = audio_file->getSampleRate();
 		context->set_sample_rate(sample_rate);
 
@@ -709,7 +712,7 @@ int main(int argc, char **argv)
 		context->set_re_render_distance_threshold(re_render_distance_threshold);
 
 		thread screen1(screen);
-		thread audio1(audio, dac, false); // true input, false audio
+		thread audio1(audio, dac, true); // true input, false audio
 
 		screen1.join();
 		audio1.detach();

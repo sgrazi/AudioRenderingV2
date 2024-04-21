@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "AudioRenderer.h"
+#include "CircularBuffer.h"
 #include "OptixModel.h"
 #include <vector>
 #include "AudioFile.h"
@@ -17,6 +18,7 @@ private:
 	float volume;
 	AudioFile<float>* audio_file;
 	unsigned int ir_length_in_seconds = 2;
+    CircularBuffer<double>* liveInputBuffer;
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
@@ -49,6 +51,9 @@ public:
 	void showMessage();
 
 	// ------------------------------------ SOUND ------------------------------------
+
+	static void set_live_input_buffer(CircularBuffer<double>* b);
+	static CircularBuffer<double>* get_live_input_buffer();
 
 	static void set_audio_file(AudioFile<float>* audio_file);
 	static AudioFile<float>* get_audio_file();

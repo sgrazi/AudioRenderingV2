@@ -545,49 +545,78 @@ void AudioRenderer::render()
     }
 }
 
-void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
-{
+/**
+ * Se normaliza en un kernel los valores de los arreglos.
+ * Luego se los "mergea" con un zip, los valores del buffer izq estan en las posiciones pares, los valores derechos en posiciones impares.
+ */
+void AudioRenderer::normalizeAndMergeStereoOutput(double * d_outputBuffer_left, double * d_outputBuffer_right, size_t monoBufferLength, double * d_outputBuffer){
+    // normalize
+    int blockSize = 256;
+    int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
+    normalizeBuffers(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, (launchParams.ir_length / 2));
+    cudaDeviceSynchronize();
 
-    // LEFT
-    //  move inputBuffer to device
-    float *d_inputBuffer_left;
-    float *d_inputBuffer_right;
+    // merge
+    zipArrays(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
+    cudaDeviceSynchronize();
+}
 
-    // RIGHT
-    //  move inputBuffer to device
+/**
+ * Dado el buffer circular, empezando en startIndex se le hace atomicAdd de cada valor de deviceArray.
+ */
+void addToCircularBuffer(double* deviceArray, CircularBuffer<double> *hostCircularBuffer, size_t startIndex, size_t length, size_t size) {
+    double* d_circularBuffer;
+    cudaMalloc((void**)&d_circularBuffer, size);
+    cudaMemcpy(d_circularBuffer, hostCircularBuffer->buffer, size, cudaMemcpyHostToDevice);
+
+    int blockSize = 256;
+    int numBlocks = (length + blockSize - 1) / blockSize;
+
+    addDeviceArrayToCircularBuffer(numBlocks, blockSize, deviceArray, d_circularBuffer, startIndex, length);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(hostCircularBuffer->buffer, d_circularBuffer, size, cudaMemcpyDeviceToHost);
+    cudaFree(d_circularBuffer);
+}
+
+/**
+ * Convoluciona el input buffer con los IRs, carga el resultado en el buffer circular de salida
+ */
+void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, CircularBuffer<double> *h_circularOutputBuffer) {
+    // move inputBuffer to device
+    double *d_inputBuffer_left;
+    double *d_inputBuffer_right;
+
     cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
 
     copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
 
-    // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
-    float *d_outputBuffer_left = NULL;
-    float *d_outputBuffer_right = NULL;
+    // create outputBuffer
+    double *d_outputBuffer_left;
+    double *d_outputBuffer_right;
 
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
-    size_t outputSize = h_inputBufferSize;
-
-    // convolute_input_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.ir_length, d_outputBuffer_left);
+    // convoluteFromLiveInput(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_left);
     // cudaDeviceSynchronize();
+    // convoluteFromLiveInput(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_right);
+    // cudaDeviceSynchronize();
+    
+    // merge into single output
+    double *d_outputBuffer;
+    cudaMalloc(&d_outputBuffer, h_inputBufferSize * 2);
+    normalizeAndMergeStereoOutput(d_outputBuffer_left, d_outputBuffer_right, h_inputBufferSize / sizeof(double), d_outputBuffer);
+    
+    // add to h_circularOutputBuffer
+    size_t startIndex = h_circularOutputBuffer->head;
+    size_t length = h_circularOutputBuffer->length;
 
-    convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
-    cudaDeviceSynchronize();
-    convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
-    cudaDeviceSynchronize();
-    // copy result to host
-    copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
-    copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
-
-    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-    {
-        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
-        // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
-        h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
-    }
-
+    addToCircularBuffer(d_outputBuffer, h_circularOutputBuffer, startIndex, length, length * sizeof(double));
+    
+    // // write IR if indicated
     // if (this->write_output_to_file_flag){
     //     std::ofstream outFileLeft("output_convolute_left.txt");
     //     std::ofstream outFileRight("output_convolute_right.txt");
@@ -612,6 +641,80 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
     //     }
     //     this->set_write_output_to_file_flag(false);
     // }
+
+    // free
+    cudaFree(d_inputBuffer_left);
+    cudaFree(d_outputBuffer_left);
+    cudaFree(d_inputBuffer_right);
+    cudaFree(d_outputBuffer_right);
+    cudaFree(d_outputBuffer);
+}
+    
+
+void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
+{
+
+    // LEFT
+    //  move inputBuffer to device
+    float *d_inputBuffer_left;
+    float *d_inputBuffer_right;
+
+    // RIGHT
+    //  move inputBuffer to device
+    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
+    cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
+
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
+
+    // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
+    float *d_outputBuffer_left = NULL;
+    float *d_outputBuffer_right = NULL;
+
+    cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
+    cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
+
+    size_t outputSize = h_inputBufferSize;
+
+    convoluteFromAudioBuffer(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    cudaDeviceSynchronize();
+    convoluteFromAudioBuffer(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
+    cudaDeviceSynchronize();
+    // copy result to host
+    copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
+    copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
+
+    for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+    {
+        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / num_channels);
+        // std::cout << "for: " << h_outputBuffer_left[i] << std::endl;
+        h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
+    }
+
+    if (this->write_output_to_file_flag){
+        std::ofstream outFileLeft("output_convolute_left.txt");
+        std::ofstream outFileRight("output_convolute_right.txt");
+        if (!outFileLeft.is_open() && !outFileRight.is_open())
+        {
+            std::cerr << "Error opening the file." << std::endl;
+        }
+        else
+        {
+            std::cout << "Wrote output to file" << std::endl;
+
+            // Write each element of the float array to the file, one per line
+            for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
+            {
+                outFileLeft << h_outputBuffer_left[i] << std::endl;
+                outFileRight << h_outputBuffer_right[i] << std::endl;
+            }
+
+            // Close the file
+            outFileLeft.close();
+            outFileRight.close();
+        }
+        this->set_write_output_to_file_flag(false);
+    }
 
     // free
     cudaFree(d_inputBuffer_left);

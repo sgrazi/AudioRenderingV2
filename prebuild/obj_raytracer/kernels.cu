@@ -237,7 +237,7 @@ void copyDeviceToDevice(float* src, float* dst, int size) {
     cudaDeviceSynchronize();
 }
 
-void convolute_input_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int ir_len, float* outputBuffer) {
+void convoluteFromLiveInput(float* samples, float* IR, unsigned int samples_len, unsigned int ir_len, float* outputBuffer) {
     
     // int blockSize = 256;
     // int numBlocks = (samples_len + blockSize - 1) / blockSize;
@@ -312,7 +312,7 @@ void convolute_input_fourier_in_gpu(float* samples, float* IR, unsigned int samp
     cudaFree(IRData);
 }
 
-void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len, float* outputBuffer) {
+void convoluteFromAudioBuffer(float* samples, float* IR, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len, float* outputBuffer) {
     const int threadsPerBlock = 256;
     int blocks;
     const int batchSize = 1; // Number of batches 
@@ -401,10 +401,54 @@ void convolute_fourier_in_gpu(float* samples, float* IR, unsigned int samples_le
     cudaFree(IRData);
 }
 
-void copy_from_gpu(float* device_pointer, float* host_pointer, size_t size) {
+void copy_from_gpu(void* device_pointer, void* host_pointer, size_t size) {
     CUDA_CHK(cudaMemcpy(host_pointer, device_pointer, size, cudaMemcpyDeviceToHost));
 };
 
-void copy_to_gpu(float* host_pointer, float* device_pointer, size_t size) {
+void copy_to_gpu(void* host_pointer, void* device_pointer, size_t size) {
     CUDA_CHK(cudaMemcpy(device_pointer, host_pointer, size, cudaMemcpyHostToDevice));
+};
+
+__global__ void d_normalizeBuffers(double * d_outputBuffer_left, double * d_outputBuffer_right, int bufferLength, int value) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (index < bufferLength) {
+        d_outputBuffer_left[index] /= value;
+        d_outputBuffer_right[index] /= value;
+    }
+};
+
+void normalizeBuffers(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value) {
+    d_normalizeBuffers<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, value);
+    cudaDeviceSynchronize();
+};
+
+__global__ void d_zipArrays(const double *arrayA, const double *arrayB, double *outputArray, int length) {
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    if (index < length) {
+        int outputIndex = index * 2;
+        outputArray[outputIndex] = arrayA[index];
+        outputArray[outputIndex + 1] = arrayB[index];
+    }
+};
+
+void zipArrays(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength) {
+    d_zipArrays<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
+    cudaDeviceSynchronize();
+};
+
+__global__ void d_addDeviceArrayToCircularBuffer(double *deviceArray, double *circularBuffer, size_t startIndex, size_t length) {
+    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
+    
+    // Ensure the thread index is within the array bounds
+    if (index < length) {
+        size_t circularIndex = (startIndex + index) % length;
+        atomicAdd(&(circularBuffer[circularIndex]), deviceArray[index]);
+    }
+};
+
+void addDeviceArrayToCircularBuffer(int numBlocks, int blockSize, double* deviceArray, double *circularBuffer, int startIndex, int length){
+    d_addDeviceArrayToCircularBuffer<<<numBlocks, blockSize>>>(deviceArray, circularBuffer, startIndex, length);
+    cudaDeviceSynchronize();
 };
