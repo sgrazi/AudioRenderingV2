@@ -25,7 +25,7 @@ public:
     /*! render one frame */
     void render();
 
-    void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, CircularBuffer<double> *h_circularOutputBuffer);
+    void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, double *h_circularOutputBuffer);
 
     void convoluteAudioFile(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer_left, float* h_outputBuffer_right, unsigned int num_channels);
 
@@ -134,4 +134,6 @@ protected:
 
     bool write_ir_to_file_flag = false;
     bool write_output_to_file_flag = false;
+
+    const double* d_live_remaining_echo = NULL;
 };

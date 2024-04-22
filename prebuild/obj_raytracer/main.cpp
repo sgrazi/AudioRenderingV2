@@ -99,34 +99,20 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	if (status) std::cout << "Stream over/underflow detected." << std::endl;
 	Context *context = Context::getInstance();
 	audioCallbackData *renderData = (audioCallbackData *)data;
-	// memset(outputBuffer, 0, renderData->bufferFrames * sizeof(SAMPLE_TYPE));
-	SAMPLE_TYPE* input_buffer = (SAMPLE_TYPE*)malloc(sizeof(SAMPLE_TYPE) * inputBufferLen);
-	renderData->samplesRecordBuffer->insert((SAMPLE_TYPE*)inputBuffer, renderData->bufferFrames);
 	AudioRenderer *renderer = Context::get_audio_renderer();
 
-	for (int i=0; i < renderData->bufferFrames; i++)
-    {
-        input_buffer[i] = renderData->samplesRecordBuffer->getElement(renderData->samplesRecordBufferSize - 1 - i);
-    }
+	double *buffer = (double *)outputBuffer;
+	double *ibuffer = (double*)inputBuffer;
+	double* outputBufferSinho = new double[nBufferFrames * 2];
 
 	inputBufferMutex.lock();
-	renderer->convoluteLiveInput(input_buffer, inputBufferLen * sizeof(SAMPLE_TYPE), context->get_live_input_buffer());
+	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), outputBufferSinho);
 	inputBufferMutex.unlock();
 	
-	// double *buffer = (double *)outputBuffer;
-	// float volume = Context::get_volume();
-	// int head = context->get_live_input_buffer()->head;
-	
-	// if (renderData->samplesRecordBuffer->full) {
-
-	// 	for (int i = 0; i < nBufferFrames; i++){
-	// 		*buffer++ = context->get_live_input_buffer()[head + i] * 100 * volume;
-	// 		*buffer++ = context->get_live_input_buffer()[head + i] * 100 * volume;
-	// 	}
-
-	// }
-
-	context->get_live_input_buffer()->takeFirstEntries((double*)outputBuffer, nBufferFrames * 2);
+	float volume = Context::get_volume();
+	 for (int i = 0; i < nBufferFrames * 2 ; i++) {
+		 *buffer++ = outputBufferSinho[i] * 50 * volume;
+	 }
 
 	return 0;
 }
@@ -193,6 +179,7 @@ void audioMicPlay(RtAudio *dac) {
     audioData->bufferFrames = inputBufferLen;
     audioData->pos = 0;
     audioData->samplesRecordBufferSize = sampleRate * input_channels;
+	//audioData->samplesRecordBufferSize = 48000;
     audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(audioData->samplesRecordBufferSize);
     audioData->paths = new audioPaths();
     audioData->paths->ptr = NULL;
