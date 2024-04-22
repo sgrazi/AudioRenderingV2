@@ -26,6 +26,9 @@ include_directories(${CMAKE_SOURCE_DIR}/common/glad)
 # Add rtaudio as a sub-directory so its CMakeLists.txt gets invoked.
 #add_subdirectory(external/rtaudio)
 
+# Add compute capability 6.0 as a requirement
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -arch=sm_60")
+
 cuda_compile_and_embed(embedded_ptx_code devicePrograms.cu)
 
 add_executable(obj_raytracer
