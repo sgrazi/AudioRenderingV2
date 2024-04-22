@@ -550,15 +550,6 @@ void AudioRenderer::render()
  * Luego se los "mergea" con un zip, los valores del buffer izq estan en las posiciones pares, los valores derechos en posiciones impares.
  */
 void AudioRenderer::normalizeAndMergeStereoOutput(double * d_outputBuffer_left, double * d_outputBuffer_right, size_t monoBufferLength, double * d_outputBuffer){
-    // normalize
-    int blockSize = 256;
-    int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
-    normalizeBuffers(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, (launchParams.ir_length / 2));
-    cudaDeviceSynchronize();
-
-    // merge
-    zipArrays(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
-    cudaDeviceSynchronize();
 }
 
 /**
@@ -569,13 +560,13 @@ void addToCircularBuffer(double* deviceArray, CircularBuffer<double> *hostCircul
     cudaMalloc((void**)&d_circularBuffer, size);
     cudaMemcpy(d_circularBuffer, hostCircularBuffer->buffer, size, cudaMemcpyHostToDevice);
 
-    int blockSize = 256;
-    int numBlocks = (length + blockSize - 1) / blockSize;
+    // int blockSize = 256;
+    // int numBlocks = (length + blockSize - 1) / blockSize;
 
-    addDeviceArrayToCircularBuffer(numBlocks, blockSize, deviceArray, d_circularBuffer, startIndex, length);
-    cudaDeviceSynchronize();
+    // addDeviceArrayToCircularBuffer(numBlocks, blockSize, deviceArray, d_circularBuffer, startIndex, length);
+    // cudaDeviceSynchronize();
 
-    cudaMemcpy(hostCircularBuffer->buffer, d_circularBuffer, size, cudaMemcpyDeviceToHost);
+    cudaMemcpy(hostCircularBuffer->buffer, deviceArray, size, cudaMemcpyDeviceToHost);
     cudaFree(d_circularBuffer);
 }
 
@@ -590,6 +581,8 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
 
+    //TODO, usar uno solo
+    
     copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
     copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
 
@@ -600,15 +593,24 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
+    copy_to_gpu(h_inputBuffer, d_outputBuffer_left, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_outputBuffer_right, h_inputBufferSize);
+
     // convoluteFromLiveInput(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_left);
     // cudaDeviceSynchronize();
     // convoluteFromLiveInput(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_right);
     // cudaDeviceSynchronize();
-    
-    // merge into single output
+
     double *d_outputBuffer;
     cudaMalloc(&d_outputBuffer, h_inputBufferSize * 2);
-    normalizeAndMergeStereoOutput(d_outputBuffer_left, d_outputBuffer_right, h_inputBufferSize / sizeof(double), d_outputBuffer);
+    
+    // normalize
+    int blockSize = 256;
+    int numBlocks = ((h_inputBufferSize / sizeof(double)) + blockSize - 1) / blockSize;
+    normalizeBuffers(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, h_inputBufferSize / sizeof(double), (launchParams.ir_length / 2));
+
+    // merge
+    zipArrays(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, h_inputBufferSize / sizeof(double));
     
     // add to h_circularOutputBuffer
     size_t startIndex = h_circularOutputBuffer->head;
@@ -641,7 +643,6 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     //     }
     //     this->set_write_output_to_file_flag(false);
     // }
-
     // free
     cudaFree(d_inputBuffer_left);
     cudaFree(d_outputBuffer_left);

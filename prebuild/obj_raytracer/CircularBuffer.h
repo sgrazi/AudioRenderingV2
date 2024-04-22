@@ -92,11 +92,11 @@ public:
 		}
 	}
 	
-	// Function to take the first 'count' entries from the buffer
+	// Function to take the first 'n' entries from the buffer
     // and store them in 'output', then fill the copied positions
     // in buffer with 0 and move the head pointer correspondingly.
-    void takeFirstEntries(T *output, size_t count) {
-        size_t elementsToCopy = std::min(count, length);
+    void takeFirstEntries(T *output, size_t n) {
+        size_t elementsToCopy = std::min(n, length);
 
         for (size_t i = 0; i < elementsToCopy; ++i) {
             output[i] = buffer[head];

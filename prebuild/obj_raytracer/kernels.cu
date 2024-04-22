@@ -419,8 +419,8 @@ __global__ void d_normalizeBuffers(double * d_outputBuffer_left, double * d_outp
 };
 
 void normalizeBuffers(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value) {
-    d_normalizeBuffers<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, value);
-    cudaDeviceSynchronize();
+    // d_normalizeBuffers<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, value);
+    // cudaDeviceSynchronize();
 };
 
 __global__ void d_zipArrays(const double *arrayA, const double *arrayB, double *outputArray, int length) {
@@ -444,7 +444,8 @@ __global__ void d_addDeviceArrayToCircularBuffer(double *deviceArray, double *ci
     // Ensure the thread index is within the array bounds
     if (index < length) {
         size_t circularIndex = (startIndex + index) % length;
-        atomicAdd(&(circularBuffer[circularIndex]), deviceArray[index]);
+        // maybe change to atomicAdd?
+        circularBuffer[circularIndex] += deviceArray[index];
     }
 };
 

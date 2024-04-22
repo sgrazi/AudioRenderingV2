@@ -93,7 +93,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 // nBufferFrames es inputBufferLen
 // len(inputBuffer) es inputBufferLen
 // len(outputBuffer) es inputBufferLen * 2
-
 int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	double streamTime, RtAudioStreamStatus status, void *data)
 {
@@ -114,13 +113,21 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	renderer->convoluteLiveInput(input_buffer, inputBufferLen * sizeof(SAMPLE_TYPE), context->get_live_input_buffer());
 	inputBufferMutex.unlock();
 	
-	if (renderData->samplesRecordBuffer->full) {
-		SAMPLE_TYPE* test = (SAMPLE_TYPE*)malloc(sizeof(SAMPLE_TYPE) * inputBufferLen * 2);
-		//la idea tomar primeros audioBufferLen samples del bc hacia el output buffer, mover el puntero correspondientemente
-		// TODO: arreglar takeFirstEntries, deberia de dejar 0 sobre las entradas que saco los valores
-		context->get_live_input_buffer()->takeFirstEntries(test, nBufferFrames * 2); // tomo 4096, se supone que convolute carga en el circularbuffer correctamente
-		memcpy(outputBuffer, test, sizeof(SAMPLE_TYPE) * inputBufferLen * 2);
-	}
+	// double *buffer = (double *)outputBuffer;
+	// float volume = Context::get_volume();
+	// int head = context->get_live_input_buffer()->head;
+	
+	// if (renderData->samplesRecordBuffer->full) {
+
+	// 	for (int i = 0; i < nBufferFrames; i++){
+	// 		*buffer++ = context->get_live_input_buffer()[head + i] * 100 * volume;
+	// 		*buffer++ = context->get_live_input_buffer()[head + i] * 100 * volume;
+	// 	}
+
+	// }
+
+	context->get_live_input_buffer()->takeFirstEntries((double*)outputBuffer, nBufferFrames * 2);
+
 	return 0;
 }
 
@@ -499,7 +506,7 @@ int main(int argc, char **argv)
 		// renderer_parameters
 		const cJSON *cJSON_renderer_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
 		// defaults
-		float initial_volume = 1.0f;
+		float initial_volume = 0.5f;
 		unsigned int output_channels = 2;
 		unsigned int ir_length_in_seconds = 2;
 		unsigned int width = 1366;
