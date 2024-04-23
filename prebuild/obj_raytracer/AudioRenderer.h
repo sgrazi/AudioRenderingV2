@@ -25,7 +25,7 @@ public:
     /*! render one frame */
     void render();
 
-    void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, double *h_circularOutputBuffer);
+    void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer);
 
     void convoluteAudioFile(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer_left, float* h_outputBuffer_right, unsigned int num_channels);
 

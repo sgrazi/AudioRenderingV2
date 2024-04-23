@@ -553,27 +553,37 @@ void AudioRenderer::normalizeAndMergeStereoOutput(double * d_outputBuffer_left, 
 }
 
 /**
- * Dado el buffer circular, empezando en startIndex se le hace atomicAdd de cada valor de deviceArray.
+ * Dado el buffer circular, empezando en startIndex se le suma cada valor de deviceArray.
  */
-void addToCircularBuffer(double* deviceArray, double *hostCircularBuffer, size_t length, size_t size) {
-    /*double* d_circularBuffer;
-    cudaMalloc((void**)&d_circularBuffer, size);
-    cudaMemcpy(d_circularBuffer, hostCircularBuffer->buffer, size, cudaMemcpyHostToDevice);*/
+void addToCircularBuffer(double* deviceArray, size_t deviceArrayLength, double *hostCircularBuffer, size_t length, size_t startIndex) {
+    double* d_circularBuffer;
+    cudaMalloc((void**)&d_circularBuffer, length * sizeof(double));
+    cudaMemcpy(d_circularBuffer, hostCircularBuffer, length * sizeof(double), cudaMemcpyHostToDevice);
 
-    // int blockSize = 256;
-    // int numBlocks = (length + blockSize - 1) / blockSize;
+    int blockSize = 256;
+    int numBlocks = (deviceArrayLength + blockSize - 1) / blockSize;
 
-    // addDeviceArrayToCircularBuffer(numBlocks, blockSize, deviceArray, d_circularBuffer, startIndex, length);
-    // cudaDeviceSynchronize();
+    addDeviceArrayToCircularBuffer(numBlocks, blockSize, deviceArray, deviceArrayLength, d_circularBuffer, startIndex, length);
+    cudaDeviceSynchronize();
 
-    cudaMemcpy(hostCircularBuffer, deviceArray, size, cudaMemcpyDeviceToHost);
-    //cudaFree(d_circularBuffer);
+    cudaMemcpy(hostCircularBuffer, d_circularBuffer, length * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaFree(d_circularBuffer);
 }
+
+bool isArrayAllZeros(const double* array, int length) {
+    for (int i = 0; i < length; ++i) {
+        if (array[i] != 0) {
+            return false; // Array contains a non-zero element
+        }
+    }
+    return true; // Array contains all zeros
+}
+
 
 /**
  * Convoluciona el input buffer con los IRs, carga el resultado en el buffer circular de salida
  */
-void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, double *h_circularOutputBuffer) {
+void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer) {
     if (this->d_live_remaining_echo == NULL) {
         cudaMalloc(&d_live_remaining_echo, h_inputBufferSize);
     }
@@ -590,13 +600,18 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
-    cudaMemcpy(d_outputBuffer_left, d_inputBuffer, h_inputBufferSize, cudaMemcpyDeviceToDevice);
-    cudaMemcpy(d_outputBuffer_right, d_inputBuffer, h_inputBufferSize, cudaMemcpyDeviceToDevice);
-    
-    // convoluteFromLiveInput(d_inputBuffer, launchParams.ir_left, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_left);
-    // cudaDeviceSynchronize();
-    // convoluteFromLiveInput(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_right);
-    // cudaDeviceSynchronize();
+    // change IR to double
+    double *d_IRLeft;
+    double *d_IRRight;
+    cudaMalloc(&d_IRLeft, launchParams.ir_length * sizeof(double));
+    cudaMalloc(&d_IRRight, launchParams.ir_length * sizeof(double));
+    castFloatArrayToDouble(launchParams.ir_left, d_IRLeft, launchParams.ir_length);
+    castFloatArrayToDouble(launchParams.ir_right, d_IRRight, launchParams.ir_length);
+
+    convoluteFromLiveInput(d_inputBuffer, d_IRLeft, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_left);
+    cudaDeviceSynchronize();
+    convoluteFromLiveInput(d_inputBuffer, d_IRRight, h_inputBufferSize / sizeof(double), launchParams.ir_length, d_outputBuffer_right);
+    cudaDeviceSynchronize();
 
     double *d_outputBuffer;
     cudaMalloc(&d_outputBuffer, h_inputBufferSize * 2);
@@ -610,38 +625,10 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     zipArrays(numBlocks, blockSize, d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, h_inputBufferSize / sizeof(double));
     
     // add to h_circularOutputBuffer
-   /* size_t startIndex = h_circularOutputBuffer->head;
-    size_t length = h_circularOutputBuffer->length;*/
-
-    cudaMemcpy(h_circularOutputBuffer, d_outputBuffer, h_outputBufferSize, cudaMemcpyDeviceToHost);
-
-    //addToCircularBuffer(d_outputBuffer, h_circularOutputBuffer, h_inputBufferSize * 2 / sizeof(double), h_inputBufferSize * 2);
+    size_t startIndex = h_circularOutputBuffer->head;
+    size_t length = h_circularOutputBuffer->length;
+    addToCircularBuffer(d_outputBuffer, (h_inputBufferSize * 2) / sizeof(double), h_circularOutputBuffer->buffer, length, startIndex);
     
-    // // write IR if indicated
-    // if (this->write_output_to_file_flag){
-    //     std::ofstream outFileLeft("output_convolute_left.txt");
-    //     std::ofstream outFileRight("output_convolute_right.txt");
-    //     if (!outFileLeft.is_open() && !outFileRight.is_open())
-    //     {
-    //         std::cerr << "Error opening the file." << std::endl;
-    //     }
-    //     else
-    //     {
-    //         std::cout << "Wrote output to file" << std::endl;
-
-    //         // Write each element of the float array to the file, one per line
-    //         for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
-    //         {
-    //             outFileLeft << h_outputBuffer_left[i] << std::endl;
-    //             outFileRight << h_outputBuffer_right[i] << std::endl;
-    //         }
-
-    //         // Close the file
-    //         outFileLeft.close();
-    //         outFileRight.close();
-    //     }
-    //     this->set_write_output_to_file_flag(false);
-    // }
     // free
     cudaFree(d_inputBuffer);
     cudaFree(d_outputBuffer_left);

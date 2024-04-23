@@ -30,7 +30,7 @@
 using namespace std;
 #define SAMPLE_TYPE double
 #define inputSampleRate 44100 //inventando un sample rate de 44.1khz
-#define inputBufferLen 2048 //inventado too
+#define inputBufferLen 4096 //inventado too
 std::mutex outputBufferMutex;
 std::mutex inputBufferMutex;
 
@@ -103,16 +103,20 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 	double *buffer = (double *)outputBuffer;
 	double *ibuffer = (double*)inputBuffer;
-	double* outputBufferSinho = new double[nBufferFrames * 2];
+	CircularBuffer<double>* circularBuffer = context->get_live_input_buffer();
 
 	inputBufferMutex.lock();
-	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), outputBufferSinho);
+	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), circularBuffer);
 	inputBufferMutex.unlock();
 	
 	float volume = Context::get_volume();
-	 for (int i = 0; i < nBufferFrames * 2 ; i++) {
-		 *buffer++ = outputBufferSinho[i] * 50 * volume;
-	 }
+	int start = circularBuffer->head;
+	int length = circularBuffer->length;
+	for (int i = 0; i < nBufferFrames * 2 ; i++) {
+		*buffer++ = circularBuffer->buffer[(start + i) % length] * 50 * volume;
+		circularBuffer->buffer[(start + i) % length] = 0;
+	}
+	circularBuffer->head = (circularBuffer->head + (nBufferFrames * 2)) % length;
 
 	return 0;
 }
