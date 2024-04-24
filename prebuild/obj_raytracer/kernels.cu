@@ -253,34 +253,28 @@ __global__ void complexCrossMultiplication(const cufftDoubleComplex *inputA, con
 /*
  * Convoluciona samples con IR, guarda el resultado en outputBuffer
 */
-void convoluteFromLiveInput(double* samples, double* IR, unsigned int samples_len, unsigned int ir_len, double* outputBuffer) {    
-    // Expand with 0's until it has the same size as IR
-    double* expandedSamples;
-    cudaMalloc((void**)&expandedSamples, ir_len * sizeof(double));
-    cudaMemcpy(expandedSamples, samples, samples_len * sizeof(double), cudaMemcpyDeviceToDevice);
-    cudaMemset(expandedSamples + samples_len, 0, (ir_len - samples_len) * sizeof(double));
-
+void convoluteFromLiveInput(double* samples, double* IR, unsigned int len, double* outputBuffer) {    
     // Allocate device memory for samples
     cufftDoubleComplex* segmentData;
-    cudaMalloc((void**)&segmentData, ir_len * sizeof(cufftDoubleComplex));
+    cudaMalloc((void**)&segmentData, len * sizeof(cufftDoubleComplex));
     // Allocate device memory for IR
     cufftDoubleComplex* IRData;
-    cudaMalloc((void**)&IRData, ir_len * sizeof(cufftDoubleComplex));
+    cudaMalloc((void**)&IRData, len * sizeof(cufftDoubleComplex));
     
     // Set up FFT plans
     const int batchSize = 1; // Number of batches 
     cufftHandle plan;
-    cufftPlan1d(&plan, ir_len, CUFFT_D2Z, batchSize);
+    cufftPlan1d(&plan, len, CUFFT_D2Z, batchSize);
 
     // Convolute and invert result
     cufftHandle inversePlan;
-    cufftPlan1d(&inversePlan, ir_len, CUFFT_Z2D, batchSize);
+    cufftPlan1d(&inversePlan, len, CUFFT_Z2D, batchSize);
     CHCK_CUFFT_RES(cufftExecD2Z(plan, IR, IRData));
-    CHCK_CUFFT_RES(cufftExecD2Z(plan, expandedSamples, segmentData));
+    CHCK_CUFFT_RES(cufftExecD2Z(plan, samples, segmentData));
 
     int blockSize = 256;
-    int numBlocks = (ir_len + blockSize - 1) / blockSize;
-    complexCrossMultiplication<<<numBlocks, blockSize>>>(segmentData, IRData, segmentData, ir_len);
+    int numBlocks = (len + blockSize - 1) / blockSize;
+    complexCrossMultiplication<<<numBlocks, blockSize>>>(segmentData, IRData, segmentData, len);
     cudaDeviceSynchronize();
     
     CHCK_CUFFT_RES(cufftExecZ2D(inversePlan, segmentData, outputBuffer));
@@ -288,7 +282,6 @@ void convoluteFromLiveInput(double* samples, double* IR, unsigned int samples_le
     // Clean up
     cufftDestroy(plan);
     cufftDestroy(inversePlan);
-    cudaFree(expandedSamples);
     cudaFree(segmentData);
     cudaFree(IRData);
 }
@@ -399,7 +392,9 @@ __global__ void d_normalizeBuffers(double * d_outputBuffer_left, double * d_outp
     }
 };
 
-void normalizeBuffers(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value) {
+void normalizeBuffers(double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value) {
+    int blockSize = 256;
+    int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
     d_normalizeBuffers<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, monoBufferLength, value);
     cudaDeviceSynchronize();
 };
@@ -414,7 +409,9 @@ __global__ void d_zipArrays(const double *arrayA, const double *arrayB, double *
     }
 };
 
-void zipArrays(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength) {
+void zipArrays(double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength) {
+    int blockSize = 256;
+    int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
     d_zipArrays<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
     cudaDeviceSynchronize();
 };
@@ -429,7 +426,9 @@ __global__ void d_addDeviceArrayToCircularBuffer(double *deviceArray, size_t dLe
     }
 };
 
-void addDeviceArrayToCircularBuffer(int numBlocks, int blockSize, double* deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength){
+void addDeviceArrayToCircularBuffer(double* deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength){
+    int blockSize = 256;
+    int numBlocks = (dLength + blockSize - 1) / blockSize;
     d_addDeviceArrayToCircularBuffer<<<numBlocks, blockSize>>>(deviceArray, dLength, circularBuffer, startIndex, hLength);
     cudaDeviceSynchronize();
 };

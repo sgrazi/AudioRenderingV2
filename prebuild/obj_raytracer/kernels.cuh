@@ -11,14 +11,14 @@
 
 void fillWithZeroesKernel(float* buf, int size);
 void convolute_toeplitz_in_gpu(float* samples, float* IR, int ir_len, float* outputBuffer);
-void convoluteFromLiveInput(double* samples, double* IR, unsigned int samples_len, unsigned int ir_len, double* outputBuffer);
+void convoluteFromLiveInput(double* samples, double* IR, unsigned int len, double* outputBuffer);
 void convoluteFromAudioBuffer(float* samples, float* IR, unsigned int samples_len, unsigned int sample_rate, unsigned int ir_len, float* outputBuffer);
 void copy_from_gpu(void* device_pointer, void* host_pointer, size_t size);
 void copy_to_gpu(void* host_pointer, void* device_pointer, size_t size);
 bool checkArrayZero(float* IR, unsigned int ir_len);
-void zipArrays(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength);
-void normalizeBuffers(int numBlocks, int blockSize, double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value);
-void addDeviceArrayToCircularBuffer(int numBlocks, int blockSize, double* deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength);
+void zipArrays(double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength);
+void normalizeBuffers(double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value);
+void addDeviceArrayToCircularBuffer(double* deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength);
 bool isArrayAllZerosOnDevice(const double* d_array, int length);
 double getFirstElementOnDevice(const double *d_array);
 void castFloatArrayToDouble(const float *input, double *output, size_t length);

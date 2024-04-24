@@ -90,6 +90,40 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
+void appendDoubleArrayToFile(const double* array, int size, const char* filename) {
+    // Open file in append mode
+    std::ofstream outfile(filename, std::ios_base::app);
+    if (!outfile) {
+        std::cerr << "Error opening file for appending." << std::endl;
+        return;
+    }
+
+    // Write the array to the file as text
+    for (int i = 0; i < size; ++i) {
+        outfile << array[i] << "\n";
+    }
+	outfile << 8 << "\n";
+
+    // Close the file
+    outfile.close();
+}
+
+
+void appendIntToFile(const int value, const char* filename){
+	// Open file in append mode
+    std::ofstream outfile(filename, std::ios_base::app);
+    if (!outfile) {
+        std::cerr << "Error opening file for appending." << std::endl;
+        return;
+    }
+
+    // Write the array to the file as text
+	outfile << value << "\n";
+
+    // Close the file
+    outfile.close();
+}
+
 // nBufferFrames es inputBufferLen
 // len(inputBuffer) es inputBufferLen
 // len(outputBuffer) es inputBufferLen * 2
@@ -101,10 +135,10 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	audioCallbackData *renderData = (audioCallbackData *)data;
 	AudioRenderer *renderer = Context::get_audio_renderer();
 
-	double *buffer = (double *)outputBuffer;
+	double *buffer = (double*)outputBuffer;
 	double *ibuffer = (double*)inputBuffer;
 	CircularBuffer<double>* circularBuffer = context->get_live_input_buffer();
-
+	// appendDoubleArrayToFile(ibuffer, nBufferFrames, "AUDIOINPUT.txt");
 	inputBufferMutex.lock();
 	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), circularBuffer);
 	inputBufferMutex.unlock();
@@ -113,11 +147,12 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	int start = circularBuffer->head;
 	int length = circularBuffer->length;
 	for (int i = 0; i < nBufferFrames * 2 ; i++) {
-		*buffer++ = circularBuffer->buffer[(start + i) % length] * 50 * volume;
-		circularBuffer->buffer[(start + i) % length] = 0;
+		int index = (start + i) % length;
+		*buffer++ = circularBuffer->buffer[index] * 50 * volume;
+		circularBuffer->buffer[index] = 0;
 	}
+	// appendDoubleArrayToFile((double*)outputBuffer, nBufferFrames * 2, "AUDIOOUTPUT.txt");
 	circularBuffer->head = (circularBuffer->head + (nBufferFrames * 2)) % length;
-
 	return 0;
 }
 
@@ -686,7 +721,7 @@ int main(int argc, char **argv)
 				return 1;
 			}
 		} else {
-			CircularBuffer<SAMPLE_TYPE>* b = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 2); 
+			CircularBuffer<SAMPLE_TYPE>* b = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 4); 
 			context->set_live_input_buffer(b);
 		}
 		
