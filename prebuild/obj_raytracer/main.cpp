@@ -90,21 +90,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
-void appendIntToFile(const int value, const char* filename){
-	// Open file in append mode
-    std::ofstream outfile(filename, std::ios_base::app);
-    if (!outfile) {
-        std::cerr << "Error opening file for appending." << std::endl;
-        return;
-    }
-
-    // Write the array to the file as text
-	outfile << value << "\n";
-
-    // Close the file
-    outfile.close();
-}
-
 // nBufferFrames es inputBufferLen
 // len(inputBuffer) es inputBufferLen
 // len(outputBuffer) es inputBufferLen * 2
@@ -301,18 +286,22 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
 
-		AudioFile<float> *audio = Context::get_audio_file();
-		size_t len_of_audio = audio->samples[0].size();
-		size_t size_of_audio = sizeof(float) * len_of_audio;
-		float *output_buffer_left = Context::get_output_buffer_left();
-		float *output_buffer_right = Context::get_output_buffer_right();
+		if (!Context::get_live_flag()) {
+			AudioFile<float> *audio = Context::get_audio_file();
+			size_t len_of_audio = audio->samples[0].size();
+			size_t size_of_audio = sizeof(float) * len_of_audio;
+			float *output_buffer_left = Context::get_output_buffer_left();
+			float *output_buffer_right = Context::get_output_buffer_right();
 
-		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
-		Context::set_output_buffer_left(output_buffer_left);
-		Context::set_output_buffer_right(output_buffer_right);
-		Context::set_output_buffer_len(size_of_audio);
+			renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
+			Context::set_output_buffer_left(output_buffer_left);
+			Context::set_output_buffer_right(output_buffer_right);
+			Context::set_output_buffer_len(size_of_audio);
+		}
+
 		Context::set_last_render_position(camera_central_position);
 		cout << "Rendered" << endl;
+		
 	}
 	if (key == GLFW_KEY_P)
 	{
@@ -415,18 +404,23 @@ void screen()
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->render();
 
-	AudioFile<float> *audio = Context::get_audio_file();
-	// size_t len_of_audio = audio->samples[0].size();
-	// size_t size_of_audio = sizeof(float) * len_of_audio;
-	// float *outputBuffer_left = Context::get_output_buffer_left();
-	// float *outputBuffer_right = Context::get_output_buffer_right();
+	size_t size_of_audio;
+	float* outputBuffer_left;
+	float* outputBuffer_right;
+	AudioFile<float>* audio = Context::get_audio_file();
+	if (!Context::get_live_flag()){
+		size_t len_of_audio = audio->samples[0].size();
+		size_t size_of_audio = sizeof(float) * len_of_audio;
+		float *outputBuffer_left = Context::get_output_buffer_left();
+		float *outputBuffer_right = Context::get_output_buffer_right();
 
-	// renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
-	// Context::set_output_buffer_left(outputBuffer_left);
-	// Context::set_output_buffer_right(outputBuffer_right);
-	// Context::set_output_buffer_len(size_of_audio);
-
+		Context::set_output_buffer_left(outputBuffer_left);
+		Context::set_output_buffer_right(outputBuffer_right);
+		Context::set_output_buffer_len(size_of_audio);
+	}
+	
 	gdt::vec3f last_render_position = Context::get_last_render_position();
 	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
 
@@ -449,7 +443,9 @@ void screen()
 		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold) {
 			placeReceiver(sphere, scene, camera_central_point);
 			renderer->render();
-			// renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+			if (!Context::get_live_flag()){
+				renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+			}
 			last_render_position = camera_central_point;
 		}
 
@@ -474,7 +470,6 @@ int main(int argc, char **argv)
 	try
 	{
 		// Initialize context
-		// Not currently being used, TO DO
 		string configJsonPath;
 
 		if (argc < 2)
@@ -663,7 +658,6 @@ int main(int argc, char **argv)
 		context->set_scene_width(width);
 		context->set_scene_height(height);
 		context->set_scene_file_path(scene_file_path);
-		context->set_audio_file_path(audio_file_path);
 		context->set_material_file_path(materials_file_path);
 		context->set_ray_distance_threshold(ray_distance_threshold);
 		context->set_ray_energy_threshold(ray_energy_threshold);
@@ -686,40 +680,42 @@ int main(int argc, char **argv)
 		OptixModel *scene = loadOBJ(scene_file_path);
 		context->set_optix_model(scene);
 		RtAudio *dac = new RtAudio();
-		AudioFile<float> *audio_file = new AudioFile<float>;
+		uint32_t sample_rate;
 		if (!audio_file_path.empty()) {
 			try
 			{
+				AudioFile<float> *audio_file = new AudioFile<float>;
+				context->set_audio_file_path(audio_file_path);
 				audio_file->load(audio_file_path);
 				context->set_audio_file(audio_file);
+				sample_rate = audio_file->getSampleRate();
+				size_t len_of_audio = audio_file->samples[0].size();
+				size_t size_of_audio = sizeof(float) * len_of_audio;
+				float *outputBuffer_left = (float *)malloc(size_of_audio);
+				float *outputBuffer_right = (float *)malloc(size_of_audio);
+				context->set_output_buffer_left(outputBuffer_left);
+				context->set_output_buffer_right(outputBuffer_right);
+				context->set_output_buffer_len(size_of_audio);
 			}
 			catch (const std::exception &)
 			{
 				return 1;
 			}
+		} else {
+			sample_rate = 44100;
+			context->set_live_flag(true);
 		}
 		
-		uint32_t sample_rate = audio_file->getSampleRate();
 		context->set_sample_rate(sample_rate);
-
 		placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z));
-
 		AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate, materials);
 		renderer->set_write_output_to_file_flag(write_output_to_file_on_render);
 		renderer->set_write_ir_to_file_flag(write_ir_to_file_on_render);
 		context->set_audio_renderer(renderer);
-
-		size_t len_of_audio = audio_file->samples[0].size();
-		size_t size_of_audio = sizeof(float) * len_of_audio;
-		float *outputBuffer_left = (float *)malloc(size_of_audio);
-		float *outputBuffer_right = (float *)malloc(size_of_audio);
-		context->set_output_buffer_left(outputBuffer_left);
-		context->set_output_buffer_right(outputBuffer_right);
-		context->set_output_buffer_len(size_of_audio);
 		context->set_re_render_distance_threshold(re_render_distance_threshold);
 
 		thread screen1(screen);
-		thread audio1(audio, dac, true); // true input, false audio
+		thread audio1(audio, dac, audio_file_path.empty()); // true = live input, false = audio
 
 		screen1.join();
 		audio1.detach();

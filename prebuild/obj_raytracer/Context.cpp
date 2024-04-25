@@ -272,3 +272,11 @@ void Context::set_live_input_buffer(CircularBuffer<double>* b) {
 CircularBuffer<double>* Context::get_live_input_buffer() {
     return instance->liveInputBuffer;
 }
+
+void Context::set_live_flag(bool flag){
+    instance->liveFlag = flag;
+}
+
+bool Context::get_live_flag() {
+    return instance->liveFlag;
+}

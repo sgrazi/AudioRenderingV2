@@ -16,6 +16,7 @@ private:
 	Context();
 
 	float volume;
+	bool liveFlag = false;
 	AudioFile<float>* audio_file;
 	unsigned int ir_length_in_seconds = 2;
     CircularBuffer<double>* liveInputBuffer;
@@ -51,6 +52,9 @@ public:
 	void showMessage();
 
 	// ------------------------------------ SOUND ------------------------------------
+
+	static void set_live_flag(bool liveFlag);
+	static bool get_live_flag();
 
 	static void set_live_input_buffer(CircularBuffer<double>* b);
 	static CircularBuffer<double>* get_live_input_buffer();
