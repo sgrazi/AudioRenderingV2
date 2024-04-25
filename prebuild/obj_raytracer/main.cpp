@@ -90,25 +90,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
-void appendDoubleArrayToFile(const double* array, int size, const char* filename) {
-    // Open file in append mode
-    std::ofstream outfile(filename, std::ios_base::app);
-    if (!outfile) {
-        std::cerr << "Error opening file for appending." << std::endl;
-        return;
-    }
-
-    // Write the array to the file as text
-    for (int i = 0; i < size; ++i) {
-        outfile << array[i] << "\n";
-    }
-	outfile << 8 << "\n";
-
-    // Close the file
-    outfile.close();
-}
-
-
 void appendIntToFile(const int value, const char* filename){
 	// Open file in append mode
     std::ofstream outfile(filename, std::ios_base::app);
@@ -137,22 +118,19 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 	double *buffer = (double*)outputBuffer;
 	double *ibuffer = (double*)inputBuffer;
-	CircularBuffer<double>* circularBuffer = context->get_live_input_buffer();
-	// appendDoubleArrayToFile(ibuffer, nBufferFrames, "AUDIOINPUT.txt");
 	inputBufferMutex.lock();
-	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), circularBuffer);
+	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), renderData->samplesRecordBuffer);
 	inputBufferMutex.unlock();
 	
 	float volume = Context::get_volume();
-	int start = circularBuffer->head;
-	int length = circularBuffer->length;
+	int start = renderData->samplesRecordBuffer->head;
+	int length = renderData->samplesRecordBuffer->length;
 	for (int i = 0; i < nBufferFrames * 2 ; i++) {
 		int index = (start + i) % length;
-		*buffer++ = circularBuffer->buffer[index] * 50 * volume;
-		circularBuffer->buffer[index] = 0;
+		*buffer++ = renderData->samplesRecordBuffer->buffer[index] * 50 * volume;
+		renderData->samplesRecordBuffer->buffer[index] = 0;
 	}
-	// appendDoubleArrayToFile((double*)outputBuffer, nBufferFrames * 2, "AUDIOOUTPUT.txt");
-	circularBuffer->head = (circularBuffer->head + (nBufferFrames * 2)) % length;
+	renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
 	return 0;
 }
 
@@ -218,8 +196,7 @@ void audioMicPlay(RtAudio *dac) {
     audioData->bufferFrames = inputBufferLen;
     audioData->pos = 0;
     audioData->samplesRecordBufferSize = sampleRate * input_channels;
-	//audioData->samplesRecordBufferSize = 48000;
-    audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(audioData->samplesRecordBufferSize);
+    audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 4);
     audioData->paths = new audioPaths();
     audioData->paths->ptr = NULL;
     audioData->paths->size = 0;
@@ -710,7 +687,7 @@ int main(int argc, char **argv)
 		context->set_optix_model(scene);
 		RtAudio *dac = new RtAudio();
 		AudioFile<float> *audio_file = new AudioFile<float>;
-		if (audio_file_path.empty()) {
+		if (!audio_file_path.empty()) {
 			try
 			{
 				audio_file->load(audio_file_path);
@@ -720,9 +697,6 @@ int main(int argc, char **argv)
 			{
 				return 1;
 			}
-		} else {
-			CircularBuffer<SAMPLE_TYPE>* b = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 4); 
-			context->set_live_input_buffer(b);
 		}
 		
 		uint32_t sample_rate = audio_file->getSampleRate();

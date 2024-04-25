@@ -134,6 +134,4 @@ protected:
 
     bool write_ir_to_file_flag = false;
     bool write_output_to_file_flag = false;
-
-    const double* d_live_remaining_echo = NULL;
 };

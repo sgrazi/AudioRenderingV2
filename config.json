@@ -10,7 +10,6 @@
 		"re_render_distance_threshold": 2
 	},
 	"scene_parameters": {
-		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
 		"scene_file_path": "../../assets/models/planaso2.obj",
 		"materials_file_path": "",
 		"initial_receiver_pos": {

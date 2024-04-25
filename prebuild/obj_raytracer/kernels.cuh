@@ -19,6 +19,4 @@ bool checkArrayZero(float* IR, unsigned int ir_len);
 void zipArrays(double* d_outputBuffer_left, double* d_outputBuffer_right, double* d_outputBuffer, int monoBufferLength);
 void normalizeBuffers(double* d_outputBuffer_left, double* d_outputBuffer_right, int monoBufferLength, int value);
 void addDeviceArrayToCircularBuffer(double* deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength);
-bool isArrayAllZerosOnDevice(const double* d_array, int length);
-double getFirstElementOnDevice(const double *d_array);
 void castFloatArrayToDouble(const float *input, double *output, size_t length);

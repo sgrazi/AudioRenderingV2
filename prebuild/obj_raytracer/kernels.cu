@@ -217,25 +217,6 @@ bool checkArrayZero(float* IR, unsigned int ir_len) {
     
 }
 
-__global__ void copyData(float* src, float* dst, int size) {
-    int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < size) {
-        dst[idx] = src[idx];
-    }
-}
-
-// Function to copy data from CUDA device memory to device memory
-void copyDeviceToDevice(float* src, float* dst, int size) {
-    // Define grid and block dimensions
-    int blockSize = 256;
-    int numBlocks = (size + blockSize - 1) / blockSize;
-
-    // Launch the kernel
-    copyData<<<numBlocks, blockSize>>>(src, dst, size);
-
-    // Ensure all memory operations are completed before returning
-    cudaDeviceSynchronize();
-}
 
 __global__ void complexCrossMultiplication(const cufftDoubleComplex *inputA, const cufftDoubleComplex *inputB, cufftDoubleComplex *output, size_t length) {
     int index = blockIdx.x * blockDim.x + threadIdx.x;
@@ -439,49 +420,6 @@ __global__ void checkArrayAllZeros(const double* array, bool* result, int length
     if (index < length && array[index] != 0) {
         *result = false; // Array contains a non-zero element
     }
-}
-
-bool isArrayAllZerosOnDevice(const double* d_array, int length) {
-    bool* d_result;
-    bool result;
-    cudaMalloc((void**)&d_result, sizeof(bool));
-    cudaMemcpy(d_result, &result, sizeof(bool), cudaMemcpyHostToDevice);
-
-    // Assuming a block size of 256 threads
-    int blockSize = 256;
-    int numBlocks = (length + blockSize - 1) / blockSize;
-
-    // Kernel call
-    checkArrayAllZeros << <numBlocks, blockSize >> > (d_array, d_result, length);
-    cudaDeviceSynchronize();
-
-    // Copy the result back to host
-    cudaMemcpy(&result, d_result, sizeof(bool), cudaMemcpyDeviceToHost);
-
-    cudaFree(d_result);
-
-    return result;
-}
-
-__global__ void getFirstElement(const double *array, double *result) {
-    *result = array[0];
-}
-
-double getFirstElementOnDevice(const double *d_array) {
-    double result;
-    double *d_result;
-    cudaMalloc((void**)&d_result, sizeof(double));
-
-    // Kernel call
-    getFirstElement<<<1, 1>>>(d_array, d_result);
-    cudaDeviceSynchronize();
-
-    // Copy the result back to host
-    cudaMemcpy(&result, d_result, sizeof(double), cudaMemcpyDeviceToHost);
-
-    cudaFree(d_result);
-
-    return result;
 }
 
 __global__ void convertFloatToDouble(const float *input, double *output, size_t length) {

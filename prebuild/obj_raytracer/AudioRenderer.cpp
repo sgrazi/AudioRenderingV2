@@ -576,34 +576,6 @@ bool isArrayAllZeros(const double* array, int length) {
     return true; // Array contains all zeros
 }
 
-void writeDoubleArrayToFile(const double* d_array, int size, const char* filename) {
-    // Allocate memory on host to store the array
-    double* h_array = new double[size];
-
-    // Copy data from device to host
-    cudaMemcpy(h_array, d_array, size * sizeof(double), cudaMemcpyDeviceToHost);
-
-    // Open file for writing
-    std::ofstream outfile(filename, std::ios::app);
-    if (!outfile) {
-        std::cerr << "Error opening file for writing." << std::endl;
-        delete[] h_array;
-        return;
-    }
-
-    // Write data to file
-    for (int i = 0; i < size; ++i) {
-        outfile << h_array[i] << "\n";
-    }
-
-     outfile << "8" << "\n";
-    // Close file
-    outfile.close();
-
-    // Free host memory
-    delete[] h_array;
-}
-
 /**
  * Convoluciona el input buffer con los IRs, carga el resultado en el buffer circular de salida
  */
@@ -634,6 +606,9 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaDeviceSynchronize();
     convoluteFromLiveInput(d_inputBuffer, d_IRRight, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
+    
+    cudaFree(d_IRLeft);
+    cudaFree(d_IRRight);
 
     cudaFree(d_inputBuffer);
 
@@ -642,8 +617,6 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     
     // normalize
     normalizeBuffers(d_outputBuffer_left, d_outputBuffer_right, launchParams.ir_length, (launchParams.ir_length / 2));
-
-    // writeDoubleArrayToFile(d_outputBuffer_right, launchParams.ir_length, "therightconvolute.txt");
 
     // merge
     zipArrays(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, launchParams.ir_length);
