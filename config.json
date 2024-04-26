@@ -1,6 +1,6 @@
 {
 	"renderer_parameters": {
-		"initial_volume": 0.2,
+		"initial_volume": 1,
 		"output_channels": 2,
 		"ir_length_in_seconds": 2,
 		"width": 1366,

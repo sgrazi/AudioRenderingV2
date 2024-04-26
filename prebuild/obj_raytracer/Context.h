@@ -1,14 +1,15 @@
 #pragma once
 #include <iostream>
+#include <string>
+#include <vector>
 #include "Sphere.h"
 #include "Mesh.h"
 #include "Camera.h"
 #include "AudioRenderer.h"
 #include "CircularBuffer.h"
 #include "OptixModel.h"
-#include <vector>
 #include "AudioFile.h"
-
+#include "cJSON.h"
 class Context
 {
 private:
@@ -17,9 +18,9 @@ private:
 
 	float volume;
 	bool liveFlag = false;
-	AudioFile<float>* audio_file;
+	AudioFile<float> *audio_file;
 	unsigned int ir_length_in_seconds = 2;
-    CircularBuffer<double>* liveInputBuffer;
+	CircularBuffer<double> *liveInputBuffer;
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
@@ -45,22 +46,24 @@ private:
 	AudioRenderer *renderer;
 	Camera *camera;
 	float re_render_distance_threshold;
+	float re_render_angle_threshold;
 	gdt::vec3f last_render_position;
+	bool is_rendering;
 
 public:
 	static Context *getInstance();
-	void showMessage();
+	static bool loadContext(cJSON *config);
 
 	// ------------------------------------ SOUND ------------------------------------
 
 	static void set_live_flag(bool liveFlag);
 	static bool get_live_flag();
 
-	static void set_live_input_buffer(CircularBuffer<double>* b);
-	static CircularBuffer<double>* get_live_input_buffer();
+	static void set_live_input_buffer(CircularBuffer<double> *b);
+	static CircularBuffer<double> *get_live_input_buffer();
 
-	static void set_audio_file(AudioFile<float>* audio_file);
-	static AudioFile<float>* get_audio_file();
+	static void set_audio_file(AudioFile<float> *audio_file);
+	static AudioFile<float> *get_audio_file();
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();
@@ -110,6 +113,10 @@ public:
 	static void set_last_render_position(gdt::vec3f last_render_position);
 	static gdt::vec3f get_last_render_position();
 
+	static void set_re_render_angle_threshold(float re_render_angle_threshold);
+
+	static float get_re_render_angle_threshold();
+
 	// ------------------------------------ SCREEN ------------------------------------
 
 	static void set_scene_width(unsigned int width);
@@ -135,4 +142,7 @@ public:
 
 	static void set_transmitter(std::vector<Mesh> *transmitterVector);
 	static std::vector<Mesh> *get_transmitter();
+
+	static void set_is_rendering(bool is_rendering);
+	static bool get_is_rendering();
 };

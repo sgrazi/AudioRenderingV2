@@ -1,12 +1,13 @@
 #pragma once
+#include <glm/glm.hpp>
+#include <unordered_map>
+#include <stdio.h>
+#include <mutex>
 #include "CUDABuffer.h"
 #include "LaunchParams.h"
 #include "OptixModel.h"
 #include "Camera.h"
 #include "kernels.cuh"
-#include <glm/glm.hpp>
-#include <unordered_map>
-#include <stdio.h>
 
 /*! a sample OptiX-7 renderer that demonstrates how to set up
     context, module, programs, pipeline, SBT, etc, and perform a
@@ -27,9 +28,11 @@ public:
 
     void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer);
 
-    void convoluteAudioFile(float* h_inputBuffer, size_t h_inputBufferSize, float* h_outputBuffer_left, float* h_outputBuffer_right, unsigned int num_channels);
+    void convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels);
 
     void setEmitterPosInOptix(glm::vec3 pos);
+
+    void setSphereCenterInOptix(glm::vec3 pos);
 
     void setThresholds(float dist, float energy, unsigned int max_bounces);
 
@@ -39,7 +42,9 @@ public:
 
     void set_write_output_to_file_flag(bool value);
 
-    void normalizeAndMergeStereoOutput(double * d_outputBuffer_left, double * d_outputBuffer_right, size_t monoBufferLength, double * d_outputBuffer);
+    void normalizeAndMergeStereoOutput(double *d_outputBuffer_left, double *d_outputBuffer_right, size_t monoBufferLength, double *d_outputBuffer);
+
+    void full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right, unsigned int output_channels);
 
     // void getIROnHostMem(float *h_ir, size_t ir_size);
 

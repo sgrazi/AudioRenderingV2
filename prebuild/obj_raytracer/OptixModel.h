@@ -34,7 +34,9 @@ struct OptixModel
 // OptixModel *loadOBJ(const std::string &objFile, tinyxml2::XMLDocument &xml_dict);
 OptixModel *loadOBJ(const std::string &objFile);
 
-void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition);
+void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition, float rotation);
+
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation);
 
 void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left);
 

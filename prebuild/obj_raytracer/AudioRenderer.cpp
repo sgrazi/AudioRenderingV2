@@ -467,24 +467,24 @@ void AudioRenderer::buildSBT()
 /*! render one frame */
 void AudioRenderer::render()
 {
-     vertexBuffer.clear();
-     indexBuffer.clear();
-     asBuffer.free();
-     raygenRecordsBuffer.free();
-     missRecordsBuffer.free();
-     hitgroupRecordsBuffer.free();
-     launchParamsBuffer.free();
+    vertexBuffer.clear();
+    indexBuffer.clear();
+    asBuffer.free();
+    raygenRecordsBuffer.free();
+    missRecordsBuffer.free();
+    hitgroupRecordsBuffer.free();
+    launchParamsBuffer.free();
 
-     launchParams.traversable = buildAccel();
-     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
-     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
-     cudaDeviceSynchronize();
+    launchParams.traversable = buildAccel();
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+    cudaDeviceSynchronize();
 
-     createPipeline();
+    createPipeline();
 
-     buildSBT();
+    buildSBT();
 
-     launchParamsBuffer.alloc(sizeof(launchParams));
+    launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
 
@@ -519,7 +519,8 @@ void AudioRenderer::render()
     copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
     copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
 
-    if (this->write_ir_to_file_flag) {
+    if (this->write_ir_to_file_flag)
+    {
         std::ofstream outFileLeft("output_ir_left.txt");
         std::ofstream outFileRight("output_ir_right.txt");
         if (!outFileLeft.is_open() && !outFileRight.is_open())
@@ -549,15 +550,17 @@ void AudioRenderer::render()
  * Se normaliza en un kernel los valores de los arreglos.
  * Luego se los "mergea" con un zip, los valores del buffer izq estan en las posiciones pares, los valores derechos en posiciones impares.
  */
-void AudioRenderer::normalizeAndMergeStereoOutput(double * d_outputBuffer_left, double * d_outputBuffer_right, size_t monoBufferLength, double * d_outputBuffer){
+void AudioRenderer::normalizeAndMergeStereoOutput(double *d_outputBuffer_left, double *d_outputBuffer_right, size_t monoBufferLength, double *d_outputBuffer)
+{
 }
 
 /**
  * Dado el buffer circular, empezando en startIndex se le suma cada valor de deviceArray.
  */
-void addToCircularBuffer(double* deviceArray, size_t deviceArrayLength, double *hostCircularBuffer, size_t length, size_t startIndex) {
-    double* d_circularBuffer;
-    cudaMalloc((void**)&d_circularBuffer, length * sizeof(double));
+void addToCircularBuffer(double *deviceArray, size_t deviceArrayLength, double *hostCircularBuffer, size_t length, size_t startIndex)
+{
+    double *d_circularBuffer;
+    cudaMalloc((void **)&d_circularBuffer, length * sizeof(double));
     cudaMemcpy(d_circularBuffer, hostCircularBuffer, length * sizeof(double), cudaMemcpyHostToDevice);
 
     addDeviceArrayToCircularBuffer(deviceArray, deviceArrayLength, d_circularBuffer, startIndex, length);
@@ -567,9 +570,12 @@ void addToCircularBuffer(double* deviceArray, size_t deviceArrayLength, double *
     cudaFree(d_circularBuffer);
 }
 
-bool isArrayAllZeros(const double* array, int length) {
-    for (int i = 0; i < length; ++i) {
-        if (array[i] != 0) {
+bool isArrayAllZeros(const double *array, int length)
+{
+    for (int i = 0; i < length; ++i)
+    {
+        if (array[i] != 0)
+        {
             return false; // Array contains a non-zero element
         }
     }
@@ -579,7 +585,8 @@ bool isArrayAllZeros(const double* array, int length) {
 /**
  * Convoluciona el input buffer con los IRs, carga el resultado en el buffer circular de salida
  */
-void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer) {
+void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer)
+{
     // move inputBuffer to device
     // Expand with 0's until it has the same size as IR
     double *d_inputBuffer;
@@ -606,7 +613,7 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaDeviceSynchronize();
     convoluteFromLiveInput(d_inputBuffer, d_IRRight, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
-    
+
     cudaFree(d_IRLeft);
     cudaFree(d_IRRight);
 
@@ -614,13 +621,13 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
 
     double *d_outputBuffer;
     cudaMalloc(&d_outputBuffer, launchParams.ir_length * 2 * sizeof(double));
-    
+
     // normalize
     normalizeBuffers(d_outputBuffer_left, d_outputBuffer_right, launchParams.ir_length, (launchParams.ir_length / 2));
 
     // merge
     zipArrays(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, launchParams.ir_length);
-    
+
     cudaFree(d_outputBuffer_left);
     cudaFree(d_outputBuffer_right);
 
@@ -628,10 +635,9 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     size_t startIndex = h_circularOutputBuffer->head;
     size_t length = h_circularOutputBuffer->length;
     addToCircularBuffer(d_outputBuffer, launchParams.ir_length * 2, h_circularOutputBuffer->buffer, length, startIndex);
-    
+
     cudaFree(d_outputBuffer);
 }
-    
 
 void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
 {
@@ -673,7 +679,8 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / num_channels);
     }
 
-    if (this->write_output_to_file_flag){
+    if (this->write_output_to_file_flag)
+    {
         std::ofstream outFileLeft("output_convolute_left.txt");
         std::ofstream outFileRight("output_convolute_right.txt");
         if (!outFileLeft.is_open() && !outFileRight.is_open())
@@ -711,6 +718,11 @@ void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
     launchParams.emitter_position = pos;
 }
 
+void AudioRenderer::setSphereCenterInOptix(glm::vec3 center)
+{
+    launchParams.sphere_center = center;
+}
+
 void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
 {
     launchParams.dist_thres = dist;
@@ -731,4 +743,21 @@ void AudioRenderer::set_write_ir_to_file_flag(bool value)
 void AudioRenderer::set_write_output_to_file_flag(bool value)
 {
     this->write_output_to_file_flag = value;
+}
+
+void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right, unsigned int output_channels)
+{
+    mutex->lock();
+    placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
+    this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
+    this->render();
+    if (Context::get_live_input_flag())
+    {
+        this->convoluteLiveInput(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+    }
+    else
+    {
+        this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+    }
+    mutex->unlock();
 }
