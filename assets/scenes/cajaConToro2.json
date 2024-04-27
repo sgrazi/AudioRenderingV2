@@ -1,0 +1,59 @@
+{
+  "renderer_parameters": {
+    "initial_volume": 1,
+    "output_channels": 2,
+    "ir_length_in_seconds": 2,
+    "width": 1366,
+    "height": 768,
+    "write_first_ir_to_file": false,
+    "write_first_output_to_file": false,
+    "re_render_distance_threshold": 2
+  },
+  "scene_parameters": {
+    "scene_file_path": "../../assets/models/cajaConToro.obj",
+    "materials_file_path": "",
+    "initial_receiver_pos": {
+      "x": 0,
+      "y": 0,
+      "z": 0
+    },
+    "initial_emitter_pos": {
+      "x": 15.0,
+      "y": 8.0,
+      "z": 0.0
+    }
+  },
+  "pathtracer_parameters": {
+    "base_power": 300.0,
+    "rays": {
+      "x": 100,
+      "y": 100,
+      "z": 100
+    },
+    "ray_distance_threshold": 2000.0,
+    "ray_energy_threshold": 0.0,
+    "ray_max_bounces": 10,
+    "materials": [
+      {
+        "name": "low",
+        "mat_absorption": 0.1
+      },
+      {
+        "name": "med",
+        "mat_absorption": 0.3
+      },
+      {
+        "name": "high",
+        "mat_absorption": 0.6
+      },
+      {
+        "name": "red",
+        "mat_absorption": 0.2
+      },
+      {
+        "name": "blue",
+        "mat_absorption": 0.9
+      }
+    ]
+  }
+}

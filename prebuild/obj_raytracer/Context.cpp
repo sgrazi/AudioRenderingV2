@@ -68,7 +68,7 @@ bool Context::loadContext(cJSON *config)
 	const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
 	// defaults
 	std::string scene_file_path = "../../assets/models/1D_U.obj";
-	std::string audio_file_path = "../../assets/sound_samples/experimento_entrada_16KHz.wav";
+	std::string audio_file_path;
 	std::string materials_file_path = "";
 	glm::vec3 initial_receiver_pos(-2.5f, 10.0f, 0.0f);
 	glm::vec3 initial_emitter_pos(0, 0, 0);
@@ -171,7 +171,6 @@ bool Context::loadContext(cJSON *config)
 	context->set_scene_width(width);
 	context->set_scene_height(height);
 	context->set_scene_file_path(scene_file_path);
-	context->set_audio_file_path(audio_file_path);
 	context->set_material_file_path(materials_file_path);
 	context->set_ray_distance_threshold(ray_distance_threshold);
 	context->set_ray_energy_threshold(ray_energy_threshold);
@@ -193,19 +192,34 @@ bool Context::loadContext(cJSON *config)
 	context->set_sphere(sphere);
 	OptixModel *scene = loadOBJ(scene_file_path);
 	context->set_optix_model(scene);
-	AudioFile<float> *audio_file = new AudioFile<float>;
-	try
-	{
-		audio_file->load(audio_file_path);
-	}
-	catch (const std::exception &e)
-	{
-		std::cerr << "Exception caught: " << e.what() << std::endl;
-		return false;
-	}
-	context->set_audio_file(audio_file);
 
-	uint32_t sample_rate = audio_file->getSampleRate();
+	size_t sample_rate;
+	if (!audio_file_path.empty()) {
+		try
+		{
+			AudioFile<float>* audio_file = new AudioFile<float>;
+			context->set_audio_file_path(audio_file_path);
+			audio_file->load(audio_file_path);
+			context->set_audio_file(audio_file);
+			sample_rate = audio_file->getSampleRate();
+			size_t len_of_audio = audio_file->samples[0].size();
+			size_t size_of_audio = sizeof(float) * len_of_audio;
+			float* outputBuffer_left = (float*)malloc(size_of_audio);
+			float* outputBuffer_right = (float*)malloc(size_of_audio);
+			context->set_output_buffer_left(outputBuffer_left);
+			context->set_output_buffer_right(outputBuffer_right);
+			context->set_output_buffer_len(size_of_audio);
+		}
+		catch (const std::exception& e)
+		{
+			std::cerr << "Exception caught: " << e.what() << std::endl;
+			return false;
+		}
+	}
+	else {
+		sample_rate = 44100;
+		context->set_live_flag(true);
+	}
 	context->set_sample_rate(sample_rate);
 
 	placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z), camera->globalAngle);
@@ -214,26 +228,8 @@ bool Context::loadContext(cJSON *config)
 	renderer->set_write_output_to_file_flag(write_output_to_file_on_render);
 	renderer->set_write_ir_to_file_flag(write_ir_to_file_on_render);
 	context->set_audio_renderer(renderer);
-
-	size_t len_of_audio = audio_file->samples[0].size();
-	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer_left = (float *)malloc(size_of_audio);
-	float *outputBuffer_right = (float *)malloc(size_of_audio);
-	context->set_output_buffer_left(outputBuffer_left);
-	context->set_output_buffer_right(outputBuffer_right);
-	context->set_output_buffer_len(size_of_audio);
 	context->set_re_render_distance_threshold(re_render_distance_threshold);
 	context->set_re_render_angle_threshold(re_render_angle_threshold);
-}
-
-void Context::set_audio_file(AudioFile<float> *audio_file)
-{
-	instance->audio_file = audio_file;
-}
-
-AudioFile<float> *Context::get_audio_file()
-{
-	return instance->audio_file;
 }
 
 void Context::set_audio_file(AudioFile<float> *audio_file)

@@ -32,8 +32,6 @@ using namespace std;
 #define SAMPLE_TYPE double
 #define inputSampleRate 44100 // inventando un sample rate de 44.1khz
 #define inputBufferLen 4096		// inventado too
-std::mutex outputBufferMutex;
-std::mutex inputBufferMutex;
 
 struct audioPaths
 {
@@ -49,6 +47,7 @@ struct audioCallbackData
 	CircularBuffer<SAMPLE_TYPE> *samplesRecordBuffer;
 	audioPaths *paths;
 	float volume;
+	std::mutex* inputBufferMutex;
 };
 
 struct AudioInfo
@@ -62,7 +61,7 @@ float distanceP2P(gdt::vec3f p1, gdt::vec3f p2)
 	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
 }
 
-void full_render(std::mutex *output_buffer_mutex)
+void full_render(bool testing, std::mutex *output_buffer_mutex)
 {
 	AudioRenderer *renderer = Context::get_audio_renderer();
 	OptixModel *scene = Context::get_optix_model();
@@ -70,13 +69,23 @@ void full_render(std::mutex *output_buffer_mutex)
 	Camera camera = *Context::get_camera();
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	AudioFile<float> *audio = Context::get_audio_file();
-	size_t len_of_audio = audio->samples[0].size();
-	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer_left = Context::get_output_buffer_left();
-	float *outputBuffer_right = Context::get_output_buffer_right();
-	unsigned int output_channels = Context::get_output_channels();
-	renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	if (!testing) {
+		AudioFile<float>* audio = Context::get_audio_file();
+		size_t len_of_audio = audio->samples[0].size();
+		size_t size_of_audio = sizeof(float) * len_of_audio;
+		float* outputBuffer_left = Context::get_output_buffer_left();
+		float* outputBuffer_right = Context::get_output_buffer_right();
+		unsigned int output_channels = Context::get_output_channels();
+
+		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	}
+	else {
+		output_buffer_mutex->lock();
+		placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
+		renderer->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
+		renderer->render();
+		output_buffer_mutex->unlock();
+	}
 
 	Context::set_is_rendering(false);
 };
@@ -126,20 +135,26 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 	double *buffer = (double *)outputBuffer;
 	double *ibuffer = (double *)inputBuffer;
-	inputBufferMutex.lock();
-	renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), renderData->samplesRecordBuffer);
-	inputBufferMutex.unlock();
+	std::mutex* inputBufferMutex = renderData->inputBufferMutex;
+	if (!Context::get_is_rendering()) {
+		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), renderData->samplesRecordBuffer);
 
-	float volume = Context::get_volume();
-	int start = renderData->samplesRecordBuffer->head;
-	int length = renderData->samplesRecordBuffer->length;
-	for (int i = 0; i < nBufferFrames * 2; i++)
-	{
-		int index = (start + i) % length;
-		*buffer++ = renderData->samplesRecordBuffer->buffer[index] * 50 * volume;
-		renderData->samplesRecordBuffer->buffer[index] = 0;
+		float volume = Context::get_volume();
+		int start = renderData->samplesRecordBuffer->head;
+		int length = renderData->samplesRecordBuffer->length;
+		for (int i = 0; i < nBufferFrames * 2; i++)
+		{
+			int index = (start + i) % length;
+			*buffer++ = renderData->samplesRecordBuffer->buffer[index] * 100 * volume;
+			renderData->samplesRecordBuffer->buffer[index] = 0;
+		}
+		renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
 	}
-	renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
+	else {
+		for (int i = 0; i < nBufferFrames * 2; i++)
+			*buffer++ = 0;
+	}
+	
 	return 0;
 }
 
@@ -173,7 +188,7 @@ int audioPlay(RtAudio *dac)
 	return 0;
 }
 
-void audioMicPlay(RtAudio *dac)
+void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 {
 	// Init audio stream
 	dac = new RtAudio();
@@ -212,6 +227,7 @@ void audioMicPlay(RtAudio *dac)
 	audioData->paths->ptr = NULL;
 	audioData->paths->size = 0;
 	audioData->volume = 30.0f;
+	audioData->inputBufferMutex = inputBufferMutex;
 
 	std::cout << "\nLLAMO OPEN STREAM\n";
 	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData, &options);
@@ -220,13 +236,13 @@ void audioMicPlay(RtAudio *dac)
 	checkError = dac->startStream();
 }
 
-void audio(RtAudio *dac, bool isMic)
+void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 {
 	try
 	{
 		if (isMic)
 		{
-			audioMicPlay(dac);
+			audioMicPlay(dac, inputBufferMutex);
 		}
 		else
 		{
@@ -495,20 +511,8 @@ void screen(std::mutex *output_buffer_mutex)
 			Context::set_is_rendering(true);
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			thread rendering_thread(full_render, output_buffer_mutex);
+			thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
 			rendering_thread.detach();
-		}
-
-		gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
-		if (distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold)
-		{
-			placeReceiver(sphere, scene, camera_central_point);
-			renderer->render();
-			if (!Context::get_live_flag())
-			{
-				renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-			}
-			last_render_position = camera_central_point;
 		}
 
 		for (int i = 0; i < objects.size(); i++)
@@ -560,10 +564,10 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		std::mutex *output_buffer_mutex = new std::mutex();
+		std::mutex *buffer_mutex = new std::mutex();
 		RtAudio *dac = new RtAudio();
-		thread screen1(screen, output_buffer_mutex);
-		thread audio1(audio, dac);
+		thread screen1(screen, buffer_mutex);
+		thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
 
 		screen1.join();
 		audio1.detach();

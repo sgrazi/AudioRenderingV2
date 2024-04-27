@@ -751,13 +751,6 @@ void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixMod
     placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
     this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
     this->render();
-    if (Context::get_live_input_flag())
-    {
-        this->convoluteLiveInput(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-    }
-    else
-    {
-        this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
-    }
+    this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
     mutex->unlock();
 }
