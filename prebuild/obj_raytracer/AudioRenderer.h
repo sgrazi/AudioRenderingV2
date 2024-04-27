@@ -26,7 +26,9 @@ public:
     /*! render one frame */
     void render();
 
-    void convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels);
+    void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer);
+
+    void convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels);
 
     void setEmitterPosInOptix(glm::vec3 pos);
 
@@ -39,6 +41,8 @@ public:
     void set_write_ir_to_file_flag(bool value);
 
     void set_write_output_to_file_flag(bool value);
+
+    void normalizeAndMergeStereoOutput(double *d_outputBuffer_left, double *d_outputBuffer_right, size_t monoBufferLength, double *d_outputBuffer);
 
     void full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right, unsigned int output_channels);
 

@@ -4,10 +4,12 @@
     "output_channels": 2,
     "ir_length_in_seconds": 2,
     "width": 1366,
-    "height": 768
+    "height": 768,
+    "write_first_ir_to_file": false,
+    "write_first_output_to_file": false,
+    "re_render_distance_threshold": 2
   },
   "scene_parameters": {
-    "audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
     "scene_file_path": "../../assets/models/cajaConToro.obj",
     "materials_file_path": "",
     "initial_receiver_pos": {

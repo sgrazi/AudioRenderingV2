@@ -150,13 +150,14 @@ OptixModel *loadOBJ(const std::string &objFile)
     return model;
 }
 
-void placeReceiver(Sphere sphere, OptixModel* model, vec3f cameraPosition, float rotation)
+void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition, float rotation)
 {
     place_receiver_half(sphere.get_left_side(), model, cameraPosition, true, rotation);
     place_receiver_half(sphere.get_right_side(), model, cameraPosition, false, rotation);
 }
 
-void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation) {
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation)
+{
     // moving the side
     for (const auto &shape : side.shapes)
     {
@@ -181,9 +182,9 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
 
             // Aplicar la rotaci�n
             glm::vec4 vert = glm::vec4(side.original_attributes.vertices[3 * index + 0],
-                side.original_attributes.vertices[3 * index + 1],
-                side.original_attributes.vertices[3 * index + 2],
-                1.0);
+                                       side.original_attributes.vertices[3 * index + 1],
+                                       side.original_attributes.vertices[3 * index + 2],
+                                       1.0);
             vert = rotationMatrix * vert;
 
             // Translate each vertex by (x, y, z)
@@ -217,12 +218,12 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
                       addVertex(mesh, side.attributes, idx1, knownVertices),
                       addVertex(mesh, side.attributes, idx2, knownVertices));
             mesh->index.push_back(idx);
-            if (is_left) 
+            if (is_left)
             {
                 mesh->material_name = "receiver_left";
                 mesh->material_absorption = -1;
-            } 
-            else 
+            }
+            else
             {
                 mesh->material_name = "receiver_right";
                 mesh->material_absorption = -2;
@@ -234,18 +235,23 @@ void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPositio
         }
         else
         {
-            if (is_left) {
+            if (is_left)
+            {
                 // Delete left sphere
-                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -1; }), model
-                    ->meshes.end());
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh *aux_mesh)
+                                                   { return aux_mesh->material_absorption == -1; }),
+                                    model
+                                        ->meshes.end());
             }
-            else {
+            else
+            {
                 // Delete right sphere
-                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh* aux_mesh) {return aux_mesh->material_absorption == -2; }), model
-                    ->meshes.end());
+                model->meshes.erase(std::remove_if(model->meshes.begin(), model->meshes.end(), [](TriangleMesh *aux_mesh)
+                                                   { return aux_mesh->material_absorption == -2; }),
+                                    model
+                                        ->meshes.end());
             }
             model->meshes.push_back(mesh);
         }
     }
 }
-

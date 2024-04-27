@@ -21,7 +21,7 @@ private:
 	bool firstClick = true;
 
 	// Adjust the speed of the camera and it's sensitivity when looking around
-	float speed = 0.1f;
+	float speed = 0.05f;
 	float sensitivity = 100.0f;
 
 public:

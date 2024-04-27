@@ -1,47 +1,30 @@
 import matplotlib.pyplot as plt
-import sys, getopt
 
-def plot_numbers_from_file(filepath):
-   # Step 1: Read the file
-   with open(filepath, 'r') as f:
-      lines = f.readlines()
-
-   # Step 2: Parse the numbers
-   numbers = [(index/16000, float(line.strip())) for index, line in enumerate(lines)]
-
-   x_values, y_values = zip(*numbers)
-
-   # Step 3: Plot the numbers
-   plt.plot(x_values, y_values)
-   plt.xlabel('Time')
-   plt.ylabel('Value')
-   plt.title('Convolute')
-
-   # 16k sample rate
-   # Calculate the number of data points and the x-tick positions for 250ms intervals
-#  num_data_points = len(numbers)
-#  num_intervals = num_data_points // 160
-#  x_tick_positions = [100 * i for i in range(num_intervals + 1)]
-
-#  # Set x-tick labels and positions
-#  plt.xticks(x_tick_positions, [f'{int(x)}ms' for x in x_tick_positions])
+def plot_data_from_file(filename):
+    # Lists to store x and y data
+    x_data = []
+    y_data = []
     
-   plt.show()
+    # Read data from file
+    with open(filename, 'r') as file:
+        for line in file:
+            # Convert line to float
+            value = float(line.strip())
+            
+            # Append value to y_data
+            y_data.append(value)
+            
+            # Append corresponding index to x_data
+            x_data.append(len(y_data))  # Use index as x-value
+    
+    # Plot the data
+    plt.plot(x_data, y_data)
+    plt.xlabel('Index')
+    plt.ylabel('Value')
+    plt.title('Plot of Data from File')
+    plt.grid(True)
+    plt.show()
 
-def main(argv):
-   filepath = ''
-   outputfile = ''
-   opts, args = getopt.getopt(argv,"hf:o")
-   for opt, arg in opts:
-      if opt == '-h':
-         print ('printIR.py -f <filepath> -o <outputfile>')
-         sys.exit()
-      elif opt == "-f":
-         filepath = arg
-      elif opt == "-o":
-         outputfile = arg
-   plot_numbers_from_file(filepath)
-
-
-if __name__ == "__main__": 
-  main(sys.argv[1:])
+# Example usage:
+filename = 'arrayTest.txt'
+plot_data_from_file(filename)

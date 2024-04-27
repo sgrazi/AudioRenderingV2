@@ -38,4 +38,6 @@ void placeReceiver(Sphere sphere, OptixModel *model, vec3f cameraPosition, float
 
 void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left, float rotation);
 
+void place_receiver_half(HalfSphere side, OptixModel *model, vec3f cameraPosition, bool is_left);
+
 // float get_absorption(int material_id, tinyxml2::XMLDocument &xml_dict);

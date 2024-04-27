@@ -9,6 +9,7 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <mutex>
 #include <stdexcept>
 #include <mutex>
 #include "OBJ_Loader.h"
@@ -25,8 +26,29 @@
 #include "Context.h"
 #include "cJSON.h"
 #include "HalfSphere.h"
+#include "CircularBuffer.h"
 
 using namespace std;
+#define SAMPLE_TYPE double
+#define inputSampleRate 44100 // inventando un sample rate de 44.1khz
+#define inputBufferLen 4096		// inventado too
+
+struct audioPaths
+{
+	void *ptr;
+	int size;
+};
+
+struct audioCallbackData
+{
+	int bufferFrames;
+	int pos;
+	int samplesRecordBufferSize;
+	CircularBuffer<SAMPLE_TYPE> *samplesRecordBuffer;
+	audioPaths *paths;
+	float volume;
+	std::mutex* inputBufferMutex;
+};
 
 struct AudioInfo
 {
@@ -34,30 +56,42 @@ struct AudioInfo
 	float *volumen;
 };
 
-float distanceP2P(gdt::vec3f p1, gdt::vec3f p2) {
+float distanceP2P(gdt::vec3f p1, gdt::vec3f p2)
+{
 	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
 }
 
-void full_render(std::mutex* output_buffer_mutex) {
-	AudioRenderer* renderer = Context::get_audio_renderer();
-	OptixModel* scene = Context::get_optix_model();
+void full_render(bool testing, std::mutex *output_buffer_mutex)
+{
+	AudioRenderer *renderer = Context::get_audio_renderer();
+	OptixModel *scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
 	Camera camera = *Context::get_camera();
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	AudioFile<float>* audio = Context::get_audio_file();
-	size_t len_of_audio = audio->samples[0].size();
-	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float* outputBuffer_left = Context::get_output_buffer_left();
-	float* outputBuffer_right = Context::get_output_buffer_right();
-	unsigned int output_channels = Context::get_output_channels();
-	renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	if (!testing) {
+		AudioFile<float>* audio = Context::get_audio_file();
+		size_t len_of_audio = audio->samples[0].size();
+		size_t size_of_audio = sizeof(float) * len_of_audio;
+		float* outputBuffer_left = Context::get_output_buffer_left();
+		float* outputBuffer_right = Context::get_output_buffer_right();
+		unsigned int output_channels = Context::get_output_channels();
+
+		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+	}
+	else {
+		output_buffer_mutex->lock();
+		placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
+		renderer->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
+		renderer->render();
+		output_buffer_mutex->unlock();
+	}
 
 	Context::set_is_rendering(false);
 };
 
 int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
-		double streamTime, RtAudioStreamStatus status, void *userData)
+				double streamTime, RtAudioStreamStatus status, void *userData)
 {
 	unsigned int i;
 	double *buffer = (double *)outputBuffer;
@@ -87,6 +121,43 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
+// nBufferFrames es inputBufferLen
+// len(inputBuffer) es inputBufferLen
+// len(outputBuffer) es inputBufferLen * 2
+int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+						 double streamTime, RtAudioStreamStatus status, void *data)
+{
+	if (status)
+		std::cout << "Stream over/underflow detected." << std::endl;
+	Context *context = Context::getInstance();
+	audioCallbackData *renderData = (audioCallbackData *)data;
+	AudioRenderer *renderer = Context::get_audio_renderer();
+
+	double *buffer = (double *)outputBuffer;
+	double *ibuffer = (double *)inputBuffer;
+	std::mutex* inputBufferMutex = renderData->inputBufferMutex;
+	if (!Context::get_is_rendering()) {
+		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), renderData->samplesRecordBuffer);
+
+		float volume = Context::get_volume();
+		int start = renderData->samplesRecordBuffer->head;
+		int length = renderData->samplesRecordBuffer->length;
+		for (int i = 0; i < nBufferFrames * 2; i++)
+		{
+			int index = (start + i) % length;
+			*buffer++ = renderData->samplesRecordBuffer->buffer[index] * 100 * volume;
+			renderData->samplesRecordBuffer->buffer[index] = 0;
+		}
+		renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
+	}
+	else {
+		for (int i = 0; i < nBufferFrames * 2; i++)
+			*buffer++ = 0;
+	}
+	
+	return 0;
+}
+
 int audioPlay(RtAudio *dac)
 {
 	if (dac->getDeviceCount() < 1)
@@ -96,7 +167,7 @@ int audioPlay(RtAudio *dac)
 	}
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = dac->getDefaultOutputDevice();
-	parameters.nChannels = 2;	 // tiene que matchear con los channels del audio
+	parameters.nChannels = 2;		 // tiene que matchear con los channels del audio
 	parameters.firstChannel = 0; // Default audio output
 
 	// TODO -> check number of channels.
@@ -104,6 +175,8 @@ int audioPlay(RtAudio *dac)
 	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
+	std::cout << "\nSAMPLE RATE\n";
+	std::cout << sampleRate << '\n';
 	unsigned int bufferFrames = 256; // 256 sample frames
 
 	AudioInfo *audioInfo = new AudioInfo;
@@ -115,11 +188,66 @@ int audioPlay(RtAudio *dac)
 	return 0;
 }
 
-void audio(RtAudio *dac)
+void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
+{
+	// Init audio stream
+	dac = new RtAudio();
+
+	if (dac->getDeviceCount() < 1)
+	{
+		std::cout << "\nNo audio devices found!\n";
+		exit(0);
+	}
+
+	unsigned int bufferFrames = inputBufferLen, input_channels = 1, output_channels = 2;
+	unsigned int sampleRate = inputSampleRate;
+
+	RtAudio::StreamParameters inputParameters;
+	inputParameters.deviceId = dac->getDefaultInputDevice();
+	inputParameters.nChannels = input_channels;
+	inputParameters.firstChannel = 0;
+
+	RtAudio::StreamParameters outputParameters;
+	outputParameters.deviceId = dac->getDefaultOutputDevice();
+	outputParameters.nChannels = output_channels;
+	outputParameters.firstChannel = 0;
+
+	RtAudio::StreamOptions options;
+
+	// Calculate buffer size in bytes
+	unsigned int bufferBytes = bufferFrames * input_channels * sizeof(SAMPLE_TYPE);
+
+	// Create audioData struct on the heap
+	audioCallbackData *audioData = new audioCallbackData;
+	audioData->bufferFrames = inputBufferLen;
+	audioData->pos = 0;
+	audioData->samplesRecordBufferSize = sampleRate * input_channels;
+	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 4);
+	audioData->paths = new audioPaths();
+	audioData->paths->ptr = NULL;
+	audioData->paths->size = 0;
+	audioData->volume = 30.0f;
+	audioData->inputBufferMutex = inputBufferMutex;
+
+	std::cout << "\nLLAMO OPEN STREAM\n";
+	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData, &options);
+
+	std::cout << "\nLLAMO OPEN START STREAM\n";
+	checkError = dac->startStream();
+}
+
+void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 {
 	try
 	{
-		audioPlay(dac);
+		if (isMic)
+		{
+			audioMicPlay(dac, inputBufferMutex);
+		}
+		else
+		{
+			audioPlay(dac);
+		}
 	}
 	catch (const std::exception &e)
 	{
@@ -191,25 +319,29 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 	if (key == GLFW_KEY_R)
 	{
-		Camera* camera = Context::get_camera();
+		Camera *camera = Context::get_camera();
 		Sphere sphere = *Context::get_sphere();
-		OptixModel* scene = Context::get_optix_model();
+		OptixModel *scene = Context::get_optix_model();
 		gdt::vec3f camera_central_position = gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z);
 		placeReceiver(sphere, scene, camera_central_position, camera->globalAngle);
 
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		renderer->render();
 
-		AudioFile<float> *audio = Context::get_audio_file();
-		size_t len_of_audio = audio->samples[0].size();
-		size_t size_of_audio = sizeof(float) * len_of_audio;
-		float *output_buffer_left = Context::get_output_buffer_left();
-		float *output_buffer_right = Context::get_output_buffer_right();
+		if (!Context::get_live_flag())
+		{
+			AudioFile<float> *audio = Context::get_audio_file();
+			size_t len_of_audio = audio->samples[0].size();
+			size_t size_of_audio = sizeof(float) * len_of_audio;
+			float *output_buffer_left = Context::get_output_buffer_left();
+			float *output_buffer_right = Context::get_output_buffer_right();
 
-		renderer->convolute(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
-		Context::set_output_buffer_left(output_buffer_left);
-		Context::set_output_buffer_right(output_buffer_right);
-		Context::set_output_buffer_len(size_of_audio);
+			renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
+			Context::set_output_buffer_left(output_buffer_left);
+			Context::set_output_buffer_right(output_buffer_right);
+			Context::set_output_buffer_len(size_of_audio);
+		}
+
 		Context::set_last_render_position(camera_central_position);
 		cout << "Rendered" << endl;
 	}
@@ -222,7 +354,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	}
 }
 
-void screen(std::mutex* output_buffer_mutex)
+void screen(std::mutex *output_buffer_mutex)
 {
 	glfwInit();
 
@@ -315,17 +447,23 @@ void screen(std::mutex* output_buffer_mutex)
 	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
 	renderer->render();
 
+	size_t size_of_audio;
+	float *outputBuffer_left;
+	float *outputBuffer_right;
 	AudioFile<float> *audio = Context::get_audio_file();
-	size_t len_of_audio = audio->samples[0].size();
-	size_t size_of_audio = sizeof(float) * len_of_audio;
-	float *outputBuffer_left = Context::get_output_buffer_left();
-	float *outputBuffer_right = Context::get_output_buffer_right();
+	if (!Context::get_live_flag())
+	{
+		size_t len_of_audio = audio->samples[0].size();
+		size_t size_of_audio = sizeof(float) * len_of_audio;
+		float *outputBuffer_left = Context::get_output_buffer_left();
+		float *outputBuffer_right = Context::get_output_buffer_right();
 
-	renderer->convolute(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
 
-	Context::set_output_buffer_left(outputBuffer_left);
-	Context::set_output_buffer_right(outputBuffer_right);
-	Context::set_output_buffer_len(size_of_audio);
+		Context::set_output_buffer_left(outputBuffer_left);
+		Context::set_output_buffer_right(outputBuffer_right);
+		Context::set_output_buffer_len(size_of_audio);
+	}
 
 	gdt::vec3f last_render_position = Context::get_last_render_position();
 	float re_render_distance_threshold = Context::get_re_render_distance_threshold();
@@ -350,7 +488,8 @@ void screen(std::mutex* output_buffer_mutex)
 		Context::set_camera(&camera);
 		gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-		if (last_orientation != camera.Orientation) {
+		if (last_orientation != camera.Orientation)
+		{
 			camera.calculate_global_angle();
 			last_orientation = camera.Orientation;
 		}
@@ -360,17 +499,19 @@ void screen(std::mutex* output_buffer_mutex)
 
 		// Trigger re render if angle difference is greater than re_render_angle_threshold
 		float angleDiff = abs(last_angle - camera.globalAngle);
-		if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
+		if (angleDiff > 180.0f)
+			angleDiff = 360.0f - angleDiff;
 		bool angleGreaterThanThreshold = angleDiff > re_render_angle_threshold;
 
 		// Re render condition
 		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold;
 
-		if (reRenderCondition && !Context::get_is_rendering()) {
+		if (reRenderCondition && !Context::get_is_rendering())
+		{
 			Context::set_is_rendering(true);
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			thread rendering_thread(full_render, output_buffer_mutex);
+			thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
 			rendering_thread.detach();
 		}
 
@@ -397,36 +538,43 @@ int main(int argc, char **argv)
 		// Initialize context
 		string configJsonPath;
 
-		if (argc < 2) configJsonPath = "../../config.json";
-		else configJsonPath = argv[1];
+		if (argc < 2)
+			configJsonPath = "../../config.json";
+		else
+			configJsonPath = argv[1];
 
 		// Read config file
 		ifstream file(configJsonPath);
-		if (!file) throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
+		if (!file)
+			throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
 
 		ostringstream ss;
 		ss << file.rdbuf(); // reading data
 		string stringConfig = ss.str();
-		if (stringConfig.empty()) throw std::runtime_error("Error: File is empty or read operation failed");
+		if (stringConfig.empty())
+			throw std::runtime_error("Error: File is empty or read operation failed");
 
 		cJSON *config = cJSON_Parse(stringConfig.c_str());
-		if (!config) throw std::runtime_error("Error: JSON parsing failed for the provided string");
-		
+		if (!config)
+			throw std::runtime_error("Error: JSON parsing failed for the provided string");
+
 		bool is_context_loaded = Context::loadContext(config);
-		if (!is_context_loaded) throw std::runtime_error("Error: Context failed to load from config file");
+		if (!is_context_loaded)
+			throw std::runtime_error("Error: Context failed to load from config file");
 
 		cJSON_Delete(config);
 
-		std::mutex* output_buffer_mutex = new std::mutex();
-		RtAudio* dac = new RtAudio();
-		thread screen1(screen, output_buffer_mutex);
-		thread audio1(audio, dac);
+		std::mutex *buffer_mutex = new std::mutex();
+		RtAudio *dac = new RtAudio();
+		thread screen1(screen, buffer_mutex);
+		thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
 
 		screen1.join();
 		audio1.detach();
 		// Stop the stream
 		RtAudioErrorType checkError = dac->stopStream();
-		if (dac->isStreamOpen()) dac->closeStream();
+		if (dac->isStreamOpen())
+			dac->closeStream();
 		delete dac;
 	}
 	catch (const exception &e)

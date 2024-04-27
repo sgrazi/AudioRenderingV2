@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "Camera.h"
 #include "AudioRenderer.h"
+#include "CircularBuffer.h"
 #include "OptixModel.h"
 #include "AudioFile.h"
 #include "cJSON.h"
@@ -16,8 +17,10 @@ private:
 	Context();
 
 	float volume;
+	bool liveFlag = false;
 	AudioFile<float> *audio_file;
 	unsigned int ir_length_in_seconds = 2;
+	CircularBuffer<double> *liveInputBuffer;
 	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
@@ -52,6 +55,12 @@ public:
 	static bool loadContext(cJSON *config);
 
 	// ------------------------------------ SOUND ------------------------------------
+
+	static void set_live_flag(bool liveFlag);
+	static bool get_live_flag();
+
+	static void set_live_input_buffer(CircularBuffer<double> *b);
+	static CircularBuffer<double> *get_live_input_buffer();
 
 	static void set_audio_file(AudioFile<float> *audio_file);
 	static AudioFile<float> *get_audio_file();

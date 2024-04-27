@@ -51,7 +51,7 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
         }
     }
     // return default absorption
-    return 0.1;
+    return 0.2;
 }
 
 /*! constructor - performs all setup, including initializing
@@ -79,7 +79,7 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int buffer_size_i
     launchParams.size_z = 100;
     launchParams.traversable = buildAccel();
 
-    int ir_length = buffer_size_in_seconds * output_channels * sample_rate;
+    int ir_length = buffer_size_in_seconds * sample_rate;
     launchParams.ir_length = ir_length;
     launchParams.sample_rate = sample_rate;
     cudaMalloc(&launchParams.ir_left, launchParams.ir_length * sizeof(float));
@@ -546,7 +546,100 @@ void AudioRenderer::render()
     }
 }
 
-void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
+/**
+ * Se normaliza en un kernel los valores de los arreglos.
+ * Luego se los "mergea" con un zip, los valores del buffer izq estan en las posiciones pares, los valores derechos en posiciones impares.
+ */
+void AudioRenderer::normalizeAndMergeStereoOutput(double *d_outputBuffer_left, double *d_outputBuffer_right, size_t monoBufferLength, double *d_outputBuffer)
+{
+}
+
+/**
+ * Dado el buffer circular, empezando en startIndex se le suma cada valor de deviceArray.
+ */
+void addToCircularBuffer(double *deviceArray, size_t deviceArrayLength, double *hostCircularBuffer, size_t length, size_t startIndex)
+{
+    double *d_circularBuffer;
+    cudaMalloc((void **)&d_circularBuffer, length * sizeof(double));
+    cudaMemcpy(d_circularBuffer, hostCircularBuffer, length * sizeof(double), cudaMemcpyHostToDevice);
+
+    addDeviceArrayToCircularBuffer(deviceArray, deviceArrayLength, d_circularBuffer, startIndex, length);
+    cudaDeviceSynchronize();
+
+    cudaMemcpy(hostCircularBuffer, d_circularBuffer, length * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaFree(d_circularBuffer);
+}
+
+bool isArrayAllZeros(const double *array, int length)
+{
+    for (int i = 0; i < length; ++i)
+    {
+        if (array[i] != 0)
+        {
+            return false; // Array contains a non-zero element
+        }
+    }
+    return true; // Array contains all zeros
+}
+
+/**
+ * Convoluciona el input buffer con los IRs, carga el resultado en el buffer circular de salida
+ */
+void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, size_t h_outputBufferSize, CircularBuffer<double> *h_circularOutputBuffer)
+{
+    // move inputBuffer to device
+    // Expand with 0's until it has the same size as IR
+    double *d_inputBuffer;
+    cudaMalloc(&d_inputBuffer, launchParams.ir_length * sizeof(double));
+    cudaMemset(&d_inputBuffer, 0, launchParams.ir_length * sizeof(double));
+    copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
+
+    // create outputBuffer
+    double *d_outputBuffer_left;
+    double *d_outputBuffer_right;
+
+    cudaMalloc(&d_outputBuffer_left, launchParams.ir_length * sizeof(double));
+    cudaMalloc(&d_outputBuffer_right, launchParams.ir_length * sizeof(double));
+
+    // change IR to double
+    double *d_IRLeft;
+    double *d_IRRight;
+    cudaMalloc(&d_IRLeft, launchParams.ir_length * sizeof(double));
+    cudaMalloc(&d_IRRight, launchParams.ir_length * sizeof(double));
+    castFloatArrayToDouble(launchParams.ir_left, d_IRLeft, launchParams.ir_length);
+    castFloatArrayToDouble(launchParams.ir_right, d_IRRight, launchParams.ir_length);
+
+    convoluteFromLiveInput(d_inputBuffer, d_IRLeft, launchParams.ir_length, d_outputBuffer_left);
+    cudaDeviceSynchronize();
+    convoluteFromLiveInput(d_inputBuffer, d_IRRight, launchParams.ir_length, d_outputBuffer_right);
+    cudaDeviceSynchronize();
+
+    cudaFree(d_IRLeft);
+    cudaFree(d_IRRight);
+
+    cudaFree(d_inputBuffer);
+
+    double *d_outputBuffer;
+    cudaMalloc(&d_outputBuffer, launchParams.ir_length * 2 * sizeof(double));
+
+    // normalize
+    normalizeBuffers(d_outputBuffer_left, d_outputBuffer_right, launchParams.ir_length, (launchParams.ir_length / 2));
+
+    // merge
+    zipArrays(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, launchParams.ir_length);
+
+    cudaFree(d_outputBuffer_left);
+    cudaFree(d_outputBuffer_right);
+
+    // add to h_circularOutputBuffer
+    size_t startIndex = h_circularOutputBuffer->head;
+    size_t length = h_circularOutputBuffer->length;
+    addToCircularBuffer(d_outputBuffer, launchParams.ir_length * 2, h_circularOutputBuffer->buffer, length, startIndex);
+
+    cudaFree(d_outputBuffer);
+}
+
+void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, unsigned int num_channels)
 {
 
     // LEFT
@@ -571,11 +664,9 @@ void AudioRenderer::convolute(float *h_inputBuffer, size_t h_inputBufferSize, fl
 
     size_t outputSize = h_inputBufferSize;
 
-    // convolute_toeplitz_in_gpu(d_inputBuffer, launchParams.ir, launchParams.ir_length, d_outputBuffer);
-
-    convolute_fourier_in_gpu(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    convoluteFromAudioBuffer(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
     cudaDeviceSynchronize();
-    convolute_fourier_in_gpu(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
+    convoluteFromAudioBuffer(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
     // copy result to host
     copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
@@ -660,6 +751,6 @@ void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixMod
     placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
     this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
     this->render();
-    this->convolute(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+    this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
     mutex->unlock();
 }
