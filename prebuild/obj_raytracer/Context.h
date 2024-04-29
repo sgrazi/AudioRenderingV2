@@ -21,7 +21,6 @@ private:
 	AudioFile<float> *audio_file;
 	unsigned int ir_length_in_seconds = 2;
 	CircularBuffer<double> *liveInputBuffer;
-	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
 	float *outputBuffer_left;
@@ -67,9 +66,6 @@ public:
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();
-
-	static void set_output_channels(unsigned int output_channels);
-	static unsigned int get_output_channels();
 
 	static void set_volume(float volume);
 	static float get_volume();
