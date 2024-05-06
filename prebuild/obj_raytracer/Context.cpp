@@ -113,11 +113,11 @@ bool Context::loadContext(cJSON *config)
 	std::vector<Material> materials;
 	if (cJSON_IsObject(cJSON_pathtracer_parameters))
 	{
-		cJSON *cJSON_base_power = cJSON_GetObjectItem(cJSON_renderer_parameters, "base_power");
+		cJSON *cJSON_base_power = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "base_power");
 		if (cJSON_IsNumber(cJSON_base_power))
 			base_power = cJSON_base_power->valuedouble;
 
-		const cJSON *cJSON_rays_size = cJSON_GetObjectItem(cJSON_scene_parameters, "rays");
+		const cJSON *cJSON_rays_size = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "rays");
 		if (cJSON_IsObject(cJSON_rays_size))
 		{
 			cJSON *x = cJSON_GetObjectItem(cJSON_rays_size, "x");
@@ -127,15 +127,15 @@ bool Context::loadContext(cJSON *config)
 				rays = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
 		}
 
-		cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_distance_threshold");
+		cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_distance_threshold");
 		if (cJSON_IsNumber(cJSON_ray_distance_threshold))
-			ray_distance_threshold = cJSON_ray_distance_threshold->valuedouble;
+			ray_distance_threshold = cJSON_ray_distance_threshold->valueint;
 
-		cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_energy_threshold");
+		cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_energy_threshold");
 		if (cJSON_IsNumber(cJSON_ray_energy_threshold))
 			ray_energy_threshold = cJSON_ray_energy_threshold->valuedouble;
 
-		const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_max_bounces");
+		const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_max_bounces");
 		if (cJSON_IsNumber(cJSON_ray_max_bounces))
 			ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
 
