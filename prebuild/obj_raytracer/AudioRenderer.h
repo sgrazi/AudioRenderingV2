@@ -21,7 +21,7 @@ class AudioRenderer
 public:
     /*! constructor - performs all setup, including initializing
       optix, creates modOptixModelpipeline, programs, SBT, etc. */
-    AudioRenderer(const OptixModel *model, unsigned int ir_length_in_seconds, int sample_rate, std::vector<Material> materials);
+    AudioRenderer(const OptixModel *model, unsigned int ir_length_in_seconds, int sample_rate, std::vector<Material> materials, gdt::vec3f rays_per_dimension);
 
     /*! render one frame */
     void render();

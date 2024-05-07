@@ -37,6 +37,7 @@ private:
 	float ray_energy_threshold;
 	unsigned int ray_max_bounces;
 	glm::vec3 initial_emitter_pos;
+	gdt::vec3f rays_per_dimension;
 
 	uint32_t sample_rate;
 	Sphere *sphere;
@@ -110,8 +111,10 @@ public:
 	static gdt::vec3f get_last_render_position();
 
 	static void set_re_render_angle_threshold(float re_render_angle_threshold);
-
 	static float get_re_render_angle_threshold();
+
+	static void set_rays_per_dimension(gdt::vec3f rays_per_dimension);
+	static gdt::vec3f get_rays_per_dimension();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

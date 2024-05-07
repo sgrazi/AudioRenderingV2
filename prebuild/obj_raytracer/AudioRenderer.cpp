@@ -56,27 +56,22 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
 
 /*! constructor - performs all setup, including initializing
   optix, creates module, pipeline, programs, SBT, etc. */
-AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int ir_length_in_seconds, int sample_rate, std::vector<Material> materials) : model(model), materials(materials)
+AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int ir_length_in_seconds, int sample_rate, std::vector<Material> materials, gdt::vec3f rays_per_dimension) : model(model), materials(materials)
 {
     initOptix();
 
     std::cout << " creating optix context ..." << std::endl;
     createContext();
-
-    std::cout << " setting up module ..." << std::endl;
     createModule();
 
-    std::cout << " creating raygen programs ..." << std::endl;
     createRaygenPrograms();
-    std::cout << " creating miss programs ..." << std::endl;
     createMissPrograms();
-    std::cout << " creating hitgroup programs ..." << std::endl;
     createHitgroupPrograms();
 
     std::cout << " setting up pathtracer parameters ..." << std::endl;
-    launchParams.size_x = 100;
-    launchParams.size_y = 100;
-    launchParams.size_z = 100;
+    launchParams.size_x = rays_per_dimension.x;
+    launchParams.size_y = rays_per_dimension.y;
+    launchParams.size_z = rays_per_dimension.z;
     launchParams.traversable = buildAccel();
 
     int ir_length = ir_length_in_seconds * sample_rate;
@@ -91,11 +86,9 @@ AudioRenderer::AudioRenderer(const OptixModel *model, unsigned int ir_length_in_
     std::cout << " setting up optix pipeline ..." << std::endl;
     createPipeline();
 
-    std::cout << " building SBT ..." << std::endl;
     buildSBT();
 
     launchParamsBuffer.alloc(sizeof(launchParams));
-    std::cout << " context, module, pipeline, etc, all set up ..." << std::endl;
 }
 
 OptixTraversableHandle AudioRenderer::buildAccel()
