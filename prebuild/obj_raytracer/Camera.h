@@ -1,17 +1,18 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include<glad/glad.h>
-#include<GLFW/glfw3.h>
-#include<glm/glm.hpp>
-#include<glm/gtc/matrix_transform.hpp>
-#include<glm/gtc/type_ptr.hpp>
-#include<glm/gtx/rotate_vector.hpp>
-#include<glm/gtx/vector_angle.hpp>
-#include"shaderClass.h"
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/rotate_vector.hpp>
+#include <glm/gtx/vector_angle.hpp>
+#include "shaderClass.h"
 #include "gdt/math/AffineSpace.h"
 
-class Camera {
+class Camera
+{
 private:
 	// Stores the width and height of the window
 	int width;
@@ -37,9 +38,9 @@ public:
 	// Updates the camera matrix to the Vertex Shader
 	void updateMatrix(float FOVdeg, float nearPlane, float farPlane);
 	// Exports the camera matrix to a shader
-	void Matrix(Shader& shader, const char* uniform);
+	void Matrix(Shader &shader, const char *uniform);
 	// Handles camera inputs
-	void Inputs(GLFWwindow* window);
+	void Inputs(GLFWwindow *window);
 	// Handles global camera angle
 	void calculate_global_angle();
 };

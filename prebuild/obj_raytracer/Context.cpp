@@ -189,29 +189,31 @@ bool Context::loadContext(cJSON *config)
 	context->set_optix_model(scene);
 
 	size_t sample_rate;
-	if (!audio_file_path.empty()) {
+	if (!audio_file_path.empty())
+	{
 		try
 		{
-			AudioFile<float>* audio_file = new AudioFile<float>;
+			AudioFile<float> *audio_file = new AudioFile<float>;
 			context->set_audio_file_path(audio_file_path);
 			audio_file->load(audio_file_path);
 			context->set_audio_file(audio_file);
 			sample_rate = audio_file->getSampleRate();
 			size_t len_of_audio = audio_file->samples[0].size();
 			size_t size_of_audio = sizeof(float) * len_of_audio;
-			float* outputBuffer_left = (float*)malloc(size_of_audio);
-			float* outputBuffer_right = (float*)malloc(size_of_audio);
+			float *outputBuffer_left = (float *)malloc(size_of_audio);
+			float *outputBuffer_right = (float *)malloc(size_of_audio);
 			context->set_output_buffer_left(outputBuffer_left);
 			context->set_output_buffer_right(outputBuffer_right);
 			context->set_output_buffer_len(size_of_audio);
 		}
-		catch (const std::exception& e)
+		catch (const std::exception &e)
 		{
 			std::cerr << "Exception caught: " << e.what() << std::endl;
 			return false;
 		}
 	}
-	else {
+	else
+	{
 		sample_rate = 44100;
 		context->set_live_flag(true);
 	}

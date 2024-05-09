@@ -1,6 +1,7 @@
 #include "HalfSphere.h"
 
-HalfSphere::HalfSphere(std::string objFile) {
+HalfSphere::HalfSphere(std::string objFile)
+{
     // const std::string objFile = "../../assets/models/sphere.obj";
     const std::string mtlDir = objFile.substr(0, objFile.rfind('/'));
     tinyobj::attrib_t attributes;

@@ -349,11 +349,11 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
         cudaDeviceSynchronize();
         // Inverse on the result and save it to buffer
         CHCK_CUFFT_RES(cufftExecC2R(inversePlan, segmentData, sampleSegment));
-        int howMuchToCopy = (second*sample_rate) + ir_len < samples_len ? ir_len : samples_len - (second*sample_rate);
-        cudaMemcpy(&(outputBuffer[second*sample_rate]), sampleSegment, howMuchToCopy * sizeof(float), cudaMemcpyDeviceToHost);
+        int howMuchToCopy = (second * sample_rate) + ir_len < samples_len ? ir_len : samples_len - (second * sample_rate);
+        cudaMemcpy(&(outputBuffer[second * sample_rate]), sampleSegment, howMuchToCopy * sizeof(float), cudaMemcpyDeviceToHost);
         cudaDeviceSynchronize();
     }
-    
+
     // Clean up
     cufftDestroy(plan);
     cufftDestroy(inversePlan);

@@ -660,7 +660,7 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     // normalize after transform
     for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
     {
-        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / 2); // 2 = num channels
+        h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / 2);   // 2 = num channels
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / 2); // 2 = num channels
     }
 

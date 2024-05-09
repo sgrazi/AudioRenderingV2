@@ -47,7 +47,7 @@ struct audioCallbackData
 	CircularBuffer<SAMPLE_TYPE> *samplesRecordBuffer;
 	audioPaths *paths;
 	float volume;
-	std::mutex* inputBufferMutex;
+	std::mutex *inputBufferMutex;
 };
 
 struct AudioInfo
@@ -69,16 +69,18 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 	Camera camera = *Context::get_camera();
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	if (!testing) {
-		AudioFile<float>* audio = Context::get_audio_file();
+	if (!testing)
+	{
+		AudioFile<float> *audio = Context::get_audio_file();
 		size_t len_of_audio = audio->samples[0].size();
 		size_t size_of_audio = sizeof(float) * len_of_audio;
-		float* outputBuffer_left = Context::get_output_buffer_left();
-		float* outputBuffer_right = Context::get_output_buffer_right();
+		float *outputBuffer_left = Context::get_output_buffer_left();
+		float *outputBuffer_right = Context::get_output_buffer_right();
 
 		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
 	}
-	else {
+	else
+	{
 		output_buffer_mutex->lock();
 		placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
 		renderer->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
@@ -134,8 +136,9 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 	double *buffer = (double *)outputBuffer;
 	double *ibuffer = (double *)inputBuffer;
-	std::mutex* inputBufferMutex = renderData->inputBufferMutex;
-	if (!Context::get_is_rendering()) {
+	std::mutex *inputBufferMutex = renderData->inputBufferMutex;
+	if (!Context::get_is_rendering())
+	{
 		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
 
 		float volume = Context::get_volume();
@@ -149,11 +152,12 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		}
 		renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
 	}
-	else {
+	else
+	{
 		for (int i = 0; i < nBufferFrames * 2; i++)
 			*buffer++ = 0;
 	}
-	
+
 	return 0;
 }
 
@@ -185,7 +189,7 @@ int audioPlay(RtAudio *dac)
 	return 0;
 }
 
-void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
+void audioMicPlay(RtAudio *dac, std::mutex *inputBufferMutex)
 {
 	// Init audio stream
 	dac = new RtAudio();
@@ -232,7 +236,7 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 	checkError = dac->startStream();
 }
 
-void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
+void audio(RtAudio *dac, bool isMic, std::mutex *inputBufferMutex)
 {
 	try
 	{

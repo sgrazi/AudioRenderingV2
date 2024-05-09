@@ -1,4 +1,4 @@
-#include"Camera.h"
+#include "Camera.h"
 
 Camera::Camera(int width, int height, glm::vec3 position)
 {
@@ -22,25 +22,27 @@ void Camera::updateMatrix(float FOVdeg, float nearPlane, float farPlane)
 	cameraMatrix = projection * view;
 }
 
-void Camera::Matrix(Shader& shader, const char* uniform)
+void Camera::Matrix(Shader &shader, const char *uniform)
 {
 	// Exports camera matrix
 	glUniformMatrix4fv(glGetUniformLocation(shader.ID, uniform), 1, GL_FALSE, glm::value_ptr(cameraMatrix));
 }
 
-void Camera::calculate_global_angle() {
-	 glm::vec3 aux_camera = this->Orientation;
-    
-    // Calculate the angle using atan2 with respect to the default orientation
-    float lookAngle = glm::degrees(atan2(aux_camera.z, aux_camera.x));
-    if (lookAngle < 0) {
-        lookAngle += 360.0f;
-    }
+void Camera::calculate_global_angle()
+{
+	glm::vec3 aux_camera = this->Orientation;
 
-    this->globalAngle = lookAngle;
+	// Calculate the angle using atan2 with respect to the default orientation
+	float lookAngle = glm::degrees(atan2(aux_camera.z, aux_camera.x));
+	if (lookAngle < 0)
+	{
+		lookAngle += 360.0f;
+	}
+
+	this->globalAngle = lookAngle;
 }
 
-void Camera::Inputs(GLFWwindow* window)
+void Camera::Inputs(GLFWwindow *window)
 {
 	// Handles key inputs
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
@@ -96,7 +98,7 @@ void Camera::Inputs(GLFWwindow* window)
 		glfwGetCursorPos(window, &mouseX, &mouseY);
 
 		// Normalizes and shifts the coordinates of the cursor such that they begin in the middle of the screen
-		// and then "transforms" them into degrees 
+		// and then "transforms" them into degrees
 		float rotX = sensitivity * (float)(mouseY - (height / 2)) / height;
 		float rotY = sensitivity * (float)(mouseX - (width / 2)) / width;
 

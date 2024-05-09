@@ -44,27 +44,27 @@ namespace objl
 			Y = Y_;
 		}
 		// Bool Equals Operator Overload
-		bool operator==(const Vector2& other) const
+		bool operator==(const Vector2 &other) const
 		{
 			return (this->X == other.X && this->Y == other.Y);
 		}
 		// Bool Not Equals Operator Overload
-		bool operator!=(const Vector2& other) const
+		bool operator!=(const Vector2 &other) const
 		{
 			return !(this->X == other.X && this->Y == other.Y);
 		}
 		// Addition Operator Overload
-		Vector2 operator+(const Vector2& right) const
+		Vector2 operator+(const Vector2 &right) const
 		{
 			return Vector2(this->X + right.X, this->Y + right.Y);
 		}
 		// Subtraction Operator Overload
-		Vector2 operator-(const Vector2& right) const
+		Vector2 operator-(const Vector2 &right) const
 		{
 			return Vector2(this->X - right.X, this->Y - right.Y);
 		}
 		// Float Multiplication Operator Overload
-		Vector2 operator*(const float& other) const
+		Vector2 operator*(const float &other) const
 		{
 			return Vector2(this->X * other, this->Y * other);
 		}
@@ -94,32 +94,32 @@ namespace objl
 			Z = Z_;
 		}
 		// Bool Equals Operator Overload
-		bool operator==(const Vector3& other) const
+		bool operator==(const Vector3 &other) const
 		{
 			return (this->X == other.X && this->Y == other.Y && this->Z == other.Z);
 		}
 		// Bool Not Equals Operator Overload
-		bool operator!=(const Vector3& other) const
+		bool operator!=(const Vector3 &other) const
 		{
 			return !(this->X == other.X && this->Y == other.Y && this->Z == other.Z);
 		}
 		// Addition Operator Overload
-		Vector3 operator+(const Vector3& right) const
+		Vector3 operator+(const Vector3 &right) const
 		{
 			return Vector3(this->X + right.X, this->Y + right.Y, this->Z + right.Z);
 		}
 		// Subtraction Operator Overload
-		Vector3 operator-(const Vector3& right) const
+		Vector3 operator-(const Vector3 &right) const
 		{
 			return Vector3(this->X - right.X, this->Y - right.Y, this->Z - right.Z);
 		}
 		// Float Multiplication Operator Overload
-		Vector3 operator*(const float& other) const
+		Vector3 operator*(const float &other) const
 		{
 			return Vector3(this->X * other, this->Y * other, this->Z * other);
 		}
 		// Float Division Operator Overload
-		Vector3 operator/(const float& other) const
+		Vector3 operator/(const float &other) const
 		{
 			return Vector3(this->X / other, this->Y / other, this->Z / other);
 		}
@@ -196,10 +196,9 @@ namespace objl
 		// Default Constructor
 		Mesh()
 		{
-
 		}
 		// Variable Set Constructor
-		Mesh(std::vector<Vertex>& _Vertices, std::vector<unsigned int>& _Indices)
+		Mesh(std::vector<Vertex> &_Vertices, std::vector<unsigned int> &_Indices)
 		{
 			Vertices = _Vertices;
 			Indices = _Indices;
@@ -225,8 +224,8 @@ namespace objl
 		Vector3 CrossV3(const Vector3 a, const Vector3 b)
 		{
 			return Vector3(a.Y * b.Z - a.Z * b.Y,
-				a.Z * b.X - a.X * b.Z,
-				a.X * b.Y - a.Y * b.X);
+										 a.Z * b.X - a.X * b.Z,
+										 a.X * b.Y - a.Y * b.X);
 		}
 
 		// Vector3 Magnitude Calculation
@@ -264,7 +263,7 @@ namespace objl
 	namespace algorithm
 	{
 		// Vector3 Multiplication Opertor Overload
-		Vector3 operator*(const float& left, const Vector3& right)
+		Vector3 operator*(const float &left, const Vector3 &right)
 		{
 			return Vector3(right.X * left, right.Y * left, right.Z * left);
 		}
@@ -296,8 +295,7 @@ namespace objl
 		bool inTriangle(Vector3 point, Vector3 tri1, Vector3 tri2, Vector3 tri3)
 		{
 			// Test to see if it is within an infinite prism that the triangle outlines.
-			bool within_tri_prisim = SameSide(point, tri1, tri2, tri3) && SameSide(point, tri2, tri1, tri3)
-				&& SameSide(point, tri3, tri1, tri2);
+			bool within_tri_prisim = SameSide(point, tri1, tri2, tri3) && SameSide(point, tri2, tri1, tri3) && SameSide(point, tri3, tri1, tri2);
 
 			// If it isn't it will never be on the triangle
 			if (!within_tri_prisim)
@@ -318,9 +316,9 @@ namespace objl
 		}
 
 		// Split a String into a string array at a given token
-		inline void split(const std::string& in,
-			std::vector<std::string>& out,
-			std::string token)
+		inline void split(const std::string &in,
+											std::vector<std::string> &out,
+											std::string token)
 		{
 			out.clear();
 
@@ -357,7 +355,7 @@ namespace objl
 		}
 
 		// Get tail of string after first token and possibly following spaces
-		inline std::string tail(const std::string& in)
+		inline std::string tail(const std::string &in)
 		{
 			size_t token_start = in.find_first_not_of(" \t");
 			size_t space_start = in.find_first_of(" \t", token_start);
@@ -375,7 +373,7 @@ namespace objl
 		}
 
 		// Get first token of string
-		inline std::string firstToken(const std::string& in)
+		inline std::string firstToken(const std::string &in)
 		{
 			if (!in.empty())
 			{
@@ -395,7 +393,7 @@ namespace objl
 
 		// Get element at given index position
 		template <class T>
-		inline const T& getElement(const std::vector<T>& elements, std::string& index)
+		inline const T &getElement(const std::vector<T> &elements, std::string &index)
 		{
 			int idx = std::stoi(index);
 			if (idx < 0)
@@ -415,7 +413,6 @@ namespace objl
 		// Default Constructor
 		Loader()
 		{
-
 		}
 		~Loader()
 		{
@@ -433,7 +430,6 @@ namespace objl
 			// If the file is not an .obj file return false
 			if (Path.substr(Path.size() - 4, 4) != ".obj")
 				return false;
-
 
 			std::ifstream file(Path);
 
@@ -600,7 +596,6 @@ namespace objl
 
 						indnum = (unsigned int)((LoadedVertices.size()) - vVerts.size()) + iIndices[i];
 						LoadedIndices.push_back(indnum);
-
 					}
 				}
 				// Get Mesh Material Name
@@ -615,10 +610,11 @@ namespace objl
 						tempMesh = Mesh(Vertices, Indices);
 						tempMesh.MeshName = meshname;
 						int i = 2;
-						while (1) {
+						while (1)
+						{
 							tempMesh.MeshName = meshname + "_" + std::to_string(i);
 
-							for (auto& m : LoadedMeshes)
+							for (auto &m : LoadedMeshes)
 								if (m.MeshName == tempMesh.MeshName)
 									continue;
 							break;
@@ -655,11 +651,11 @@ namespace objl
 						}
 					}
 
-
 					pathtomat += algorithm::tail(curline);
 
 #ifdef OBJL_CONSOLE_OUTPUT
-					std::cout << std::endl << "- find materials in: " << pathtomat << std::endl;
+					std::cout << std::endl
+										<< "- find materials in: " << pathtomat << std::endl;
 #endif
 
 					// Load Materials
@@ -722,13 +718,13 @@ namespace objl
 		std::vector<Material> LoadedMaterials;
 
 	private:
-		// Generate vertices from a list of positions, 
+		// Generate vertices from a list of positions,
 		//	tcoords, normals and a face line
-		void GenVerticesFromRawOBJ(std::vector<Vertex>& oVerts,
-			const std::vector<Vector3>& iPositions,
-			const std::vector<Vector2>& iTCoords,
-			const std::vector<Vector3>& iNormals,
-			std::string icurline)
+		void GenVerticesFromRawOBJ(std::vector<Vertex> &oVerts,
+															 const std::vector<Vector3> &iPositions,
+															 const std::vector<Vector2> &iTCoords,
+															 const std::vector<Vector3> &iNormals,
+															 std::string icurline)
 		{
 			std::vector<std::string> sface, svert;
 			Vertex vVert;
@@ -817,8 +813,8 @@ namespace objl
 			}
 
 			// take care of missing normals
-			// these may not be truly acurate but it is the 
-			// best they get for not compiling a mesh with normals	
+			// these may not be truly acurate but it is the
+			// best they get for not compiling a mesh with normals
 			if (noNormal)
 			{
 				Vector3 A = oVerts[0].Position - oVerts[1].Position;
@@ -835,8 +831,8 @@ namespace objl
 
 		// Triangulate a list of vertices into a face by printing
 		//	inducies corresponding with triangles within it
-		void VertexTriangluation(std::vector<unsigned int>& oIndices,
-			const std::vector<Vertex>& iVerts)
+		void VertexTriangluation(std::vector<unsigned int> &oIndices,
+														 const std::vector<Vertex> &iVerts)
 		{
 			// If there are 2 or less verts,
 			// no triangle can be created,
@@ -921,9 +917,7 @@ namespace objl
 						Vector3 tempVec;
 						for (int j = 0; j < int(tVerts.size()); j++)
 						{
-							if (tVerts[j].Position != pCur.Position
-								&& tVerts[j].Position != pPrev.Position
-								&& tVerts[j].Position != pNext.Position)
+							if (tVerts[j].Position != pCur.Position && tVerts[j].Position != pPrev.Position && tVerts[j].Position != pNext.Position)
 							{
 								tempVec = tVerts[j].Position;
 								break;
@@ -954,10 +948,7 @@ namespace objl
 					bool inTri = false;
 					for (int j = 0; j < int(iVerts.size()); j++)
 					{
-						if (algorithm::inTriangle(iVerts[j].Position, pPrev.Position, pCur.Position, pNext.Position)
-							&& iVerts[j].Position != pPrev.Position
-							&& iVerts[j].Position != pCur.Position
-							&& iVerts[j].Position != pNext.Position)
+						if (algorithm::inTriangle(iVerts[j].Position, pPrev.Position, pCur.Position, pNext.Position) && iVerts[j].Position != pPrev.Position && iVerts[j].Position != pCur.Position && iVerts[j].Position != pNext.Position)
 						{
 							inTri = true;
 							break;

@@ -18,7 +18,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
- //=======================================================================
+//=======================================================================
 
 #ifndef _AS_AudioFile_h
 #define _AS_AudioFile_h
@@ -34,41 +34,39 @@
 #include <algorithm>
 
 // disable some warnings on Windows
-#if defined (_MSC_VER)
+#if defined(_MSC_VER)
 __pragma(warning(push))
-__pragma(warning(disable : 4244))
-__pragma(warning(disable : 4457))
-__pragma(warning(disable : 4458))
-__pragma(warning(disable : 4389))
-__pragma(warning(disable : 4996))
-#elif defined (__GNUC__)
+    __pragma(warning(disable : 4244))
+        __pragma(warning(disable : 4457))
+            __pragma(warning(disable : 4458))
+                __pragma(warning(disable : 4389))
+                    __pragma(warning(disable : 4996))
+#elif defined(__GNUC__)
 _Pragma("GCC diagnostic push")
-_Pragma("GCC diagnostic ignored \"-Wconversion\"")
-_Pragma("GCC diagnostic ignored \"-Wsign-compare\"")
-_Pragma("GCC diagnostic ignored \"-Wshadow\"")
+    _Pragma("GCC diagnostic ignored \"-Wconversion\"")
+        _Pragma("GCC diagnostic ignored \"-Wsign-compare\"")
+            _Pragma("GCC diagnostic ignored \"-Wshadow\"")
 #endif
 
-//=============================================================
-/** The different types of audio file, plus some other types to
- * indicate a failure to load a file, or that one hasn't been
- * loaded yet
- */
-    enum class AudioFileFormat
-{
-    Error,
-    NotLoaded,
-    Wave,
-    Aiff
-};
+    //=============================================================
+    /** The different types of audio file, plus some other types to
+     * indicate a failure to load a file, or that one hasn't been
+     * loaded yet
+     */
+    enum class AudioFileFormat {
+        Error,
+        NotLoaded,
+        Wave,
+        Aiff
+    };
 
 //=============================================================
 template <class T>
 class AudioFile
 {
 public:
-
     //=============================================================
-    typedef std::vector<std::vector<T> > AudioBuffer;
+    typedef std::vector<std::vector<T>> AudioBuffer;
 
     //=============================================================
     /** Constructor */
@@ -118,7 +116,7 @@ public:
     /** Set the audio buffer for this AudioFile by copying samples from another buffer.
      * @Returns true if the buffer was copied successfully.
      */
-    bool setAudioBuffer(AudioBuffer& newBuffer);
+    bool setAudioBuffer(AudioBuffer &newBuffer);
 
     /** Sets the audio buffer to a given number of channels and number of samples per channel. This will try to preserve
      * the existing audio, adding zeros to any new channels or new samples in a given channel.
@@ -157,7 +155,6 @@ public:
     std::string iXMLChunk;
 
 private:
-
     //=============================================================
     enum class Endianness
     {
@@ -166,9 +163,9 @@ private:
     };
 
     //=============================================================
-    AudioFileFormat determineAudioFileFormat(std::vector<uint8_t>& fileData);
-    bool decodeWaveFile(std::vector<uint8_t>& fileData);
-    bool decodeAiffFile(std::vector<uint8_t>& fileData);
+    AudioFileFormat determineAudioFileFormat(std::vector<uint8_t> &fileData);
+    bool decodeWaveFile(std::vector<uint8_t> &fileData);
+    bool decodeAiffFile(std::vector<uint8_t> &fileData);
 
     //=============================================================
     bool saveToWaveFile(std::string filePath);
@@ -178,10 +175,10 @@ private:
     void clearAudioBuffer();
 
     //=============================================================
-    int32_t fourBytesToInt(std::vector<uint8_t>& source, int startIndex, Endianness endianness = Endianness::LittleEndian);
-    int16_t twoBytesToInt(std::vector<uint8_t>& source, int startIndex, Endianness endianness = Endianness::LittleEndian);
-    int getIndexOfString(std::vector<uint8_t>& source, std::string s);
-    int getIndexOfChunk(std::vector<uint8_t>& source, const std::string& chunkHeaderID, int startIndex, Endianness endianness = Endianness::LittleEndian);
+    int32_t fourBytesToInt(std::vector<uint8_t> &source, int startIndex, Endianness endianness = Endianness::LittleEndian);
+    int16_t twoBytesToInt(std::vector<uint8_t> &source, int startIndex, Endianness endianness = Endianness::LittleEndian);
+    int getIndexOfString(std::vector<uint8_t> &source, std::string s);
+    int getIndexOfChunk(std::vector<uint8_t> &source, const std::string &chunkHeaderID, int startIndex, Endianness endianness = Endianness::LittleEndian);
 
     //=============================================================
     T sixteenBitIntToSample(int16_t sample);
@@ -191,18 +188,18 @@ private:
     uint8_t sampleToSingleByte(T sample);
     T singleByteToSample(uint8_t sample);
 
-    uint32_t getAiffSampleRate(std::vector<uint8_t>& fileData, int sampleRateStartIndex);
-    bool tenByteMatch(std::vector<uint8_t>& v1, int startIndex1, std::vector<uint8_t>& v2, int startIndex2);
-    void addSampleRateToAiffData(std::vector<uint8_t>& fileData, uint32_t sampleRate);
+    uint32_t getAiffSampleRate(std::vector<uint8_t> &fileData, int sampleRateStartIndex);
+    bool tenByteMatch(std::vector<uint8_t> &v1, int startIndex1, std::vector<uint8_t> &v2, int startIndex2);
+    void addSampleRateToAiffData(std::vector<uint8_t> &fileData, uint32_t sampleRate);
     T clamp(T v1, T minValue, T maxValue);
 
     //=============================================================
-    void addStringToFileData(std::vector<uint8_t>& fileData, std::string s);
-    void addInt32ToFileData(std::vector<uint8_t>& fileData, int32_t i, Endianness endianness = Endianness::LittleEndian);
-    void addInt16ToFileData(std::vector<uint8_t>& fileData, int16_t i, Endianness endianness = Endianness::LittleEndian);
+    void addStringToFileData(std::vector<uint8_t> &fileData, std::string s);
+    void addInt32ToFileData(std::vector<uint8_t> &fileData, int32_t i, Endianness endianness = Endianness::LittleEndian);
+    void addInt16ToFileData(std::vector<uint8_t> &fileData, int16_t i, Endianness endianness = Endianness::LittleEndian);
 
     //=============================================================
-    bool writeDataToFile(std::vector<uint8_t>& fileData, std::string filePath);
+    bool writeDataToFile(std::vector<uint8_t> &fileData, std::string filePath);
 
     //=============================================================
     void reportError(std::string errorMessage);
@@ -211,13 +208,12 @@ private:
     AudioFileFormat audioFileFormat;
     uint32_t sampleRate;
     int bitDepth;
-    bool logErrorsToConsole{ true };
+    bool logErrorsToConsole{true};
 };
-
 
 //=============================================================
 // Pre-defined 10-byte representations of common sample rates
-static std::unordered_map <uint32_t, std::vector<uint8_t>> aiffSampleRateTable = {
+static std::unordered_map<uint32_t, std::vector<uint8_t>> aiffSampleRateTable = {
     {8000, {64, 11, 250, 0, 0, 0, 0, 0, 0, 0}},
     {11025, {64, 12, 172, 68, 0, 0, 0, 0, 0, 0}},
     {16000, {64, 12, 250, 0, 0, 0, 0, 0, 0, 0}},
@@ -236,8 +232,7 @@ static std::unordered_map <uint32_t, std::vector<uint8_t>> aiffSampleRateTable =
     {192000, {64, 16, 187, 128, 0, 0, 0, 0, 0, 0}},
     {352800, {64, 17, 172, 68, 0, 0, 0, 0, 0, 0}},
     {2822400, {64, 20, 172, 68, 0, 0, 0, 0, 0, 0}},
-    {5644800, {64, 21, 172, 68, 0, 0, 0, 0, 0, 0}}
-};
+    {5644800, {64, 21, 172, 68, 0, 0, 0, 0, 0, 0}}};
 
 //=============================================================
 enum WavAudioFormat
@@ -349,7 +344,7 @@ void AudioFile<T>::printSummary() const
 
 //=============================================================
 template <class T>
-bool AudioFile<T>::setAudioBuffer(AudioBuffer& newBuffer)
+bool AudioFile<T>::setAudioBuffer(AudioBuffer &newBuffer)
 {
     int numChannels = (int)newBuffer.size();
 
@@ -469,7 +464,7 @@ bool AudioFile<T>::load(std::string filePath)
     // allocate
     fileData.resize(length);
 
-    file.read(reinterpret_cast<char*> (fileData.data()), length);
+    file.read(reinterpret_cast<char *>(fileData.data()), length);
     file.close();
 
     if (file.gcount() != length)
@@ -483,7 +478,7 @@ bool AudioFile<T>::load(std::string filePath)
 
     if (audioFileFormat == AudioFileFormat::Wave)
     {
-        //return true;
+        // return true;
         return decodeWaveFile(fileData);
     }
     else if (audioFileFormat == AudioFileFormat::Aiff)
@@ -499,12 +494,12 @@ bool AudioFile<T>::load(std::string filePath)
 
 //=============================================================
 template <class T>
-bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
+bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t> &fileData)
 {
     // -----------------------------------------------------------
     // HEADER CHUNK
     std::string headerChunkID(fileData.begin(), fileData.begin() + 4);
-    //int32_t fileSizeInBytes = fourBytesToInt (fileData, 4) + 8;
+    // int32_t fileSizeInBytes = fourBytesToInt (fileData, 4) + 8;
     std::string format(fileData.begin() + 8, fileData.begin() + 12);
 
     // -----------------------------------------------------------
@@ -525,7 +520,7 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
     // FORMAT CHUNK
     int f = indexOfFormatChunk;
     std::string formatChunkID(fileData.begin() + f, fileData.begin() + f + 4);
-    //int32_t formatChunkSize = fourBytesToInt (fileData, f + 4);
+    // int32_t formatChunkSize = fourBytesToInt (fileData, f + 4);
     uint16_t audioFormat = twoBytesToInt(fileData, f + 8);
     uint16_t numChannels = twoBytesToInt(fileData, f + 10);
     sampleRate = (uint32_t)fourBytesToInt(fileData, f + 12);
@@ -533,7 +528,7 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
     uint16_t numBytesPerBlock = twoBytesToInt(fileData, f + 20);
     bitDepth = (int)twoBytesToInt(fileData, f + 22);
 
-    uint16_t numBytesPerSample = static_cast<uint16_t> (bitDepth) / 8;
+    uint16_t numBytesPerSample = static_cast<uint16_t>(bitDepth) / 8;
 
     // check that the audio format is PCM or Float or extensible
     if (audioFormat != WavAudioFormat::PCM && audioFormat != WavAudioFormat::IEEEFloat && audioFormat != WavAudioFormat::Extensible)
@@ -550,7 +545,7 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
     }
 
     // check header data is consistent
-    if (numBytesPerSecond != static_cast<uint32_t> ((numChannels * sampleRate * bitDepth) / 8) || numBytesPerBlock != (numChannels * numBytesPerSample))
+    if (numBytesPerSecond != static_cast<uint32_t>((numChannels * sampleRate * bitDepth) / 8) || numBytesPerBlock != (numChannels * numBytesPerSample))
     {
         reportError("ERROR: the header data in this WAV file seems to be inconsistent");
         return false;
@@ -603,7 +598,7 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
                 int32_t sampleAsInt = 0;
                 sampleAsInt = (fileData[sampleIndex + 2] << 16) | (fileData[sampleIndex + 1] << 8) | fileData[sampleIndex];
 
-                if (sampleAsInt & 0x800000) //  if the 24th bit is set, this is a negative number in 24-bit world
+                if (sampleAsInt & 0x800000)                //  if the 24th bit is set, this is a negative number in 24-bit world
                     sampleAsInt = sampleAsInt | ~0xFFFFFF; // so make sure sign is extended to the 32 bit float
 
                 T sample = (T)sampleAsInt / (T)8388608.;
@@ -615,9 +610,9 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
                 T sample;
 
                 if (audioFormat == WavAudioFormat::IEEEFloat)
-                    sample = (T)reinterpret_cast<float&> (sampleAsInt);
+                    sample = (T) reinterpret_cast<float &>(sampleAsInt);
                 else // assume PCM
-                    sample = (T)sampleAsInt / static_cast<float> (std::numeric_limits<std::int32_t>::max());
+                    sample = (T)sampleAsInt / static_cast<float>(std::numeric_limits<std::int32_t>::max());
 
                 samples[channel].push_back(sample);
             }
@@ -633,7 +628,7 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
     if (indexOfXMLChunk != -1)
     {
         int32_t chunkSize = fourBytesToInt(fileData, indexOfXMLChunk + 4);
-        iXMLChunk = std::string((const char*)&fileData[indexOfXMLChunk + 8], chunkSize);
+        iXMLChunk = std::string((const char *)&fileData[indexOfXMLChunk + 8], chunkSize);
     }
 
     return true;
@@ -641,15 +636,16 @@ bool AudioFile<T>::decodeWaveFile(std::vector<uint8_t>& fileData)
 
 //=============================================================
 template <class T>
-bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
+bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t> &fileData)
 {
     // -----------------------------------------------------------
     // HEADER CHUNK
     std::string headerChunkID(fileData.begin(), fileData.begin() + 4);
-    //int32_t fileSizeInBytes = fourBytesToInt (fileData, 4, Endianness::BigEndian) + 8;
+    // int32_t fileSizeInBytes = fourBytesToInt (fileData, 4, Endianness::BigEndian) + 8;
     std::string format(fileData.begin() + 8, fileData.begin() + 12);
 
-    int audioFormat = format == "AIFF" ? AIFFAudioFormat::Uncompressed : format == "AIFC" ? AIFFAudioFormat::Compressed : AIFFAudioFormat::Error;
+    int audioFormat = format == "AIFF" ? AIFFAudioFormat::Uncompressed : format == "AIFC" ? AIFFAudioFormat::Compressed
+                                                                                          : AIFFAudioFormat::Error;
 
     // -----------------------------------------------------------
     // try and find the start points of key chunks
@@ -669,7 +665,7 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
     // COMM CHUNK
     int p = indexOfCommChunk;
     std::string commChunkID(fileData.begin() + p, fileData.begin() + p + 4);
-    //int32_t commChunkSize = fourBytesToInt (fileData, p + 4, Endianness::BigEndian);
+    // int32_t commChunkSize = fourBytesToInt (fileData, p + 4, Endianness::BigEndian);
     int16_t numChannels = twoBytesToInt(fileData, p + 8, Endianness::BigEndian);
     int32_t numSamplesPerChannel = fourBytesToInt(fileData, p + 10, Endianness::BigEndian);
     bitDepth = (int)twoBytesToInt(fileData, p + 14, Endianness::BigEndian);
@@ -702,7 +698,7 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
     std::string soundDataChunkID(fileData.begin() + s, fileData.begin() + s + 4);
     int32_t soundDataChunkSize = fourBytesToInt(fileData, s + 4, Endianness::BigEndian);
     int32_t offset = fourBytesToInt(fileData, s + 8, Endianness::BigEndian);
-    //int32_t blockSize = fourBytesToInt (fileData, s + 12, Endianness::BigEndian);
+    // int32_t blockSize = fourBytesToInt (fileData, s + 12, Endianness::BigEndian);
 
     int numBytesPerSample = bitDepth / 8;
     int numBytesPerFrame = numBytesPerSample * numChannels;
@@ -748,7 +744,7 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
                 int32_t sampleAsInt = 0;
                 sampleAsInt = (fileData[sampleIndex] << 16) | (fileData[sampleIndex + 1] << 8) | fileData[sampleIndex + 2];
 
-                if (sampleAsInt & 0x800000) //  if the 24th bit is set, this is a negative number in 24-bit world
+                if (sampleAsInt & 0x800000)                //  if the 24th bit is set, this is a negative number in 24-bit world
                     sampleAsInt = sampleAsInt | ~0xFFFFFF; // so make sure sign is extended to the 32 bit float
 
                 T sample = (T)sampleAsInt / (T)8388608.;
@@ -760,9 +756,9 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
                 T sample;
 
                 if (audioFormat == AIFFAudioFormat::Compressed)
-                    sample = (T)reinterpret_cast<float&> (sampleAsInt);
+                    sample = (T) reinterpret_cast<float &>(sampleAsInt);
                 else // assume uncompressed
-                    sample = (T)sampleAsInt / static_cast<float> (std::numeric_limits<std::int32_t>::max());
+                    sample = (T)sampleAsInt / static_cast<float>(std::numeric_limits<std::int32_t>::max());
 
                 samples[channel].push_back(sample);
             }
@@ -778,7 +774,7 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
     if (indexOfXMLChunk != -1)
     {
         int32_t chunkSize = fourBytesToInt(fileData, indexOfXMLChunk + 4);
-        iXMLChunk = std::string((const char*)&fileData[indexOfXMLChunk + 8], chunkSize);
+        iXMLChunk = std::string((const char *)&fileData[indexOfXMLChunk + 8], chunkSize);
     }
 
     return true;
@@ -786,7 +782,7 @@ bool AudioFile<T>::decodeAiffFile(std::vector<uint8_t>& fileData)
 
 //=============================================================
 template <class T>
-uint32_t AudioFile<T>::getAiffSampleRate(std::vector<uint8_t>& fileData, int sampleRateStartIndex)
+uint32_t AudioFile<T>::getAiffSampleRate(std::vector<uint8_t> &fileData, int sampleRateStartIndex)
 {
     for (auto it : aiffSampleRateTable)
     {
@@ -799,7 +795,7 @@ uint32_t AudioFile<T>::getAiffSampleRate(std::vector<uint8_t>& fileData, int sam
 
 //=============================================================
 template <class T>
-bool AudioFile<T>::tenByteMatch(std::vector<uint8_t>& v1, int startIndex1, std::vector<uint8_t>& v2, int startIndex2)
+bool AudioFile<T>::tenByteMatch(std::vector<uint8_t> &v1, int startIndex1, std::vector<uint8_t> &v2, int startIndex2)
 {
     for (int i = 0; i < 10; i++)
     {
@@ -812,7 +808,7 @@ bool AudioFile<T>::tenByteMatch(std::vector<uint8_t>& v1, int startIndex1, std::
 
 //=============================================================
 template <class T>
-void AudioFile<T>::addSampleRateToAiffData(std::vector<uint8_t>& fileData, uint32_t sampleRate)
+void AudioFile<T>::addSampleRateToAiffData(std::vector<uint8_t> &fileData, uint32_t sampleRate)
 {
     if (aiffSampleRateTable.count(sampleRate) > 0)
     {
@@ -846,7 +842,7 @@ bool AudioFile<T>::saveToWaveFile(std::string filePath)
     int32_t dataChunkSize = getNumSamplesPerChannel() * (getNumChannels() * bitDepth / 8);
     int16_t audioFormat = bitDepth == 32 ? WavAudioFormat::IEEEFloat : WavAudioFormat::PCM;
     int32_t formatChunkSize = audioFormat == WavAudioFormat::PCM ? 16 : 18;
-    int32_t iXMLChunkSize = static_cast<int32_t> (iXMLChunk.size());
+    int32_t iXMLChunkSize = static_cast<int32_t>(iXMLChunk.size());
 
     // -----------------------------------------------------------
     // HEADER CHUNK
@@ -867,10 +863,10 @@ bool AudioFile<T>::saveToWaveFile(std::string filePath)
     // -----------------------------------------------------------
     // FORMAT CHUNK
     addStringToFileData(fileData, "fmt ");
-    addInt32ToFileData(fileData, formatChunkSize); // format chunk size (16 for PCM)
-    addInt16ToFileData(fileData, audioFormat); // audio format
+    addInt32ToFileData(fileData, formatChunkSize);           // format chunk size (16 for PCM)
+    addInt16ToFileData(fileData, audioFormat);               // audio format
     addInt16ToFileData(fileData, (int16_t)getNumChannels()); // num channels
-    addInt32ToFileData(fileData, (int32_t)sampleRate); // sample rate
+    addInt32ToFileData(fileData, (int32_t)sampleRate);       // sample rate
 
     int32_t numBytesPerSecond = (int32_t)((getNumChannels() * sampleRate * bitDepth) / 8);
     addInt32ToFileData(fileData, numBytesPerSecond);
@@ -920,7 +916,7 @@ bool AudioFile<T>::saveToWaveFile(std::string filePath)
                 int32_t sampleAsInt;
 
                 if (audioFormat == WavAudioFormat::IEEEFloat)
-                    sampleAsInt = (int32_t) reinterpret_cast<int32_t&> (samples[channel][i]);
+                    sampleAsInt = (int32_t) reinterpret_cast<int32_t &>(samples[channel][i]);
                 else // assume PCM
                     sampleAsInt = (int32_t)(samples[channel][i] * std::numeric_limits<int32_t>::max());
 
@@ -944,7 +940,7 @@ bool AudioFile<T>::saveToWaveFile(std::string filePath)
     }
 
     // check that the various sizes we put in the metadata are correct
-    if (fileSizeInBytes != static_cast<int32_t> (fileData.size() - 8) || dataChunkSize != (getNumSamplesPerChannel() * getNumChannels() * (bitDepth / 8)))
+    if (fileSizeInBytes != static_cast<int32_t>(fileData.size() - 8) || dataChunkSize != (getNumSamplesPerChannel() * getNumChannels() * (bitDepth / 8)))
     {
         reportError("ERROR: couldn't save file to " + filePath);
         return false;
@@ -964,7 +960,7 @@ bool AudioFile<T>::saveToAiffFile(std::string filePath)
     int32_t numBytesPerFrame = numBytesPerSample * getNumChannels();
     int32_t totalNumAudioSampleBytes = getNumSamplesPerChannel() * numBytesPerFrame;
     int32_t soundDataChunkSize = totalNumAudioSampleBytes + 8;
-    int32_t iXMLChunkSize = static_cast<int32_t> (iXMLChunk.size());
+    int32_t iXMLChunkSize = static_cast<int32_t>(iXMLChunk.size());
 
     // -----------------------------------------------------------
     // HEADER CHUNK
@@ -985,10 +981,10 @@ bool AudioFile<T>::saveToAiffFile(std::string filePath)
     // -----------------------------------------------------------
     // COMM CHUNK
     addStringToFileData(fileData, "COMM");
-    addInt32ToFileData(fileData, 18, Endianness::BigEndian); // commChunkSize
-    addInt16ToFileData(fileData, getNumChannels(), Endianness::BigEndian); // num channels
+    addInt32ToFileData(fileData, 18, Endianness::BigEndian);                        // commChunkSize
+    addInt16ToFileData(fileData, getNumChannels(), Endianness::BigEndian);          // num channels
     addInt32ToFileData(fileData, getNumSamplesPerChannel(), Endianness::BigEndian); // num samples per channel
-    addInt16ToFileData(fileData, bitDepth, Endianness::BigEndian); // bit depth
+    addInt16ToFileData(fileData, bitDepth, Endianness::BigEndian);                  // bit depth
     addSampleRateToAiffData(fileData, sampleRate);
 
     // -----------------------------------------------------------
@@ -1049,7 +1045,7 @@ bool AudioFile<T>::saveToAiffFile(std::string filePath)
     }
 
     // check that the various sizes we put in the metadata are correct
-    if (fileSizeInBytes != static_cast<int32_t> (fileData.size() - 8) || soundDataChunkSize != getNumSamplesPerChannel() * numBytesPerFrame + 8)
+    if (fileSizeInBytes != static_cast<int32_t>(fileData.size() - 8) || soundDataChunkSize != getNumSamplesPerChannel() * numBytesPerFrame + 8)
     {
         reportError("ERROR: couldn't save file to " + filePath);
         return false;
@@ -1061,7 +1057,7 @@ bool AudioFile<T>::saveToAiffFile(std::string filePath)
 
 //=============================================================
 template <class T>
-bool AudioFile<T>::writeDataToFile(std::vector<uint8_t>& fileData, std::string filePath)
+bool AudioFile<T>::writeDataToFile(std::vector<uint8_t> &fileData, std::string filePath)
 {
     std::ofstream outputFile(filePath, std::ios::binary);
 
@@ -1083,7 +1079,7 @@ bool AudioFile<T>::writeDataToFile(std::vector<uint8_t>& fileData, std::string f
 
 //=============================================================
 template <class T>
-void AudioFile<T>::addStringToFileData(std::vector<uint8_t>& fileData, std::string s)
+void AudioFile<T>::addStringToFileData(std::vector<uint8_t> &fileData, std::string s)
 {
     for (size_t i = 0; i < s.length(); i++)
         fileData.push_back((uint8_t)s[i]);
@@ -1091,7 +1087,7 @@ void AudioFile<T>::addStringToFileData(std::vector<uint8_t>& fileData, std::stri
 
 //=============================================================
 template <class T>
-void AudioFile<T>::addInt32ToFileData(std::vector<uint8_t>& fileData, int32_t i, Endianness endianness)
+void AudioFile<T>::addInt32ToFileData(std::vector<uint8_t> &fileData, int32_t i, Endianness endianness)
 {
     uint8_t bytes[4];
 
@@ -1116,7 +1112,7 @@ void AudioFile<T>::addInt32ToFileData(std::vector<uint8_t>& fileData, int32_t i,
 
 //=============================================================
 template <class T>
-void AudioFile<T>::addInt16ToFileData(std::vector<uint8_t>& fileData, int16_t i, Endianness endianness)
+void AudioFile<T>::addInt16ToFileData(std::vector<uint8_t> &fileData, int16_t i, Endianness endianness)
 {
     uint8_t bytes[2];
 
@@ -1149,7 +1145,7 @@ void AudioFile<T>::clearAudioBuffer()
 
 //=============================================================
 template <class T>
-AudioFileFormat AudioFile<T>::determineAudioFileFormat(std::vector<uint8_t>& fileData)
+AudioFileFormat AudioFile<T>::determineAudioFileFormat(std::vector<uint8_t> &fileData)
 {
     std::string header(fileData.begin(), fileData.begin() + 4);
 
@@ -1163,7 +1159,7 @@ AudioFileFormat AudioFile<T>::determineAudioFileFormat(std::vector<uint8_t>& fil
 
 //=============================================================
 template <class T>
-int32_t AudioFile<T>::fourBytesToInt(std::vector<uint8_t>& source, int startIndex, Endianness endianness)
+int32_t AudioFile<T>::fourBytesToInt(std::vector<uint8_t> &source, int startIndex, Endianness endianness)
 {
     int32_t result;
 
@@ -1177,7 +1173,7 @@ int32_t AudioFile<T>::fourBytesToInt(std::vector<uint8_t>& source, int startInde
 
 //=============================================================
 template <class T>
-int16_t AudioFile<T>::twoBytesToInt(std::vector<uint8_t>& source, int startIndex, Endianness endianness)
+int16_t AudioFile<T>::twoBytesToInt(std::vector<uint8_t> &source, int startIndex, Endianness endianness)
 {
     int16_t result;
 
@@ -1191,7 +1187,7 @@ int16_t AudioFile<T>::twoBytesToInt(std::vector<uint8_t>& source, int startIndex
 
 //=============================================================
 template <class T>
-int AudioFile<T>::getIndexOfString(std::vector<uint8_t>& source, std::string stringToSearchFor)
+int AudioFile<T>::getIndexOfString(std::vector<uint8_t> &source, std::string stringToSearchFor)
 {
     int index = -1;
     int stringLength = (int)stringToSearchFor.length();
@@ -1202,7 +1198,7 @@ int AudioFile<T>::getIndexOfString(std::vector<uint8_t>& source, std::string str
 
         if (section == stringToSearchFor)
         {
-            index = static_cast<int> (i);
+            index = static_cast<int>(i);
             break;
         }
     }
@@ -1212,7 +1208,7 @@ int AudioFile<T>::getIndexOfString(std::vector<uint8_t>& source, std::string str
 
 //=============================================================
 template <class T>
-int AudioFile<T>::getIndexOfChunk(std::vector<uint8_t>& source, const std::string& chunkHeaderID, int startIndex, Endianness endianness)
+int AudioFile<T>::getIndexOfChunk(std::vector<uint8_t> &source, const std::string &chunkHeaderID, int startIndex, Endianness endianness)
 {
     constexpr int dataLen = 4;
     if (chunkHeaderID.size() != dataLen)
@@ -1241,7 +1237,7 @@ int AudioFile<T>::getIndexOfChunk(std::vector<uint8_t>& source, const std::strin
 template <class T>
 T AudioFile<T>::sixteenBitIntToSample(int16_t sample)
 {
-    return static_cast<T> (sample) / static_cast<T> (32768.);
+    return static_cast<T>(sample) / static_cast<T>(32768.);
 }
 
 //=============================================================
@@ -1249,7 +1245,7 @@ template <class T>
 int16_t AudioFile<T>::sampleToSixteenBitInt(T sample)
 {
     sample = clamp(sample, -1., 1.);
-    return static_cast<int16_t> (sample * 32767.);
+    return static_cast<int16_t>(sample * 32767.);
 }
 
 //=============================================================
@@ -1258,14 +1254,14 @@ uint8_t AudioFile<T>::sampleToSingleByte(T sample)
 {
     sample = clamp(sample, -1., 1.);
     sample = (sample + 1.) / 2.;
-    return static_cast<uint8_t> (sample * 255.);
+    return static_cast<uint8_t>(sample * 255.);
 }
 
 //=============================================================
 template <class T>
 T AudioFile<T>::singleByteToSample(uint8_t sample)
 {
-    return static_cast<T> (sample - 128) / static_cast<T> (128.);
+    return static_cast<T>(sample - 128) / static_cast<T>(128.);
 }
 
 //=============================================================
@@ -1285,9 +1281,9 @@ void AudioFile<T>::reportError(std::string errorMessage)
         std::cout << errorMessage << std::endl;
 }
 
-#if defined (_MSC_VER)
+#if defined(_MSC_VER)
 __pragma(warning(pop))
-#elif defined (__GNUC__)
+#elif defined(__GNUC__)
 _Pragma("GCC diagnostic pop")
 #endif
 
