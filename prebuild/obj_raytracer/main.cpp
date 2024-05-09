@@ -75,9 +75,8 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 		size_t size_of_audio = sizeof(float) * len_of_audio;
 		float* outputBuffer_left = Context::get_output_buffer_left();
 		float* outputBuffer_right = Context::get_output_buffer_right();
-		unsigned int output_channels = Context::get_output_channels();
 
-		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
 	}
 	else {
 		output_buffer_mutex->lock();
@@ -137,7 +136,7 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	double *ibuffer = (double *)inputBuffer;
 	std::mutex* inputBufferMutex = renderData->inputBufferMutex;
 	if (!Context::get_is_rendering()) {
-		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), nBufferFrames * 2 * sizeof(double), renderData->samplesRecordBuffer);
+		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
 
 		float volume = Context::get_volume();
 		int start = renderData->samplesRecordBuffer->head;
@@ -175,8 +174,6 @@ int audioPlay(RtAudio *dac)
 	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
-	std::cout << "\nSAMPLE RATE\n";
-	std::cout << sampleRate << '\n';
 	unsigned int bufferFrames = 256; // 256 sample frames
 
 	AudioInfo *audioInfo = new AudioInfo;
@@ -222,17 +219,16 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 	audioData->bufferFrames = inputBufferLen;
 	audioData->pos = 0;
 	audioData->samplesRecordBufferSize = sampleRate * input_channels;
-	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * 4);
+	// circular buffer must be longer than IR
+	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * (Context::get_ir_length_in_seconds() + 2));
 	audioData->paths = new audioPaths();
 	audioData->paths->ptr = NULL;
 	audioData->paths->size = 0;
 	audioData->volume = 30.0f;
 	audioData->inputBufferMutex = inputBufferMutex;
 
-	std::cout << "\nLLAMO OPEN STREAM\n";
 	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData, &options);
 
-	std::cout << "\nLLAMO OPEN START STREAM\n";
 	checkError = dac->startStream();
 }
 
@@ -304,7 +300,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		else
 			volume = 0.0f;
 		Context::set_volume(volume);
-		cout << "volumen seteado a " << volume << endl;
+		cout << "Volumen seteado a " << volume << endl;
 	}
 	if (key == GLFW_KEY_E)
 	{
@@ -315,7 +311,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
 		setTransmitter(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
-		cout << "Emitter set at: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
+		cout << "Emisor colocado en: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
@@ -336,14 +332,14 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 			float *output_buffer_left = Context::get_output_buffer_left();
 			float *output_buffer_right = Context::get_output_buffer_right();
 
-			renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right, Context::get_output_channels());
+			renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, output_buffer_left, output_buffer_right);
 			Context::set_output_buffer_left(output_buffer_left);
 			Context::set_output_buffer_right(output_buffer_right);
 			Context::set_output_buffer_len(size_of_audio);
 		}
 
 		Context::set_last_render_position(camera_central_position);
-		cout << "Rendered" << endl;
+		cout << "Rendereado" << endl;
 	}
 	if (key == GLFW_KEY_P)
 	{
@@ -438,7 +434,6 @@ void screen(std::mutex *output_buffer_mutex)
 	uint32_t sample_rate = Context::get_sample_rate();
 
 	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
-	unsigned int output_channels = Context::get_output_channels();
 
 	AudioRenderer *renderer = Context::get_audio_renderer();
 	renderer->setBasePower(Context::get_base_power());
@@ -458,7 +453,7 @@ void screen(std::mutex *output_buffer_mutex)
 		float *outputBuffer_left = Context::get_output_buffer_left();
 		float *outputBuffer_right = Context::get_output_buffer_right();
 
-		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, output_channels);
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
 
 		Context::set_output_buffer_left(outputBuffer_left);
 		Context::set_output_buffer_right(outputBuffer_right);

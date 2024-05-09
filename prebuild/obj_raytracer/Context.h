@@ -21,7 +21,6 @@ private:
 	AudioFile<float> *audio_file;
 	unsigned int ir_length_in_seconds = 2;
 	CircularBuffer<double> *liveInputBuffer;
-	unsigned int output_channels;
 	unsigned int width;
 	unsigned int height;
 	float *outputBuffer_left;
@@ -38,6 +37,7 @@ private:
 	float ray_energy_threshold;
 	unsigned int ray_max_bounces;
 	glm::vec3 initial_emitter_pos;
+	gdt::vec3f rays_per_dimension;
 
 	uint32_t sample_rate;
 	Sphere *sphere;
@@ -67,9 +67,6 @@ public:
 
 	static void set_ir_length_in_seconds(unsigned int ir_length_in_seconds);
 	static unsigned int get_ir_length_in_seconds();
-
-	static void set_output_channels(unsigned int output_channels);
-	static unsigned int get_output_channels();
 
 	static void set_volume(float volume);
 	static float get_volume();
@@ -114,8 +111,10 @@ public:
 	static gdt::vec3f get_last_render_position();
 
 	static void set_re_render_angle_threshold(float re_render_angle_threshold);
-
 	static float get_re_render_angle_threshold();
+
+	static void set_rays_per_dimension(gdt::vec3f rays_per_dimension);
+	static gdt::vec3f get_rays_per_dimension();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

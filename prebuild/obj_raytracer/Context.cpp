@@ -18,7 +18,6 @@ bool Context::loadContext(cJSON *config)
 	const cJSON *cJSON_renderer_parameters = cJSON_GetObjectItem(config, "renderer_parameters");
 	// defaults
 	float initial_volume = 1.0f;
-	unsigned int output_channels = 2;
 	unsigned int ir_length_in_seconds = 2;
 	unsigned int width = 1366;
 	unsigned int height = 768;
@@ -31,10 +30,6 @@ bool Context::loadContext(cJSON *config)
 		cJSON *cJSON_initial_volume = cJSON_GetObjectItem(cJSON_renderer_parameters, "initial_volume");
 		if (cJSON_IsNumber(cJSON_initial_volume))
 			initial_volume = cJSON_initial_volume->valuedouble;
-
-		const cJSON *cJSON_output_channels = cJSON_GetObjectItem(cJSON_renderer_parameters, "output_channels");
-		if (cJSON_IsNumber(cJSON_output_channels))
-			output_channels = round(cJSON_output_channels->valuedouble);
 
 		const cJSON *cJSON_ir_length_in_seconds = cJSON_GetObjectItem(cJSON_renderer_parameters, "ir_length_in_seconds");
 		if (cJSON_IsNumber(cJSON_ir_length_in_seconds))
@@ -111,36 +106,36 @@ bool Context::loadContext(cJSON *config)
 	const cJSON *cJSON_pathtracer_parameters = cJSON_GetObjectItem(config, "pathtracer_parameters");
 	// defaults
 	float base_power = 100.f;
-	glm::vec3 rays(100, 100, 100);
+	gdt::vec3f rays(100, 100, 100);
 	float ray_distance_threshold = 100.f;
 	float ray_energy_threshold = 0.f;
 	unsigned int ray_max_bounces = 10;
 	std::vector<Material> materials;
 	if (cJSON_IsObject(cJSON_pathtracer_parameters))
 	{
-		cJSON *cJSON_base_power = cJSON_GetObjectItem(cJSON_renderer_parameters, "base_power");
+		cJSON *cJSON_base_power = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "base_power");
 		if (cJSON_IsNumber(cJSON_base_power))
 			base_power = cJSON_base_power->valuedouble;
 
-		const cJSON *cJSON_rays_size = cJSON_GetObjectItem(cJSON_scene_parameters, "rays");
+		const cJSON *cJSON_rays_size = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "rays");
 		if (cJSON_IsObject(cJSON_rays_size))
 		{
 			cJSON *x = cJSON_GetObjectItem(cJSON_rays_size, "x");
 			cJSON *y = cJSON_GetObjectItem(cJSON_rays_size, "y");
 			cJSON *z = cJSON_GetObjectItem(cJSON_rays_size, "z");
 			if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
-				rays = glm::vec3(x->valuedouble, y->valuedouble, z->valuedouble);
+				rays = gdt::vec3f(x->valuedouble, y->valuedouble, z->valuedouble);
 		}
 
-		cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_distance_threshold");
+		cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_distance_threshold");
 		if (cJSON_IsNumber(cJSON_ray_distance_threshold))
-			ray_distance_threshold = cJSON_ray_distance_threshold->valuedouble;
+			ray_distance_threshold = cJSON_ray_distance_threshold->valueint;
 
-		cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_energy_threshold");
+		cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_energy_threshold");
 		if (cJSON_IsNumber(cJSON_ray_energy_threshold))
 			ray_energy_threshold = cJSON_ray_energy_threshold->valuedouble;
 
-		const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_renderer_parameters, "ray_max_bounces");
+		const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_max_bounces");
 		if (cJSON_IsNumber(cJSON_ray_max_bounces))
 			ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
 
@@ -167,7 +162,6 @@ bool Context::loadContext(cJSON *config)
 	Context *context = Context::getInstance();
 	context->set_volume(initial_volume);
 	context->set_ir_length_in_seconds(ir_length_in_seconds);
-	context->set_output_channels(output_channels);
 	context->set_scene_width(width);
 	context->set_scene_height(height);
 	context->set_scene_file_path(scene_file_path);
@@ -176,6 +170,7 @@ bool Context::loadContext(cJSON *config)
 	context->set_ray_energy_threshold(ray_energy_threshold);
 	context->set_ray_max_bounces(ray_max_bounces);
 	context->set_base_power(base_power);
+	context->set_rays_per_dimension(rays);
 	// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
 	context->set_initial_emitter_pos(initial_emitter_pos);
 	std::vector<Mesh> *transmitterVector = new std::vector<Mesh>;
@@ -224,7 +219,7 @@ bool Context::loadContext(cJSON *config)
 
 	placeReceiver(*sphere, scene, gdt::vec3f(camera->Position.x, camera->Position.y, camera->Position.z), camera->globalAngle);
 
-	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, output_channels, sample_rate, materials);
+	AudioRenderer *renderer = new AudioRenderer(scene, ir_length_in_seconds, sample_rate, materials, rays);
 	renderer->set_write_output_to_file_flag(write_output_to_file_on_render);
 	renderer->set_write_ir_to_file_flag(write_ir_to_file_on_render);
 	context->set_audio_renderer(renderer);
@@ -250,16 +245,6 @@ void Context::set_ir_length_in_seconds(unsigned int ir_length_in_seconds)
 unsigned int Context::get_ir_length_in_seconds()
 {
 	return instance->ir_length_in_seconds;
-}
-
-void Context::set_output_channels(unsigned int output_channels)
-{
-	instance->output_channels = output_channels;
-}
-
-unsigned int Context::get_output_channels()
-{
-	return instance->output_channels;
 }
 
 void Context::set_volume(float volume)
@@ -521,4 +506,14 @@ void Context::set_is_rendering(bool is_rendering)
 bool Context::get_is_rendering()
 {
 	return instance->is_rendering;
+}
+
+void Context::set_rays_per_dimension(gdt::vec3f rays_per_dimension)
+{
+	instance->rays_per_dimension = rays_per_dimension;
+}
+
+gdt::vec3f Context::get_rays_per_dimension()
+{
+	return instance->rays_per_dimension;
 }
