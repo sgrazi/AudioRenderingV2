@@ -122,33 +122,35 @@ extern "C" __global__ void __closesthit__radiance()
             }
         }
         prd.recursion_depth = -1;
-    }
-    if (sbtData.mat_absorption == -2)
-    {
-        // we identify the receiver with a negative absorption
-        float elapsed_time = prd.distance / SPEED_OF_SOUND;
-        int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
-        if (array_pos < optixLaunchParams.ir_length)
+    } 
+    else {
+        if (sbtData.mat_absorption == -2)
         {
-            atomicAdd(&ir_right[array_pos], prd.remaining_factor);
-            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
-            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
-            if (array_pos + delay < optixLaunchParams.ir_length)
+            // we identify the receiver with a negative absorption
+            float elapsed_time = prd.distance / SPEED_OF_SOUND;
+            int array_pos = round(elapsed_time * optixLaunchParams.sample_rate);
+            if (array_pos < optixLaunchParams.ir_length)
             {
-                atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * 0.4);
+                atomicAdd(&ir_right[array_pos], prd.remaining_factor);
+                // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+                int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+                if (array_pos + delay < optixLaunchParams.ir_length)
+                {
+                    atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * 0.4);
+                }
+                else
+                {
+                    atomicAdd(&ir_left[array_pos], prd.remaining_factor * 0.4);
+                }
             }
-            else
-            {
-                atomicAdd(&ir_left[array_pos], prd.remaining_factor * 0.4);
-            }
+            prd.recursion_depth = -1;
         }
-        prd.recursion_depth = -1;
-    }
-    else
-    {
-        prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng) * Ng;
-        prd.remaining_factor *= (1 - sbtData.mat_absorption);
-        prd.recursion_depth++;
+        else
+        {
+            prd.direction = prd.direction - 2.0f * dot(prd.direction, Ng) * Ng;
+            prd.remaining_factor *= (1 - sbtData.mat_absorption);
+            prd.recursion_depth++;
+        }
     }
 
     prd.prev_position = P + (1e-3f * prd.direction);
