@@ -5,11 +5,13 @@
 #include <cuda.h>
 #include <gdt/math/vec.h>
 #include <glm/glm.hpp>
+#include <math.h>
 #include "LaunchParams.h"
 #include "PRD.h"
 #include "curand_kernel.h"
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
+#define CUDART_PI_F 3.141592654f
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
@@ -87,18 +89,35 @@ extern "C" __global__ void __closesthit__radiance()
     float *ir_left = optixLaunchParams.ir_left;
     if (sbtData.mat_absorption < 0)
     {
-
-        glm::vec3 normDirection = rayDir * (1.0f / sqrt(glm::dot(rayDir, rayDir)));
-
         // Sphere radius hardcoded to 1m
         float sphere_radius = 1;
+        glm::vec3 normDirection = rayDir * (1.0f / sqrt(glm::dot(rayDir, rayDir)));
 
-        glm::vec3 farPoint = P + normDirection * (2.0f * sphere_radius);
-        glm::vec3 ray = farPoint - prd.sphere_center;
-        float t = sqrt(glm::dot(ray, ray)) - sphere_radius;
-        glm::vec3 exitPoint = P + normDirection * t;
+        glm::vec3 oc = P - prd.sphere_center;
+        float a = glm::dot(normDirection, normDirection);
+        float b = 2.0 * glm::dot(oc, normDirection);
+        float c = glm::dot(oc, oc) - sphere_radius * sphere_radius;
+        float discriminant = b * b - 4 * a * c;
 
-        prd.remaining_factor *= sqrt(glm::dot((exitPoint - P), (exitPoint - P)));
+        if (discriminant < 0) {
+            prd.remaining_factor = 0;
+        }
+        else {
+            if (discriminant == 0) {
+                prd.remaining_factor = 0;
+            }
+            else {
+                float sqrtDiscriminant = sqrt(discriminant);
+                float t1 = (-b - sqrtDiscriminant) / (2 * a);
+                float t2 = (-b + sqrtDiscriminant) / (2 * a);
+
+                glm::vec3 intersection1 = P + t1 * normDirection;
+                glm::vec3 intersection2 = P + t2 * normDirection;
+
+                // Two intersection points.
+                prd.remaining_factor *= sqrt(glm::dot((intersection1- intersection2), (intersection1 - intersection2)));
+            }
+        }
     }
 
     if (sbtData.mat_absorption == -1)
@@ -181,8 +200,8 @@ extern "C" __global__ void __raygen__renderFrame()
     uint32_t u0, u1;
     packPointer(&prd, u0, u1);
 
-    // 2.09439510239 is the volume of the sphere divided by 2
-    prd.remaining_factor = (optixLaunchParams.base_power) / ((x_rays * y_rays * z_rays) * 2.09439510239);
+    // 4.18879020478 is the volume of the sphere
+    prd.remaining_factor = (optixLaunchParams.base_power) / ((x_rays * y_rays * z_rays) * 4.18879020478);
     prd.distance = 0;
     prd.prev_position = optixLaunchParams.emitter_position;
     prd.recursion_depth = 0;
@@ -193,19 +212,16 @@ extern "C" __global__ void __raygen__renderFrame()
     curandState state;
     curand_init((unsigned long long)clock64(), tid, 0, &state);
 
-    double dx = curand_uniform(&state) * 2.0f - 1.0f;
-    double dy = curand_uniform(&state) * 2.0f - 1.0f;
-    double dz = curand_uniform(&state) * 2.0f - 1.0f;
-    // it is bound to happen that some threads have (0,0,0) as their vector
-    if (dx != 0.0 || dy != 0.0 || dz != 0.0)
-    {
-        double length = std::sqrt(dx * dx + dy * dy + dz * dz);
-        dx /= length;
-        dy /= length;
-        dz /= length;
+    double theta = 2 * CUDART_PI_F * curand_uniform(&state);
+    double phi = acos(2 * curand_uniform(&state) - 1);
 
-        // printf("sending to %f,%f,%f...\n", dx, dy, dz);
-        prd.direction = {dx, dy, dz};
+    double x = sin(phi) * cos(theta);
+    double y = sin(phi) * sin(theta);
+    double z = cos(phi);
+    // it is bound to happen that some threads have (0,0,0) as their vector
+    if (x != 0.0 || y != 0.0 || z != 0.0)
+    {
+        prd.direction = {x, y, z};
         while (prd.distance < optixLaunchParams.dist_thres &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
