@@ -1,32 +1,33 @@
 {
 	"renderer_parameters": {
 		"initial_volume": 1,
-		"ir_length_in_seconds": 20,
+		"ir_length_in_seconds": 2,
 		"width": 1366,
 		"height": 768,
-		"write_first_ir_to_file": false,
+		"write_first_ir_to_file": true,
 		"write_first_output_to_file": false,
 		"re_render_distance_threshold": 2
 	},
 	"scene_parameters": {
-		"scene_file_path": "../../assets/models/planaso2.obj",
+		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
+		"scene_file_path": "../../assets/models/1D_U.obj",
 		"materials_file_path": "",
 		"initial_receiver_pos": {
-			"x": 4.5,
-			"y": 1.8,
-			"z": -10.0
+			"x": -2.5,
+			"y": 9.9,
+			"z": 0
 		},
 		"initial_emitter_pos": {
 			"x": 0.0,
-			"y": 1.0,
-			"z": -2.0
+			"y": 0.0,
+			"z": 0.0
 		}
 	},
 	"pathtracer_parameters": {
-		"base_power": 300.0,
+		"base_power": 31.62,
 		"rays": {
-			"x": 100,
-			"y": 100,
+			"x": 1000,
+			"y": 1000,
 			"z": 100
 		},
 		"ray_distance_threshold": 2000.0,
