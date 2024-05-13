@@ -51,7 +51,7 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
         }
     }
     // return default absorption
-    return 0.2;
+    return 0.5;
 }
 
 /*! constructor - performs all setup, including initializing

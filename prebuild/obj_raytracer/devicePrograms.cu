@@ -12,7 +12,7 @@
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
 #define CUDART_PI_F 3.141592654f
-#define HRTF_HEAD_ABSORPTION 0.1f
+#define HRTF_HEAD_ABSORPTION 0.9f
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
