@@ -460,3 +460,22 @@ void castFloatArrayToDouble(const float *input, double *output, size_t length)
     convertFloatToDouble<<<numBlocks, blockSize>>>(input, output, length);
     cudaDeviceSynchronize();
 }
+
+__global__ void addIRs(int ir_length, float* ir_left, float* ir_right){
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (index < ir_length)
+    {
+        float sum = ir_left[index] + ir_right[index];
+        ir_left[index] = sum;
+        ir_right[index] = sum;
+    }
+}
+
+void addIRsKernel(int ir_length, float *ir_left, float *ir_right)
+{
+    int blockSize = 256;
+    int numBlocks = (ir_length + blockSize - 1) / blockSize;
+
+    addIRs<<<numBlocks, blockSize>>>(ir_length, ir_left, ir_right);
+    cudaDeviceSynchronize();
+}

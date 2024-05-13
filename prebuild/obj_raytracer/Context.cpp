@@ -62,6 +62,7 @@ bool Context::loadContext(cJSON *config)
 	// scene_parameters
 	const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
 	// defaults
+	bool is_mono = false;
 	std::string scene_file_path = "../../assets/models/1D_U.obj";
 	std::string audio_file_path;
 	std::string materials_file_path = "";
@@ -69,6 +70,10 @@ bool Context::loadContext(cJSON *config)
 	glm::vec3 initial_emitter_pos(0, 0, 0);
 	if (cJSON_IsObject(cJSON_scene_parameters))
 	{
+		const cJSON *cJSON_mono = cJSON_GetObjectItem(cJSON_scene_parameters, "mono");
+		if (cJSON_IsBool(cJSON_mono))
+			is_mono = cJSON_IsTrue(cJSON_mono);
+			
 		const cJSON *cJSON_scene_file_path = cJSON_GetObjectItem(cJSON_scene_parameters, "scene_file_path");
 		if (cJSON_IsString(cJSON_scene_file_path))
 			scene_file_path = cJSON_scene_file_path->valuestring;
@@ -160,6 +165,7 @@ bool Context::loadContext(cJSON *config)
 	}
 
 	Context *context = Context::getInstance();
+	context->set_is_mono(is_mono);
 	context->set_volume(initial_volume);
 	context->set_ir_length_in_seconds(ir_length_in_seconds);
 	context->set_scene_width(width);
@@ -516,4 +522,14 @@ void Context::set_rays_per_dimension(gdt::vec3f rays_per_dimension)
 gdt::vec3f Context::get_rays_per_dimension()
 {
 	return instance->rays_per_dimension;
+}
+
+void Context::set_is_mono(bool is_mono)
+{
+	instance->is_mono = is_mono;
+}
+
+bool Context::get_is_mono()
+{
+	return instance->is_mono;
 }

@@ -35,6 +35,7 @@ struct LaunchParams
 
     int sample_rate;
 
+    bool isMono;
     int ir_length;
     float *ir_left;
     float *ir_right;
