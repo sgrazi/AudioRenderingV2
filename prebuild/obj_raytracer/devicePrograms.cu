@@ -12,6 +12,7 @@
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
 #define CUDART_PI_F 3.141592654f
+#define HRTF_HEAD_ABSORPTION 0.1f
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
@@ -133,11 +134,11 @@ extern "C" __global__ void __closesthit__radiance()
             if (!optixLaunchParams.isMono) {
                 if (array_pos + delay < optixLaunchParams.ir_length)
                 {
-                    atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * 0.4);
+                    atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
                 }
                 else
                 {
-                    atomicAdd(&ir_right[array_pos], prd.remaining_factor * 0.4);
+                    atomicAdd(&ir_right[array_pos], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
                 }
             }
         }
@@ -157,11 +158,11 @@ extern "C" __global__ void __closesthit__radiance()
                 if (!optixLaunchParams.isMono) {
                     if (array_pos + delay < optixLaunchParams.ir_length)
                     {
-                        atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * 0.4);
+                        atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
                     }
                     else
                     {
-                        atomicAdd(&ir_left[array_pos], prd.remaining_factor * 0.4);
+                        atomicAdd(&ir_left[array_pos], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
                     }
                 }
             }
