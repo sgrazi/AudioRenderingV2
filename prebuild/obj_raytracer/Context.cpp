@@ -112,7 +112,6 @@ bool Context::loadContext(cJSON *config)
 	// defaults
 	float base_power = 100.f;
 	gdt::vec3f rays(100, 100, 100);
-	float ray_distance_threshold = 100.f;
 	float ray_energy_threshold = 0.f;
 	unsigned int ray_max_bounces = 10;
 	std::vector<Material> materials;
@@ -131,10 +130,6 @@ bool Context::loadContext(cJSON *config)
 			if (cJSON_IsNumber(x) && cJSON_IsNumber(y) && cJSON_IsNumber(z))
 				rays = gdt::vec3f(x->valuedouble, y->valuedouble, z->valuedouble);
 		}
-
-		cJSON *cJSON_ray_distance_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_distance_threshold");
-		if (cJSON_IsNumber(cJSON_ray_distance_threshold))
-			ray_distance_threshold = cJSON_ray_distance_threshold->valueint;
 
 		cJSON *cJSON_ray_energy_threshold = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_energy_threshold");
 		if (cJSON_IsNumber(cJSON_ray_energy_threshold))
@@ -172,7 +167,6 @@ bool Context::loadContext(cJSON *config)
 	context->set_scene_height(height);
 	context->set_scene_file_path(scene_file_path);
 	context->set_material_file_path(materials_file_path);
-	context->set_ray_distance_threshold(ray_distance_threshold);
 	context->set_ray_energy_threshold(ray_energy_threshold);
 	context->set_ray_max_bounces(ray_max_bounces);
 	context->set_base_power(base_power);
@@ -413,16 +407,6 @@ void Context::set_base_power(float base_power)
 float Context::get_base_power()
 {
 	return instance->base_power;
-}
-
-void Context::set_ray_distance_threshold(float ray_distance_threshold)
-{
-	instance->ray_distance_threshold = ray_distance_threshold;
-}
-
-float Context::get_ray_distance_threshold()
-{
-	return instance->ray_distance_threshold;
 }
 
 void Context::set_ray_energy_threshold(float ray_energy_threshold)

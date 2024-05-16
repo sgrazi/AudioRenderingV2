@@ -222,11 +222,15 @@ extern "C" __global__ void __raygen__renderFrame()
     double x = sin(phi) * cos(theta);
     double y = sin(phi) * sin(theta);
     double z = cos(phi);
+
+    // Guarantees 1 < IR_length_in_seconds < 999
+    int IR_length_in_seconds = std::max(1, std::min(optixLaunchParams.ir_length / optixLaunchParams.sample_rate, 999));
+    float distance_threshold = IR_length_in_seconds * SPEED_OF_SOUND + 1;
     // it is bound to happen that some threads have (0,0,0) as their vector
     if (x != 0.0 || y != 0.0 || z != 0.0)
     {
         prd.direction = {x, y, z};
-        while (prd.distance < optixLaunchParams.dist_thres &&
+        while (prd.distance < distance_threshold &&
                prd.remaining_factor > optixLaunchParams.energy_thres &&
                prd.recursion_depth >= 0 &&
                prd.recursion_depth < optixLaunchParams.max_bounces)

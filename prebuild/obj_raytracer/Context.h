@@ -33,7 +33,6 @@ private:
 	std::string material_file_path;
 
 	float base_power;
-	float ray_distance_threshold;
 	float ray_energy_threshold;
 	unsigned int ray_max_bounces;
 	glm::vec3 initial_emitter_pos;
@@ -83,9 +82,6 @@ public:
 
 	static void set_base_power(float base_power);
 	static float get_base_power();
-
-	static void set_ray_distance_threshold(float ray_distance_threshold);
-	static float get_ray_distance_threshold();
 
 	static void set_ray_energy_threshold(float ray_energy_threshold);
 	static float get_ray_energy_threshold();

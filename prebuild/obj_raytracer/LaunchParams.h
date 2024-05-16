@@ -30,7 +30,7 @@ struct LaunchParams
 
     OptixTraversableHandle traversable;
 
-    float base_power, dist_thres, energy_thres;
+    float base_power, energy_thres;
     unsigned int max_bounces;
 
     int sample_rate;

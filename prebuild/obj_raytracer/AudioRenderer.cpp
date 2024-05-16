@@ -712,9 +712,8 @@ void AudioRenderer::setSphereCenterInOptix(glm::vec3 center)
     launchParams.sphere_center = center;
 }
 
-void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)
+void AudioRenderer::setThresholds(float energy, unsigned int max_bounces)
 {
-    launchParams.dist_thres = dist;
     launchParams.energy_thres = energy;
     launchParams.max_bounces = max_bounces;
 }
