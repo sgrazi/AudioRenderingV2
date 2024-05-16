@@ -12,7 +12,6 @@
 
 #define SPEED_OF_SOUND 343 // grabbed from Cameelo/AudioRendering
 #define CUDART_PI_F 3.141592654f
-#define HRTF_HEAD_ABSORPTION 0.9f
 
 /*! launch parameters in constant memory, filled in by optix upon
       optixLaunch (this gets filled in from the buffer we pass to
@@ -120,6 +119,10 @@ extern "C" __global__ void __closesthit__radiance()
             }
         }
     }
+    
+    // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
+    int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
+    float hrtf_absorption_rate = optixLaunchParams.hrtf_absorption_rate;
 
     if (sbtData.mat_absorption == -1)
     {
@@ -129,16 +132,14 @@ extern "C" __global__ void __closesthit__radiance()
         if (array_pos < optixLaunchParams.ir_length)
         {
             atomicAdd(&ir_left[array_pos], prd.remaining_factor);
-            // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
-            int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
             if (!optixLaunchParams.isMono) {
                 if (array_pos + delay < optixLaunchParams.ir_length)
                 {
-                    atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
+                    atomicAdd(&ir_right[array_pos + delay], prd.remaining_factor * (1- hrtf_absorption_rate));
                 }
                 else
                 {
-                    atomicAdd(&ir_right[array_pos], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
+                    atomicAdd(&ir_right[array_pos], prd.remaining_factor * (1- hrtf_absorption_rate));
                 }
             }
         }
@@ -153,16 +154,14 @@ extern "C" __global__ void __closesthit__radiance()
             if (array_pos < optixLaunchParams.ir_length)
             {
                 atomicAdd(&ir_right[array_pos], prd.remaining_factor);
-                // Average head breadth	is 15.5cm so we delay signal to the other ear and we lower its impact
-                int delay = optixLaunchParams.sample_rate * 0.00044; // 0.00044 seconds for sound to travel 15.5cm
                 if (!optixLaunchParams.isMono) {
                     if (array_pos + delay < optixLaunchParams.ir_length)
                     {
-                        atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
+                        atomicAdd(&ir_left[array_pos + delay], prd.remaining_factor * (1- hrtf_absorption_rate));
                     }
                     else
                     {
-                        atomicAdd(&ir_left[array_pos], prd.remaining_factor * (1- HRTF_HEAD_ABSORPTION));
+                        atomicAdd(&ir_left[array_pos], prd.remaining_factor * (1- hrtf_absorption_rate));
                     }
                 }
             }
@@ -224,7 +223,7 @@ extern "C" __global__ void __raygen__renderFrame()
     double z = cos(phi);
 
     // Guarantees 1 < IR_length_in_seconds < 999
-    int IR_length_in_seconds = std::max(1, std::min(optixLaunchParams.ir_length / optixLaunchParams.sample_rate, 999));
+    int IR_length_in_seconds = max(1, min(optixLaunchParams.ir_length / optixLaunchParams.sample_rate, 999));
     float distance_threshold = IR_length_in_seconds * SPEED_OF_SOUND + 1;
     // it is bound to happen that some threads have (0,0,0) as their vector
     if (x != 0.0 || y != 0.0 || z != 0.0)

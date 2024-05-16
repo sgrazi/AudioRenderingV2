@@ -36,6 +36,8 @@ public:
 
     void setThresholds(float energy, unsigned int max_bounces);
 
+    void set_hrtf_absorption_rate(float hrtf_absorption_rate);
+
     void setBasePower(float base_power);
 
     void set_write_ir_to_file_flag(bool value);

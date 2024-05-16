@@ -439,6 +439,7 @@ void screen(std::mutex *output_buffer_mutex)
 	renderer->setMonoOutput(Context::get_is_mono());
 	renderer->setBasePower(Context::get_base_power());
 	renderer->setThresholds(Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->set_hrtf_absorption_rate(Context::get_hrtf_absorption_rate());
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
 	renderer->render();

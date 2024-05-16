@@ -114,6 +114,7 @@ bool Context::loadContext(cJSON *config)
 	gdt::vec3f rays(100, 100, 100);
 	float ray_energy_threshold = 0.f;
 	unsigned int ray_max_bounces = 10;
+	float hrtf_absorption_rate = 0.9;
 	std::vector<Material> materials;
 	if (cJSON_IsObject(cJSON_pathtracer_parameters))
 	{
@@ -138,6 +139,10 @@ bool Context::loadContext(cJSON *config)
 		const cJSON *cJSON_ray_max_bounces = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "ray_max_bounces");
 		if (cJSON_IsNumber(cJSON_ray_max_bounces))
 			ray_max_bounces = round(cJSON_ray_max_bounces->valuedouble);
+
+		const cJSON* cJSON_hrtf_absorption_rate = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "hrtf_absorption_rate");
+		if (cJSON_IsNumber(cJSON_hrtf_absorption_rate))
+			hrtf_absorption_rate = round(cJSON_hrtf_absorption_rate->valuedouble);
 
 		const cJSON *cJSON_materials = cJSON_GetObjectItem(cJSON_pathtracer_parameters, "materials");
 		const cJSON *cJSON_material = NULL;
@@ -169,6 +174,7 @@ bool Context::loadContext(cJSON *config)
 	context->set_material_file_path(materials_file_path);
 	context->set_ray_energy_threshold(ray_energy_threshold);
 	context->set_ray_max_bounces(ray_max_bounces);
+	context->set_hrtf_absorption_rate(hrtf_absorption_rate);
 	context->set_base_power(base_power);
 	context->set_rays_per_dimension(rays);
 	// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
@@ -506,6 +512,16 @@ void Context::set_rays_per_dimension(gdt::vec3f rays_per_dimension)
 gdt::vec3f Context::get_rays_per_dimension()
 {
 	return instance->rays_per_dimension;
+}
+
+void Context::set_hrtf_absorption_rate(float hrtf_absorption_rate)
+{
+	instance->hrtf_absorption_rate = hrtf_absorption_rate;
+}
+
+float Context::get_hrtf_absorption_rate()
+{
+	return instance->hrtf_absorption_rate;
 }
 
 void Context::set_is_mono(bool is_mono)

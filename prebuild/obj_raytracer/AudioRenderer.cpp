@@ -718,6 +718,11 @@ void AudioRenderer::setThresholds(float energy, unsigned int max_bounces)
     launchParams.max_bounces = max_bounces;
 }
 
+void AudioRenderer::set_hrtf_absorption_rate(float hrtf_absorption_rate)
+{
+    launchParams.hrtf_absorption_rate = hrtf_absorption_rate;
+}
+
 void AudioRenderer::setBasePower(float base_power)
 {
     launchParams.base_power = base_power;

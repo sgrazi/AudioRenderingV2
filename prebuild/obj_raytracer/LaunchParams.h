@@ -32,6 +32,7 @@ struct LaunchParams
 
     float base_power, energy_thres;
     unsigned int max_bounces;
+    float hrtf_absorption_rate;
 
     int sample_rate;
 
