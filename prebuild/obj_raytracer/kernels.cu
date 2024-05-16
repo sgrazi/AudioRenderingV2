@@ -4,15 +4,17 @@
         gpuAssert((ans), __FILE__, __LINE__); \
     }
 
-inline void CHCK_CUFFT_RES(cufftResult_t res)
+inline void CHCK_CUFFT_RES(cufftResult_t res, const char* file, int line)
 {
     if (res != 0)
     {
-        fprintf(stderr, "CHCK_CUFFT_RES: %d\n", res);
+        fprintf(stderr, "CUFFT error in file '%s', line %d: %d\n", file, line, res);
         if (abort)
             exit(res);
     }
 }
+
+#define CHCK_CUFFT_RES_CALL(res) CHCK_CUFFT_RES(res, __FILE__, __LINE__)
 
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
 {
@@ -22,6 +24,13 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
         if (abort)
             exit(code);
     }
+}
+
+__global__ void add(float* a, float* b, float* c, int n)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i < n)
+        c[i] = a[i] + b[i];
 }
 
 __global__ void fillZeros(float *buf, int size)
@@ -287,15 +296,15 @@ void convoluteFromLiveInput(double *samples, double *IR, unsigned int len, doubl
     // Convolute and invert result
     cufftHandle inversePlan;
     cufftPlan1d(&inversePlan, len, CUFFT_Z2D, batchSize);
-    CHCK_CUFFT_RES(cufftExecD2Z(plan, IR, IRData));
-    CHCK_CUFFT_RES(cufftExecD2Z(plan, samples, segmentData));
+    CHCK_CUFFT_RES_CALL(cufftExecD2Z(plan, IR, IRData));
+    CHCK_CUFFT_RES_CALL(cufftExecD2Z(plan, samples, segmentData));
 
     int blockSize = 256;
     int numBlocks = (len + blockSize - 1) / blockSize;
     complexCrossMultiplication<<<numBlocks, blockSize>>>(segmentData, IRData, segmentData, len);
     cudaDeviceSynchronize();
 
-    CHCK_CUFFT_RES(cufftExecZ2D(inversePlan, segmentData, outputBuffer));
+    CHCK_CUFFT_RES_CALL(cufftExecZ2D(inversePlan, segmentData, outputBuffer));
 
     // Clean up
     cufftDestroy(plan);
@@ -321,12 +330,12 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
     cudaMalloc((void **)&IRData, ir_len * sizeof(cufftComplex));
     // Set up FFT plan
     cufftHandle plan;
-    cufftPlan1d(&plan, ir_len, CUFFT_R2C, batchSize);
+    CHCK_CUFFT_RES_CALL(cufftPlan1d(&plan, ir_len, CUFFT_R2C, batchSize));
     // Invert result
     cufftHandle inversePlan;
-    cufftPlan1d(&inversePlan, ir_len, CUFFT_C2R, batchSize);
+    CHCK_CUFFT_RES_CALL(cufftPlan1d(&inversePlan, ir_len, CUFFT_C2R, batchSize));
     // Do FFT on IR, which will be reused a lot
-    CHCK_CUFFT_RES(cufftExecR2C(plan, IR, IRData));
+    CHCK_CUFFT_RES_CALL(cufftExecR2C(plan, IR, IRData));
 
     /*
     Finally convolute, second by second
@@ -344,13 +353,15 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
         load_sample_segment<<<blocks, threadsPerBlock>>>(second, sample_rate, ir_len / sample_rate, sampleSegment, samples);
         cudaDeviceSynchronize();
         // FFT on the loaded segment, and convolute it with IR
-        CHCK_CUFFT_RES(cufftExecR2C(plan, sampleSegment, segmentData));
+        CHCK_CUFFT_RES_CALL(cufftExecR2C(plan, sampleSegment, segmentData));
         multiply_samples_segment_and_ir<<<blocks, threadsPerBlock>>>(sample_rate, ir_len / sample_rate, segmentData, IRData);
         cudaDeviceSynchronize();
         // Inverse on the result and save it to buffer
-        CHCK_CUFFT_RES(cufftExecC2R(inversePlan, segmentData, sampleSegment));
+        CHCK_CUFFT_RES_CALL(cufftExecC2R(inversePlan, segmentData, sampleSegment));
         int howMuchToCopy = (second*sample_rate) + ir_len < samples_len ? ir_len : samples_len - (second*sample_rate);
-        cudaMemcpy(&(outputBuffer[second*sample_rate]), sampleSegment, howMuchToCopy * sizeof(float), cudaMemcpyDeviceToHost);
+        int threadsPerBlock2 = 256;
+        int blocks2 = (howMuchToCopy / threadsPerBlock) + 1;
+        add<<<blocks2, threadsPerBlock2>>>(&outputBuffer[second*sample_rate], sampleSegment, &outputBuffer[second * sample_rate], howMuchToCopy);
         cudaDeviceSynchronize();
     }
     

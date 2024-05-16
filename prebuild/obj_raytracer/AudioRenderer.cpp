@@ -651,6 +651,9 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
+    fillWithZeroesKernel(d_outputBuffer_left, h_inputBufferSize);
+    fillWithZeroesKernel(d_outputBuffer_right, h_inputBufferSize);
+
     size_t outputSize = h_inputBufferSize;
 
     convoluteFromAudioBuffer(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
