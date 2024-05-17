@@ -26,11 +26,11 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort =
     }
 }
 
-__global__ void add(float* a, float* b, float* c, int n)
+__global__ void add(float* a, float* b, int n)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i < n)
-        c[i] = a[i] + b[i];
+        atomicAdd(&a[i], b[i]);
 }
 
 __global__ void fillZeros(float *buf, int size)
@@ -322,12 +322,13 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
     // Allocate device memory for samples
     float *sampleSegment;
     int segmentSize = ir_len * sizeof(float);
-    cudaMalloc((void **)&sampleSegment, segmentSize);
+    CUDA_CHK(cudaMalloc(&sampleSegment, segmentSize));
+
     // Allocate device memory for complex data
     cufftComplex *segmentData;
-    cudaMalloc((void **)&segmentData, ir_len * sizeof(cufftComplex));
+    CUDA_CHK(cudaMalloc(&segmentData, ir_len * sizeof(cufftComplex)));
     cufftComplex *IRData;
-    cudaMalloc((void **)&IRData, ir_len * sizeof(cufftComplex));
+    CUDA_CHK(cudaMalloc(&IRData, ir_len * sizeof(cufftComplex)));
     // Set up FFT plan
     cufftHandle plan;
     CHCK_CUFFT_RES_CALL(cufftPlan1d(&plan, ir_len, CUFFT_R2C, batchSize));
@@ -351,18 +352,18 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
     {
         // First second is samples, rest is 0's (this is why we do seconds + 1 as the upper limit)
         load_sample_segment<<<blocks, threadsPerBlock>>>(second, sample_rate, ir_len / sample_rate, sampleSegment, samples);
-        cudaDeviceSynchronize();
+        CUDA_CHK(cudaDeviceSynchronize());
         // FFT on the loaded segment, and convolute it with IR
         CHCK_CUFFT_RES_CALL(cufftExecR2C(plan, sampleSegment, segmentData));
         multiply_samples_segment_and_ir<<<blocks, threadsPerBlock>>>(sample_rate, ir_len / sample_rate, segmentData, IRData);
-        cudaDeviceSynchronize();
+        CUDA_CHK(cudaDeviceSynchronize());
         // Inverse on the result and save it to buffer
         CHCK_CUFFT_RES_CALL(cufftExecC2R(inversePlan, segmentData, sampleSegment));
         int howMuchToCopy = (second*sample_rate) + ir_len < samples_len ? ir_len : samples_len - (second*sample_rate);
         int threadsPerBlock2 = 256;
         int blocks2 = (howMuchToCopy / threadsPerBlock) + 1;
-        add<<<blocks2, threadsPerBlock2>>>(&outputBuffer[second*sample_rate], sampleSegment, &outputBuffer[second * sample_rate], howMuchToCopy);
-        cudaDeviceSynchronize();
+        add<<<blocks2, threadsPerBlock2>>>(&outputBuffer[second*sample_rate], sampleSegment, howMuchToCopy);
+        CUDA_CHK(cudaDeviceSynchronize());
     }
     
     // Clean up

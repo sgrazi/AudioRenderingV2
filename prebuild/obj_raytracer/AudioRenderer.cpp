@@ -536,6 +536,9 @@ void AudioRenderer::render()
         }
         this->set_write_ir_to_file_flag(false);
     }
+
+    delete[] host_left;
+    delete[] host_right;
 }
 
 /**
@@ -634,15 +637,12 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
 void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right)
 {
     //  move inputBuffer to device
-    float *d_inputBuffer_left;
-    float *d_inputBuffer_right;
+    float *d_input_buffer;
 
     //  move inputBuffer to device
-    cudaMalloc(&d_inputBuffer_left, h_inputBufferSize);
-    cudaMalloc(&d_inputBuffer_right, h_inputBufferSize);
+    cudaMalloc(&d_input_buffer, h_inputBufferSize);
 
-    copy_to_gpu(h_inputBuffer, d_inputBuffer_left, h_inputBufferSize);
-    copy_to_gpu(h_inputBuffer, d_inputBuffer_right, h_inputBufferSize);
+    copy_to_gpu(h_inputBuffer, d_input_buffer, h_inputBufferSize);
 
     // send launchParams.ir and d_inputBuffer and h_outputBuffer to kernel
     float *d_outputBuffer_left = NULL;
@@ -651,18 +651,20 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     cudaMalloc(&d_outputBuffer_left, h_inputBufferSize);
     cudaMalloc(&d_outputBuffer_right, h_inputBufferSize);
 
-    fillWithZeroesKernel(d_outputBuffer_left, h_inputBufferSize);
-    fillWithZeroesKernel(d_outputBuffer_right, h_inputBufferSize);
+    fillWithZeroesKernel(d_outputBuffer_left, h_inputBufferSize / sizeof(float));
+    fillWithZeroesKernel(d_outputBuffer_right, h_inputBufferSize / sizeof(float));
+    cudaDeviceSynchronize();
 
     size_t outputSize = h_inputBufferSize;
 
-    convoluteFromAudioBuffer(d_inputBuffer_left, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
+    convoluteFromAudioBuffer(d_input_buffer, launchParams.ir_left, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_left);
     cudaDeviceSynchronize();
-    convoluteFromAudioBuffer(d_inputBuffer_right, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
+    convoluteFromAudioBuffer(d_input_buffer, launchParams.ir_right, h_inputBufferSize / sizeof(float), launchParams.sample_rate, launchParams.ir_length, d_outputBuffer_right);
     cudaDeviceSynchronize();
     // copy result to host
     copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
     copy_from_gpu(d_outputBuffer_right, h_outputBuffer_right, outputSize);
+    cudaDeviceSynchronize();
 
     // normalize after transform
     for (int i = 0; i < h_inputBufferSize / sizeof(float); ++i)
@@ -698,10 +700,8 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     }
 
     // free
-    cudaFree(d_inputBuffer_left);
+    cudaFree(d_input_buffer);
     cudaFree(d_outputBuffer_left);
-
-    cudaFree(d_inputBuffer_right);
     cudaFree(d_outputBuffer_right);
 }
 
@@ -743,12 +743,10 @@ void AudioRenderer::set_write_output_to_file_flag(bool value)
 
 void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right)
 {
-    mutex->lock();
     placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
     this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
     this->render();
     this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right);
-    mutex->unlock();
 }
 
 void AudioRenderer::setMonoOutput(bool value)

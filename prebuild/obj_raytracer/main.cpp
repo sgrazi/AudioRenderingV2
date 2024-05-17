@@ -32,6 +32,7 @@ using namespace std;
 #define SAMPLE_TYPE double
 #define inputSampleRate 44100 // inventando un sample rate de 44.1khz
 #define inputBufferLen 4096		// inventado too
+std::mutex audio_critical_section;
 
 struct audioPaths
 {
@@ -75,8 +76,9 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 		size_t size_of_audio = sizeof(float) * len_of_audio;
 		float* outputBuffer_left = Context::get_output_buffer_left();
 		float* outputBuffer_right = Context::get_output_buffer_right();
-
+		audio_critical_section.lock();
 		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
+		audio_critical_section.unlock();
 	}
 	else {
 		output_buffer_mutex->lock();
