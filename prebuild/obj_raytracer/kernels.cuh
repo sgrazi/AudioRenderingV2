@@ -20,3 +20,4 @@ void zipArrays(double *d_outputBuffer_left, double *d_outputBuffer_right, double
 void normalizeBuffers(double *d_outputBuffer_left, double *d_outputBuffer_right, int monoBufferLength, int value);
 void addDeviceArrayToCircularBuffer(double *deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength);
 void castFloatArrayToDouble(const float *input, double *output, size_t length);
+void addIRsKernel(int ir_length, float *ir_left, float *ir_right);

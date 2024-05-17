@@ -49,6 +49,7 @@ private:
 	float re_render_angle_threshold;
 	gdt::vec3f last_render_position;
 	bool is_rendering;
+	bool is_mono;
 
 public:
 	static Context *getInstance();
@@ -144,4 +145,7 @@ public:
 
 	static void set_is_rendering(bool is_rendering);
 	static bool get_is_rendering();
+
+	static void set_is_mono(bool is_mono);
+	static bool get_is_mono();
 };

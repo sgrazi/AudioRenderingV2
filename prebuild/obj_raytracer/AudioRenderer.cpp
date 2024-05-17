@@ -51,7 +51,7 @@ float getMaterialAbsorption(std::string materialName, std::vector<Material> mate
         }
     }
     // return default absorption
-    return 0.2;
+    return 0.5;
 }
 
 /*! constructor - performs all setup, including initializing
@@ -469,6 +469,7 @@ void AudioRenderer::render()
     launchParamsBuffer.free();
 
     launchParams.traversable = buildAccel();
+    launchParams.isMono = isMono;
     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
     cudaDeviceSynchronize();
@@ -497,7 +498,10 @@ void AudioRenderer::render()
     // example, this will have to do)
     CUDA_SYNC_CHECK();
 
-    /////////
+    if(isMono){
+        addIRsKernel(launchParams.ir_length, launchParams.ir_left,launchParams.ir_right);
+    }
+    
     float *host_left = NULL;
     float *host_right = NULL;
 
@@ -738,4 +742,9 @@ void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixMod
     this->render();
     this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right);
     mutex->unlock();
+}
+
+void AudioRenderer::setMonoOutput(bool value)
+{
+    this->isMono = value;
 }
