@@ -9,6 +9,7 @@
 		"re_render_distance_threshold": 2
 	},
 	"scene_parameters": {
+		"mono": true,
 		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
 		"scene_file_path": "../../assets/models/3D_U.obj",
 		"materials_file_path": "",

@@ -774,10 +774,12 @@ void AudioRenderer::set_write_output_to_file_flag(bool value)
 
 void AudioRenderer::full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right)
 {
+    mutex->lock();
     placeReceiver(sphere, scene, camera_central_point, camera_global_angle);
     this->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
     this->render();
     this->convoluteAudioFile(audio_samples, size_of_audio, outputBuffer_left, outputBuffer_right);
+    mutex->unlock();
 }
 
 void AudioRenderer::setMonoOutput(bool value)
