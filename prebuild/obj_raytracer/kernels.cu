@@ -16,11 +16,52 @@ inline void CHCK_CUFFT_RES(cufftResult_t res, const char* file, int line)
 
 #define CHCK_CUFFT_RES_CALL(res) CHCK_CUFFT_RES(res, __FILE__, __LINE__)
 
+inline void printStackTrace2()
+{
+    void* stack[64];
+    unsigned short frames;
+    SYMBOL_INFO* symbol;
+    HANDLE process;
+    IMAGEHLP_LINE64 line;
+    DWORD displacement;
+
+    process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+
+    frames = CaptureStackBackTrace(0, 64, stack, NULL);
+    symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+    for (unsigned short i = 0; i < frames; i++)
+    {
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+        fprintf(stderr, "%i: %s - 0x%0llX", frames - i - 1, symbol->Name, symbol->Address);
+
+        if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &displacement, &line))
+        {
+            fprintf(stderr, " in %s at line %lu\n", line.FileName, line.LineNumber);
+        }
+        else
+        {
+            fprintf(stderr, "\n");
+        }
+    }
+
+    free(symbol);
+}
+
+
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
 {
     if (code != cudaSuccess)
     {
         fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        // Print the stack trace
+        fprintf(stderr, "Stack trace:\n");
+        printStackTrace2();
         if (abort)
             exit(code);
     }
@@ -53,6 +94,28 @@ void fillWithZeroesKernel(float *buf, int size)
         numBlocks = size / numThreads;
     }
     fillZeros<<<numBlocks, numThreads>>>(buf, size);
+}
+
+__global__ void fillZerosDoubles(double* buf, int size)
+{
+    int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    if (thread < size)
+        buf[thread] = 0.f;
+}
+
+void fillWithZeroesKernelDoubles(double* buf, int size)
+{
+    int numThreads = 256;
+    int numBlocks;
+    if (size % numThreads != 0)
+    {
+        numBlocks = (size / numThreads) + 1;
+    }
+    else
+    {
+        numBlocks = size / numThreads;
+    }
+    fillZerosDoubles << <numBlocks, numThreads >> > (buf, size);
 }
 
 __global__ void vectorMultiply(float *a, float *b, float *c, int size)
@@ -420,26 +483,6 @@ void zipArrays(double *d_outputBuffer_left, double *d_outputBuffer_right, double
     int blockSize = 256;
     int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
     d_zipArrays<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
-    cudaDeviceSynchronize();
-};
-
-__global__ void d_addDeviceArrayToCircularBuffer(double *deviceArray, size_t dLength, double *circularBuffer, size_t startIndex, size_t hLength)
-{
-    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (index < dLength)
-    {
-        size_t circularIndex = (startIndex + index) % hLength;
-        // maybe change to atomicAdd?
-        circularBuffer[circularIndex] += deviceArray[index];
-    }
-};
-
-void addDeviceArrayToCircularBuffer(double *deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength)
-{
-    int blockSize = 256;
-    int numBlocks = (dLength + blockSize - 1) / blockSize;
-    d_addDeviceArrayToCircularBuffer<<<numBlocks, blockSize>>>(deviceArray, dLength, circularBuffer, startIndex, hLength);
     cudaDeviceSynchronize();
 };
 

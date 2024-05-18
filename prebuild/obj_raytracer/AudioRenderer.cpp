@@ -537,6 +537,8 @@ void AudioRenderer::render()
         this->set_write_ir_to_file_flag(false);
     }
 
+    cudaDeviceSynchronize();
+
     delete[] host_left;
     delete[] host_right;
 }
@@ -547,22 +549,6 @@ void AudioRenderer::render()
  */
 void AudioRenderer::normalizeAndMergeStereoOutput(double *d_outputBuffer_left, double *d_outputBuffer_right, size_t monoBufferLength, double *d_outputBuffer)
 {
-}
-
-/**
- * Dado el buffer circular, empezando en startIndex se le suma cada valor de deviceArray.
- */
-void addToCircularBuffer(double *deviceArray, size_t deviceArrayLength, double *hostCircularBuffer, size_t length, size_t startIndex)
-{
-    double *d_circularBuffer;
-    cudaMalloc((void **)&d_circularBuffer, length * sizeof(double));
-    cudaMemcpy(d_circularBuffer, hostCircularBuffer, length * sizeof(double), cudaMemcpyHostToDevice);
-
-    addDeviceArrayToCircularBuffer(deviceArray, deviceArrayLength, d_circularBuffer, startIndex, length);
-    cudaDeviceSynchronize();
-
-    cudaMemcpy(hostCircularBuffer, d_circularBuffer, length * sizeof(double), cudaMemcpyDeviceToHost);
-    cudaFree(d_circularBuffer);
 }
 
 bool isArrayAllZeros(const double *array, int length)
@@ -586,8 +572,10 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     // Expand with 0's until it has the same size as IR
     double *d_inputBuffer;
     cudaMalloc(&d_inputBuffer, launchParams.ir_length * sizeof(double));
-    cudaMemset(&d_inputBuffer, 0, launchParams.ir_length * sizeof(double));
+    fillWithZeroesKernelDoubles(d_inputBuffer, launchParams.ir_length);
+
     copy_to_gpu(h_inputBuffer, d_inputBuffer, h_inputBufferSize);
+    cudaDeviceSynchronize();
 
     // create outputBuffer
     double *d_outputBuffer_left;
@@ -627,10 +615,12 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     cudaFree(d_outputBuffer_right);
 
     // add to h_circularOutputBuffer
-    size_t startIndex = h_circularOutputBuffer->head;
-    size_t length = h_circularOutputBuffer->length;
-    addToCircularBuffer(d_outputBuffer, launchParams.ir_length * 2, h_circularOutputBuffer->buffer, length, startIndex);
+    double* h_buffer = new double[launchParams.ir_length * 2];
+    copy_from_gpu(d_outputBuffer, h_buffer, launchParams.ir_length * 2 * sizeof(double));
+    cudaDeviceSynchronize();
+    h_circularOutputBuffer->add(h_buffer, launchParams.ir_length * 2);
 
+    delete[] h_buffer;
     cudaFree(d_outputBuffer);
 }
 
