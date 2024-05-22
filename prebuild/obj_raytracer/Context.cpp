@@ -231,6 +231,8 @@ bool Context::loadContext(cJSON *config)
 	context->set_audio_renderer(renderer);
 	context->set_re_render_distance_threshold(re_render_distance_threshold);
 	context->set_re_render_angle_threshold(re_render_angle_threshold);
+
+	context->set_is_rendering(true);
 }
 
 void Context::set_audio_file(AudioFile<float> *audio_file)
