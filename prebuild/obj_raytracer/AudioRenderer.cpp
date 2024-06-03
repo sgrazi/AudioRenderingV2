@@ -232,6 +232,11 @@ void AudioRenderer::initOptix()
     std::cout << " successfully initialized optix... yay!" << std::endl;
 }
 
+void AudioRenderer::enable_experimentation()
+{
+    this->experimentation_mode = true;
+}
+
 static void context_log_cb(unsigned int level,
                            const char *tag,
                            const char *message,
@@ -457,9 +462,7 @@ void AudioRenderer::buildSBT()
     sbt.hitgroupRecordCount = (int)hitgroupRecords.size();
 }
 
-/*! render one frame */
-void AudioRenderer::render()
-{
+void AudioRenderer::reload() {
     vertexBuffer.clear();
     indexBuffer.clear();
     asBuffer.free();
@@ -470,9 +473,6 @@ void AudioRenderer::render()
 
     launchParams.traversable = buildAccel();
     launchParams.isMono = isMono;
-    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
-    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
-    cudaDeviceSynchronize();
 
     createPipeline();
 
@@ -481,6 +481,14 @@ void AudioRenderer::render()
     launchParamsBuffer.alloc(sizeof(launchParams));
 
     launchParamsBuffer.upload(&launchParams, 1);
+}
+
+/*! render one frame */
+void AudioRenderer::render()
+{
+    fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
+    fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
+    cudaDeviceSynchronize();
 
     OPTIX_CHECK(optixLaunch(/*! pipeline we're launching launch: */
                             pipeline, stream,
@@ -502,19 +510,25 @@ void AudioRenderer::render()
         addIRsKernel(launchParams.ir_length, launchParams.ir_left,launchParams.ir_right);
     }
     
-    float *host_left = NULL;
-    float *host_right = NULL;
-
-    host_left = new float[launchParams.ir_length];
-    host_right = new float[launchParams.ir_length];
-
-    copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
-    copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
-
     if (this->write_ir_to_file_flag)
     {
-        std::ofstream outFileLeft("output_ir_left.txt");
-        std::ofstream outFileRight("output_ir_right.txt");
+        float *host_left = new float[launchParams.ir_length];
+        float *host_right = new float[launchParams.ir_length];
+
+        copy_from_gpu(launchParams.ir_left, host_left, launchParams.ir_length * sizeof(float));
+        copy_from_gpu(launchParams.ir_right, host_right, launchParams.ir_length * sizeof(float));
+
+        
+        std::string ir_left_path = "output_ir_left.txt";
+        std::string ir_right_path = "output_ir_right.txt";
+        if (experimentation_mode) {
+            auto now = std::chrono::system_clock::now();
+            ir_left_path = "experimentation/output_ir_left_" + std::to_string(now.time_since_epoch().count()) + ".txt";
+            ir_right_path = "experimentation/output_ir_right_" + std::to_string(now.time_since_epoch().count()) + ".txt";
+        };
+
+        std::ofstream outFileLeft(ir_left_path);
+        std::ofstream outFileRight(ir_right_path);
         if (!outFileLeft.is_open() && !outFileRight.is_open())
         {
             std::cerr << "Error opening the file." << std::endl;
@@ -535,6 +549,9 @@ void AudioRenderer::render()
             outFileRight.close();
         }
         this->set_write_ir_to_file_flag(false);
+        
+        delete[] host_left;
+        delete[] host_right;
     }
 }
 
@@ -705,11 +722,13 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
 {
     launchParams.emitter_position = pos;
+    reload();
 }
 
 void AudioRenderer::setSphereCenterInOptix(glm::vec3 center)
 {
     launchParams.sphere_center = center;
+    reload();
 }
 
 void AudioRenderer::setThresholds(float dist, float energy, unsigned int max_bounces)

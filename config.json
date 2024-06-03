@@ -28,7 +28,7 @@
 		"base_power": 31.62,
 		"rays": {
 			"x": 1000,
-			"y": 1000,
+			"y": 100,
 			"z": 100
 		},
 		"ray_distance_threshold": 2000.0,
