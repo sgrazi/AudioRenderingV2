@@ -11,12 +11,12 @@
 	"scene_parameters": {
 		"mono": true,
 		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
-		"scene_file_path": "../../assets/models/1D_U.obj",
+		"scene_file_path": "../../assets/models/3D_U.obj",
 		"materials_file_path": "",
 		"initial_receiver_pos": {
-			"x": -2.5,
+			"x": 2.5,
 			"y": 9.9,
-			"z": 0
+			"z": 0.0
 		},
 		"initial_emitter_pos": {
 			"x": 0.0,
@@ -28,12 +28,13 @@
 		"base_power": 31.62,
 		"rays": {
 			"x": 1000,
-			"y": 1000,
+			"y": 100,
 			"z": 100
 		},
 		"ray_distance_threshold": 2000.0,
 		"ray_energy_threshold": 0.0,
-		"ray_max_bounces": 10,
+		"ray_max_bounces": 100,
+		"hrtf_absorption_rate": 0.9,
 		"materials": [
 			{
 				"name": "low",

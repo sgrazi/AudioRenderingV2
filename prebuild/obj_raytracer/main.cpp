@@ -32,6 +32,7 @@ using namespace std;
 #define SAMPLE_TYPE double
 #define inputSampleRate 44100 // inventando un sample rate de 44.1khz
 #define inputBufferLen 4096		// inventado too
+std::mutex audio_critical_section;
 
 struct audioPaths
 {
@@ -75,15 +76,16 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 		size_t size_of_audio = sizeof(float) * len_of_audio;
 		float* outputBuffer_left = Context::get_output_buffer_left();
 		float* outputBuffer_right = Context::get_output_buffer_right();
-
+		audio_critical_section.lock();
 		renderer->full_render_cycle(output_buffer_mutex, sphere, scene, camera_central_point, camera.globalAngle, audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
+		audio_critical_section.unlock();
 	}
 	else {
-		output_buffer_mutex->lock();
+		audio_critical_section.lock();
 		placeReceiver(sphere, scene, camera_central_point, camera.globalAngle);
 		renderer->setSphereCenterInOptix(glm::vec3(camera_central_point.x, camera_central_point.y, camera_central_point.z));
 		renderer->render();
-		output_buffer_mutex->unlock();
+		audio_critical_section.unlock();
 	}
 
 	Context::set_is_rendering(false);
@@ -134,22 +136,26 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 
 	double *buffer = (double *)outputBuffer;
 	double *ibuffer = (double *)inputBuffer;
-	std::mutex* inputBufferMutex = renderData->inputBufferMutex;
+
 	if (!Context::get_is_rendering()) {
 		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
 
 		float volume = Context::get_volume();
-		int start = renderData->samplesRecordBuffer->head;
-		int length = renderData->samplesRecordBuffer->length;
+		std::vector<double> circular_buffer = renderData->samplesRecordBuffer->get_and_reset(nBufferFrames * 2);
+		double* host_buffer = circular_buffer.data();
 		for (int i = 0; i < nBufferFrames * 2; i++)
 		{
-			int index = (start + i) % length;
-			*buffer++ = renderData->samplesRecordBuffer->buffer[index] * 100 * volume;
-			renderData->samplesRecordBuffer->buffer[index] = 0;
+			if (host_buffer[i] != host_buffer[i]) {
+				*buffer++ = 0;
+			}
+			else {
+				*buffer++ = host_buffer[i] * volume;
+			}
 		}
-		renderData->samplesRecordBuffer->head = (renderData->samplesRecordBuffer->head + (nBufferFrames * 2)) % length;
+		circular_buffer.clear();
 	}
 	else {
+		printf("buffer ocupado\n");
 		for (int i = 0; i < nBufferFrames * 2; i++)
 			*buffer++ = 0;
 	}
@@ -209,25 +215,22 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 	outputParameters.nChannels = output_channels;
 	outputParameters.firstChannel = 0;
 
-	RtAudio::StreamOptions options;
-
 	// Calculate buffer size in bytes
 	unsigned int bufferBytes = bufferFrames * input_channels * sizeof(SAMPLE_TYPE);
 
 	// Create audioData struct on the heap
 	audioCallbackData *audioData = new audioCallbackData;
 	audioData->bufferFrames = inputBufferLen;
-	audioData->pos = 0;
 	audioData->samplesRecordBufferSize = sampleRate * input_channels;
 	// circular buffer must be longer than IR
-	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * (Context::get_ir_length_in_seconds() + 2));
+	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * Context::get_ir_length_in_seconds());
 	audioData->paths = new audioPaths();
 	audioData->paths->ptr = NULL;
 	audioData->paths->size = 0;
 	audioData->volume = 30.0f;
 	audioData->inputBufferMutex = inputBufferMutex;
 
-	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData, &options);
+	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData);
 
 	checkError = dac->startStream();
 }
@@ -438,7 +441,8 @@ void screen(std::mutex *output_buffer_mutex)
 	AudioRenderer *renderer = Context::get_audio_renderer();
 	renderer->setMonoOutput(Context::get_is_mono());
 	renderer->setBasePower(Context::get_base_power());
-	renderer->setThresholds(Context::get_ray_distance_threshold(), Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setThresholds(Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->set_hrtf_absorption_rate(Context::get_hrtf_absorption_rate());
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
 	renderer->render();
