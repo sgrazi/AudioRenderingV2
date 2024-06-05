@@ -68,6 +68,8 @@ add_executable(obj_raytracer
   Context.cpp
   cJSON.c
   cJSON.h
+  Experimentation.h
+  Experimentation.cpp
   # tinyxml2.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.h
   ${CMAKE_SOURCE_DIR}/common/glad/glad.c

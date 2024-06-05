@@ -49,6 +49,8 @@ public:
     void full_render_cycle(std::mutex *mutex, Sphere sphere, OptixModel *scene, gdt::vec3f camera_central_point, float camera_global_angle, float *audio_samples, size_t size_of_audio, float *outputBuffer_left, float *outputBuffer_right);
 
     void setMonoOutput(bool value);
+
+    void enable_experimentation();
     // void getIROnHostMem(float *h_ir, size_t ir_size);
 
 protected:
@@ -88,6 +90,9 @@ protected:
 
     /*! loads material data into map */
     std::unordered_map<int, Material> buildAbsorptionMap();
+
+    /* reloads audio renderer*/
+    void reload();
 
 protected:
     /*! @{ CUDA device context and stream that optix pipeline will run
@@ -143,4 +148,5 @@ protected:
     bool write_ir_to_file_flag = false;
     bool write_output_to_file_flag = false;
     bool isMono = false;
+    bool experimentation_mode = false;
 };

@@ -12,6 +12,8 @@
 #include <mutex>
 #include <stdexcept>
 #include <mutex>
+#include <functional>
+#include <windows.h>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -24,6 +26,7 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
 #include "Context.h"
+#include "Experimentation.h"
 #include "cJSON.h"
 #include "HalfSphere.h"
 #include "CircularBuffer.h"
@@ -530,6 +533,138 @@ void screen(std::mutex *output_buffer_mutex)
 	glfwTerminate();
 }
 
+void main_workflow() {
+	std::mutex* buffer_mutex = new std::mutex();
+	RtAudio* dac = new RtAudio();
+	thread screen1(screen, buffer_mutex);
+	thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
+
+	screen1.join();
+	audio1.detach();
+	// Stop the stream
+	RtAudioErrorType checkError = dac->stopStream();
+	if (dac->isStreamOpen())
+		dac->closeStream();
+	delete dac;
+}
+
+void process_file(const std::string& filePath) {
+	// Open the file
+	std::ifstream file(filePath);
+	if (!file.is_open()) {
+		std::cerr << "Failed to open file: " << filePath << std::endl;
+		return;
+	}
+
+	string fileName = filePath;
+	size_t pos = filePath.find_last_of("/\\");
+	if (pos != std::string::npos) {
+		fileName = filePath.substr(pos + 1);
+	}
+
+
+	FileData fileData;
+	fileData.name = fileName;
+
+	std::string line;
+	double max = 0;
+	while (std::getline(file, line)) {
+		double value = std::atof(line.c_str());
+		if (max < value) max = value;
+	}
+
+	fileData.maximum_value = max;
+
+	Experimentation::add_file_data(fileData);
+
+	file.close();
+}
+
+void process_files_with_prefix(const std::string& directoryPath, const std::string& prefix) {
+	std::string searchPath = directoryPath + "\\" + prefix + "*";
+	WIN32_FIND_DATA findFileData;
+	HANDLE hFind = FindFirstFile(searchPath.c_str(), &findFileData);
+
+	if (hFind == INVALID_HANDLE_VALUE) {
+		std::cerr << "Could not open directory: " << directoryPath << std::endl;
+		return;
+	}
+
+	do {
+		std::string fileName = findFileData.cFileName;
+		if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+			std::string filePath = directoryPath + "\\" + fileName;
+			process_file(filePath);
+		}
+	} while (FindNextFile(hFind, &findFileData) != 0);
+
+	FindClose(hFind);
+}
+
+// El modo experimentacion permite hacer 100 veces el path tracing y obtener estadisticas de la ejecución
+void experimentation_mode() {
+	OptixModel* scene = Context::get_optix_model();
+	Sphere sphere = *Context::get_sphere();
+	Camera camera = *Context::get_camera();
+	AudioFile<float>* audio = Context::get_audio_file();
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float* outputBuffer_left = Context::get_output_buffer_left();
+	float* outputBuffer_right = Context::get_output_buffer_right();
+
+	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z), camera.globalAngle);
+
+	uint32_t sample_rate = Context::get_sample_rate();
+
+	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
+
+	AudioRenderer* renderer = Context::get_audio_renderer();
+	renderer->setMonoOutput(Context::get_is_mono());
+	renderer->setBasePower(Context::get_base_power());
+	renderer->setThresholds(Context::get_ray_distance_threshold(), Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
+	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
+	renderer->enable_experimentation();
+
+	// Initialize experimentation
+	Experimentation* exp = Experimentation::getInstance();
+
+	Context::set_output_buffer_len(size_of_audio);
+	
+	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+	for (int counter = 0; counter < 100; counter++)
+	{
+		cout << "Starting round: " << counter << endl;
+		auto start_round_time = std::chrono::high_resolution_clock::now();
+		
+		renderer->set_write_ir_to_file_flag(true);
+		renderer->render();
+		
+		auto end_render_time = std::chrono::high_resolution_clock::now();
+		chrono::duration<double> render_duration = end_render_time - start_round_time;
+		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
+
+		/*auto start_convolute_time = std::chrono::high_resolution_clock::now();
+		renderer->set_write_output_to_file_flag(true);
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);*/
+		
+		auto end_round_time = chrono::high_resolution_clock::now();
+		/*chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
+		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;*/
+
+		chrono::duration<double> full_duration = end_round_time - start_round_time;
+		std::cout << "Round " << counter << ": took " << full_duration.count() * 1000 << " ms" << endl;
+	}
+
+	std::string experimentationDirectory = ".\\experimentation";
+	std::string prefix = "output_ir_left";  // Change this to your desired prefix
+
+	process_files_with_prefix(experimentationDirectory, prefix);
+
+	Experimentation::results();
+}
+
 int main(int argc, char **argv)
 {
 
@@ -539,9 +674,16 @@ int main(int argc, char **argv)
 		string configJsonPath;
 
 		if (argc < 2)
-			configJsonPath = "../../config.json";
-		else
-			configJsonPath = argv[1];
+		{
+			cerr << "Insufficient parameters" << endl;
+			cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << endl;
+			return 1;
+		}
+
+		string configJsonPath = argv[1];
+		bool mainFlag = true;
+		if (argc > 3)
+			mainFlag = argv[2] == "true";
 
 		// Read config file
 		ifstream file(configJsonPath);
@@ -564,18 +706,10 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		std::mutex *buffer_mutex = new std::mutex();
-		RtAudio *dac = new RtAudio();
-		thread screen1(screen, buffer_mutex);
-		thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
-
-		screen1.join();
-		audio1.detach();
-		// Stop the stream
-		RtAudioErrorType checkError = dac->stopStream();
-		if (dac->isStreamOpen())
-			dac->closeStream();
-		delete dac;
+		if (mainFlag)
+			main_workflow();
+		else
+			experimentation_mode();
 	}
 	catch (const exception &e)
 	{
