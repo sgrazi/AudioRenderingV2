@@ -33,9 +33,9 @@ private:
 	std::string material_file_path;
 
 	float base_power;
-	float ray_distance_threshold;
 	float ray_energy_threshold;
 	unsigned int ray_max_bounces;
+	float hrtf_absorption_rate;
 	glm::vec3 initial_emitter_pos;
 	gdt::vec3f rays_per_dimension;
 
@@ -84,13 +84,10 @@ public:
 	static void set_base_power(float base_power);
 	static float get_base_power();
 
-	static void set_ray_distance_threshold(float ray_distance_threshold);
-	static float get_ray_distance_threshold();
-
 	static void set_ray_energy_threshold(float ray_energy_threshold);
 	static float get_ray_energy_threshold();
 
-	static void set_ray_max_bounces(uint32_t ray_max_bounces);
+	static void set_ray_max_bounces(unsigned int ray_max_bounces);
 	static uint32_t get_ray_max_bounces();
 
 	static void set_initial_emitter_pos(glm::vec3 initial_emitter_pos);
@@ -116,6 +113,9 @@ public:
 
 	static void set_rays_per_dimension(gdt::vec3f rays_per_dimension);
 	static gdt::vec3f get_rays_per_dimension();
+
+	static void set_hrtf_absorption_rate(float hrtf_absorption_rate);
+	static float get_hrtf_absorption_rate();
 
 	// ------------------------------------ SCREEN ------------------------------------
 

@@ -4,24 +4,74 @@
         gpuAssert((ans), __FILE__, __LINE__); \
     }
 
-inline void CHCK_CUFFT_RES(cufftResult_t res)
+inline void CHCK_CUFFT_RES(cufftResult_t res, const char* file, int line)
 {
     if (res != 0)
     {
-        fprintf(stderr, "CHCK_CUFFT_RES: %d\n", res);
+        fprintf(stderr, "CUFFT error in file '%s', line %d: %d\n", file, line, res);
         if (abort)
             exit(res);
     }
 }
+
+#define CHCK_CUFFT_RES_CALL(res) CHCK_CUFFT_RES(res, __FILE__, __LINE__)
+
+inline void printStackTrace2()
+{
+    void* stack[64];
+    unsigned short frames;
+    SYMBOL_INFO* symbol;
+    HANDLE process;
+    IMAGEHLP_LINE64 line;
+    DWORD displacement;
+
+    process = GetCurrentProcess();
+    SymInitialize(process, NULL, TRUE);
+
+    frames = CaptureStackBackTrace(0, 64, stack, NULL);
+    symbol = (SYMBOL_INFO*)malloc(sizeof(SYMBOL_INFO) + 256 * sizeof(char));
+    symbol->MaxNameLen = 255;
+    symbol->SizeOfStruct = sizeof(SYMBOL_INFO);
+
+    line.SizeOfStruct = sizeof(IMAGEHLP_LINE64);
+
+    for (unsigned short i = 0; i < frames; i++)
+    {
+        SymFromAddr(process, (DWORD64)(stack[i]), 0, symbol);
+        fprintf(stderr, "%i: %s - 0x%0llX", frames - i - 1, symbol->Name, symbol->Address);
+
+        if (SymGetLineFromAddr64(process, (DWORD64)(stack[i]), &displacement, &line))
+        {
+            fprintf(stderr, " in %s at line %lu\n", line.FileName, line.LineNumber);
+        }
+        else
+        {
+            fprintf(stderr, "\n");
+        }
+    }
+
+    free(symbol);
+}
+
 
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort = true)
 {
     if (code != cudaSuccess)
     {
         fprintf(stderr, "GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+        // Print the stack trace
+        fprintf(stderr, "Stack trace:\n");
+        printStackTrace2();
         if (abort)
             exit(code);
     }
+}
+
+__global__ void add(float* a, float* b, int n)
+{
+    int i = blockDim.x * blockIdx.x + threadIdx.x;
+    if (i < n)
+        atomicAdd(&a[i], b[i]);
 }
 
 __global__ void fillZeros(float *buf, int size)
@@ -44,6 +94,28 @@ void fillWithZeroesKernel(float *buf, int size)
         numBlocks = size / numThreads;
     }
     fillZeros<<<numBlocks, numThreads>>>(buf, size);
+}
+
+__global__ void fillZerosDoubles(double* buf, int size)
+{
+    int thread = blockDim.x * blockIdx.x + threadIdx.x;
+    if (thread < size)
+        buf[thread] = 0.f;
+}
+
+void fillWithZeroesKernelDoubles(double* buf, int size)
+{
+    int numThreads = 256;
+    int numBlocks;
+    if (size % numThreads != 0)
+    {
+        numBlocks = (size / numThreads) + 1;
+    }
+    else
+    {
+        numBlocks = size / numThreads;
+    }
+    fillZerosDoubles << <numBlocks, numThreads >> > (buf, size);
 }
 
 __global__ void vectorMultiply(float *a, float *b, float *c, int size)
@@ -287,15 +359,15 @@ void convoluteFromLiveInput(double *samples, double *IR, unsigned int len, doubl
     // Convolute and invert result
     cufftHandle inversePlan;
     cufftPlan1d(&inversePlan, len, CUFFT_Z2D, batchSize);
-    CHCK_CUFFT_RES(cufftExecD2Z(plan, IR, IRData));
-    CHCK_CUFFT_RES(cufftExecD2Z(plan, samples, segmentData));
+    CHCK_CUFFT_RES_CALL(cufftExecD2Z(plan, IR, IRData));
+    CHCK_CUFFT_RES_CALL(cufftExecD2Z(plan, samples, segmentData));
 
     int blockSize = 256;
     int numBlocks = (len + blockSize - 1) / blockSize;
     complexCrossMultiplication<<<numBlocks, blockSize>>>(segmentData, IRData, segmentData, len);
     cudaDeviceSynchronize();
 
-    CHCK_CUFFT_RES(cufftExecZ2D(inversePlan, segmentData, outputBuffer));
+    CHCK_CUFFT_RES_CALL(cufftExecZ2D(inversePlan, segmentData, outputBuffer));
 
     // Clean up
     cufftDestroy(plan);
@@ -313,20 +385,21 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
     // Allocate device memory for samples
     float *sampleSegment;
     int segmentSize = ir_len * sizeof(float);
-    cudaMalloc((void **)&sampleSegment, segmentSize);
+    CUDA_CHK(cudaMalloc(&sampleSegment, segmentSize));
+
     // Allocate device memory for complex data
     cufftComplex *segmentData;
-    cudaMalloc((void **)&segmentData, ir_len * sizeof(cufftComplex));
+    CUDA_CHK(cudaMalloc(&segmentData, ir_len * sizeof(cufftComplex)));
     cufftComplex *IRData;
-    cudaMalloc((void **)&IRData, ir_len * sizeof(cufftComplex));
+    CUDA_CHK(cudaMalloc(&IRData, ir_len * sizeof(cufftComplex)));
     // Set up FFT plan
     cufftHandle plan;
-    cufftPlan1d(&plan, ir_len, CUFFT_R2C, batchSize);
+    CHCK_CUFFT_RES_CALL(cufftPlan1d(&plan, ir_len, CUFFT_R2C, batchSize));
     // Invert result
     cufftHandle inversePlan;
-    cufftPlan1d(&inversePlan, ir_len, CUFFT_C2R, batchSize);
+    CHCK_CUFFT_RES_CALL(cufftPlan1d(&inversePlan, ir_len, CUFFT_C2R, batchSize));
     // Do FFT on IR, which will be reused a lot
-    CHCK_CUFFT_RES(cufftExecR2C(plan, IR, IRData));
+    CHCK_CUFFT_RES_CALL(cufftExecR2C(plan, IR, IRData));
 
     /*
     Finally convolute, second by second
@@ -342,16 +415,18 @@ void convoluteFromAudioBuffer(float *samples, float *IR, unsigned int samples_le
     {
         // First second is samples, rest is 0's (this is why we do seconds + 1 as the upper limit)
         load_sample_segment<<<blocks, threadsPerBlock>>>(second, sample_rate, ir_len / sample_rate, sampleSegment, samples);
-        cudaDeviceSynchronize();
+        CUDA_CHK(cudaDeviceSynchronize());
         // FFT on the loaded segment, and convolute it with IR
-        CHCK_CUFFT_RES(cufftExecR2C(plan, sampleSegment, segmentData));
+        CHCK_CUFFT_RES_CALL(cufftExecR2C(plan, sampleSegment, segmentData));
         multiply_samples_segment_and_ir<<<blocks, threadsPerBlock>>>(sample_rate, ir_len / sample_rate, segmentData, IRData);
-        cudaDeviceSynchronize();
+        CUDA_CHK(cudaDeviceSynchronize());
         // Inverse on the result and save it to buffer
-        CHCK_CUFFT_RES(cufftExecC2R(inversePlan, segmentData, sampleSegment));
+        CHCK_CUFFT_RES_CALL(cufftExecC2R(inversePlan, segmentData, sampleSegment));
         int howMuchToCopy = (second*sample_rate) + ir_len < samples_len ? ir_len : samples_len - (second*sample_rate);
-        cudaMemcpy(&(outputBuffer[second*sample_rate]), sampleSegment, howMuchToCopy * sizeof(float), cudaMemcpyDeviceToHost);
-        cudaDeviceSynchronize();
+        int threadsPerBlock2 = 256;
+        int blocks2 = (howMuchToCopy / threadsPerBlock) + 1;
+        add<<<blocks2, threadsPerBlock2>>>(&outputBuffer[second*sample_rate], sampleSegment, howMuchToCopy);
+        CUDA_CHK(cudaDeviceSynchronize());
     }
     
     // Clean up
@@ -408,26 +483,6 @@ void zipArrays(double *d_outputBuffer_left, double *d_outputBuffer_right, double
     int blockSize = 256;
     int numBlocks = (monoBufferLength + blockSize - 1) / blockSize;
     d_zipArrays<<<numBlocks, blockSize>>>(d_outputBuffer_left, d_outputBuffer_right, d_outputBuffer, monoBufferLength);
-    cudaDeviceSynchronize();
-};
-
-__global__ void d_addDeviceArrayToCircularBuffer(double *deviceArray, size_t dLength, double *circularBuffer, size_t startIndex, size_t hLength)
-{
-    size_t index = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (index < dLength)
-    {
-        size_t circularIndex = (startIndex + index) % hLength;
-        // maybe change to atomicAdd?
-        circularBuffer[circularIndex] += deviceArray[index];
-    }
-};
-
-void addDeviceArrayToCircularBuffer(double *deviceArray, int dLength, double *circularBuffer, int startIndex, int hLength)
-{
-    int blockSize = 256;
-    int numBlocks = (dLength + blockSize - 1) / blockSize;
-    d_addDeviceArrayToCircularBuffer<<<numBlocks, blockSize>>>(deviceArray, dLength, circularBuffer, startIndex, hLength);
     cudaDeviceSynchronize();
 };
 

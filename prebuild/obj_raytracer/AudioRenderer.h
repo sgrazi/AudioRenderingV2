@@ -34,7 +34,9 @@ public:
 
     void setSphereCenterInOptix(glm::vec3 pos);
 
-    void setThresholds(float dist, float energy, unsigned int max_bounces);
+    void setThresholds(float energy, unsigned int max_bounces);
+
+    void set_hrtf_absorption_rate(float hrtf_absorption_rate);
 
     void setBasePower(float base_power);
 
