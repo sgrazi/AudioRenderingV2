@@ -14,6 +14,7 @@
 #include <mutex>
 #include <functional>
 #include <windows.h>
+#include <ctime>
 #include "OBJ_Loader.h"
 #include "VAO.h"
 #include "VBO.h"
@@ -475,6 +476,9 @@ void screen(std::mutex *output_buffer_mutex)
 	float last_angle = 0.0f;
 	Context::set_is_rendering(false);
 
+	time_t last_render_time;
+	bool timer_set = false;
+	time(&last_render_time);
 	while (!glfwWindowShouldClose(window))
 	{
 		glClearColor(0.07f, 0.132f, 0.17f, 1.0f);
@@ -498,7 +502,12 @@ void screen(std::mutex *output_buffer_mutex)
 		}
 
 		// Trigger re render if distance difference is greater than re_render_distance_threshold
-		bool distanceGreaterThanThreshold = distanceP2P(last_render_position, camera_central_point) > re_render_distance_threshold;
+		float distanceFromLastRenderPosition = distanceP2P(last_render_position, camera_central_point);
+		if (distanceFromLastRenderPosition > 0 && !timer_set) {
+			time(&last_render_time);
+			timer_set = true;
+		}
+		bool distanceGreaterThanThreshold = distanceFromLastRenderPosition > re_render_distance_threshold;
 
 		// Trigger re render if angle difference is greater than re_render_angle_threshold
 		float angleDiff = abs(last_angle - camera.globalAngle);
@@ -506,12 +515,16 @@ void screen(std::mutex *output_buffer_mutex)
 			angleDiff = 360.0f - angleDiff;
 		bool angleGreaterThanThreshold = angleDiff > re_render_angle_threshold;
 
+		// Checks if the timer was recently set and the time difference is greatear than a second
+		bool last_render_time_trigger = (timer_set && difftime(time(NULL), last_render_time) > 1);
+
 		// Re render condition
-		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold;
+		bool reRenderCondition = distanceGreaterThanThreshold || angleGreaterThanThreshold || last_render_time_trigger;
 
 		if (reRenderCondition && !Context::get_is_rendering())
 		{
 			Context::set_is_rendering(true);
+			timer_set = false;
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
 			thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
@@ -621,7 +634,7 @@ void experimentation_mode() {
 	AudioRenderer* renderer = Context::get_audio_renderer();
 	renderer->setMonoOutput(Context::get_is_mono());
 	renderer->setBasePower(Context::get_base_power());
-	renderer->setThresholds(Context::get_ray_distance_threshold(), Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setThresholds(Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
 	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
 	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
 	renderer->enable_experimentation();
@@ -670,9 +683,6 @@ int main(int argc, char **argv)
 
 	try
 	{
-		// Initialize context
-		string configJsonPath;
-
 		if (argc < 2)
 		{
 			cerr << "Insufficient parameters" << endl;

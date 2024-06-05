@@ -562,11 +562,6 @@ void AudioRenderer::render()
         delete[] host_left;
         delete[] host_right;
     }
-
-    cudaDeviceSynchronize();
-
-    delete[] host_left;
-    delete[] host_right;
 }
 
 /**
