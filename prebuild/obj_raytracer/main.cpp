@@ -601,6 +601,7 @@ void process_files_with_prefix(const std::string& directoryPath, const std::stri
 	FindClose(hFind);
 }
 
+// El modo experimentacion permite hacer 100 veces el path tracing y obtener estadisticas de la ejecución
 void experimentation_mode() {
 	OptixModel* scene = Context::get_optix_model();
 	Sphere sphere = *Context::get_sphere();
