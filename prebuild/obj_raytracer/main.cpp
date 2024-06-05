@@ -674,13 +674,16 @@ int main(int argc, char **argv)
 		string configJsonPath;
 
 		if (argc < 2)
-			configJsonPath = "../../config.json";
-		else
-			configJsonPath = argv[1];
+		{
+			cerr << "Insufficient parameters" << endl;
+			cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << endl;
+			return 1;
+		}
 
-		bool main = false;
+		string configJsonPath = argv[1];
+		bool mainFlag = true;
 		if (argc > 3)
-			main = argv[2] == "true";
+			mainFlag = argv[2] == "true";
 
 		// Read config file
 		ifstream file(configJsonPath);
@@ -703,7 +706,7 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		if (main)
+		if (mainFlag)
 			main_workflow();
 		else
 			experimentation_mode();
