@@ -66,6 +66,29 @@ float distanceP2P(gdt::vec3f p1, gdt::vec3f p2)
 	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
 }
 
+double median(vector<double> values)
+{
+	size_t size = values.size();
+
+	if (size == 0)
+	{
+		return 0;
+	}
+	else
+	{
+		sort(values.begin(), values.end());
+		if (size % 2 == 0)
+		{
+			return (values[size / 2 - 1] + values[size / 2]) / 2;
+		}
+		else
+		{
+			return values[size / 2];
+		}
+	}
+}
+
+
 void full_render(bool testing, std::mutex *output_buffer_mutex)
 {
 	AudioRenderer *renderer = Context::get_audio_renderer();
@@ -646,36 +669,70 @@ void experimentation_mode() {
 	
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	for (int counter = 0; counter < 100; counter++)
+	std::vector<double> render_times;
+	std::vector<double> convolute_times;
+	std::vector<double> convolute_process_times;
+
+	for (int round_number = 0; round_number < 100; round_number++)
 	{
-		cout << "Starting round: " << counter << endl;
+		cout << "Starting round: " << round_number << endl;
 		auto start_round_time = std::chrono::high_resolution_clock::now();
 		
+		double* render_time = new double;
+		*render_time = 0;
 		renderer->set_write_ir_to_file_flag(true);
-		renderer->render();
+		renderer->render(render_time);
 		
 		auto end_render_time = std::chrono::high_resolution_clock::now();
 		chrono::duration<double> render_duration = end_render_time - start_round_time;
 		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
 
-		/*auto start_convolute_time = std::chrono::high_resolution_clock::now();
+		auto start_convolute_time = std::chrono::high_resolution_clock::now();
 		renderer->set_write_output_to_file_flag(true);
-		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);*/
+
+		double* convolute_time = new double;
+		double* convolute_process_time = new double;
+		*convolute_time = 0;
+		*convolute_process_time = 0;
+		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, convolute_time, convolute_process_time);
 		
 		auto end_round_time = chrono::high_resolution_clock::now();
-		/*chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
-		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;*/
+		chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
+		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;
 
 		chrono::duration<double> full_duration = end_round_time - start_round_time;
-		std::cout << "Round " << counter << ": took " << full_duration.count() * 1000 << " ms" << endl;
+		std::cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << endl;
+
+		render_times.push_back(*render_time);
+		convolute_times.push_back(*convolute_time);
+		convolute_process_times.push_back(*convolute_process_time);
+
+		delete render_time;
+		delete convolute_time;
+		delete convolute_process_time;
 	}
 
 	std::string experimentationDirectory = ".\\experimentation";
-	std::string prefix = "output_ir_left";  // Change this to your desired prefix
-
+	std::string prefix = "output_ir_left";
 	process_files_with_prefix(experimentationDirectory, prefix);
 
 	Experimentation::results();
+
+	// Return execution times
+	cout << "Execution Times:" << endl;
+
+	cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0) / render_times.size() << " ms" << endl;
+	cout << "\tMedian render time: " << median(render_times) << " ms" << endl;
+
+	cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0) / convolute_times.size() << " ms" << endl;
+	cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << endl;
+
+	cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0) / convolute_process_times.size() << " ms" << endl;
+	cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << endl;
+
+	render_times.clear();
+	convolute_times.clear();
+	convolute_process_times.clear();
 }
 
 int main(int argc, char **argv)
@@ -692,7 +749,7 @@ int main(int argc, char **argv)
 
 		string configJsonPath = argv[1];
 		bool mainFlag = true;
-		if (argc > 3)
+		if (argc > 2)
 			mainFlag = argv[2] == "true";
 
 		// Read config file

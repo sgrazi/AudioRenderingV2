@@ -486,7 +486,7 @@ void AudioRenderer::reload()
 }
 
 /*! render one frame */
-void AudioRenderer::render()
+void AudioRenderer::render(double* render_time)
 {
     fillWithZeroesKernel(launchParams.ir_left, launchParams.ir_length);
     fillWithZeroesKernel(launchParams.ir_right, launchParams.ir_length);
@@ -513,6 +513,9 @@ void AudioRenderer::render()
     auto end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = end - start;
     std::cout << "Time taken by Optix: " << duration.count() * 1000 << " ms\n";
+    if (render_time != NULL) {
+        *render_time = duration.count() * 1000;
+    }
 
     if (isMono)
     {
@@ -657,7 +660,7 @@ void AudioRenderer::convoluteLiveInput(double *h_inputBuffer, size_t h_inputBuff
     std::cout << "Time taken for convolution process: " << duration.count() * 1000 << " ms\n";
 }
 
-void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right)
+void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, double* convolute_time, double* convolute_process_time)
 {
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -691,6 +694,9 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     auto end_c = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration_c = end_c - start_c;
     std::cout << "Time taken just to convolute: " << duration_c.count() * 1000 << " ms\n";
+    if (convolute_time != NULL) {
+        *convolute_time = duration_c.count() * 1000;
+    }
 
     // copy result to host
     copy_from_gpu(d_outputBuffer_left, h_outputBuffer_left, outputSize);
@@ -702,6 +708,13 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     {
         h_outputBuffer_left[i] = h_outputBuffer_left[i] / (launchParams.ir_length / 2);   // 2 = num channels
         h_outputBuffer_right[i] = h_outputBuffer_right[i] / (launchParams.ir_length / 2); // 2 = num channels
+    }
+
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "Time taken for convolution process: " << duration.count() * 1000 << " ms\n";
+    if (convolute_process_time != NULL) {
+        *convolute_process_time = duration.count() * 1000;
     }
 
     if (this->write_output_to_file_flag)
@@ -734,10 +747,6 @@ void AudioRenderer::convoluteAudioFile(float *h_inputBuffer, size_t h_inputBuffe
     cudaFree(d_input_buffer);
     cudaFree(d_outputBuffer_left);
     cudaFree(d_outputBuffer_right);
-
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    std::cout << "Time taken for convolution process: " << duration.count() * 1000 << " ms\n";
 }
 
 void AudioRenderer::setEmitterPosInOptix(glm::vec3 pos)
