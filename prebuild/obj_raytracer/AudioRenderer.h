@@ -24,11 +24,11 @@ public:
     AudioRenderer(const OptixModel *model, unsigned int ir_length_in_seconds, int sample_rate, std::vector<Material> materials, gdt::vec3f rays_per_dimension);
 
     /*! render one frame */
-    void render();
+    void render(double* render_time = NULL);
 
     void convoluteLiveInput(double *h_inputBuffer, size_t h_inputBufferSize, CircularBuffer<double> *h_circularOutputBuffer);
 
-    void convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right);
+    void convoluteAudioFile(float *h_inputBuffer, size_t h_inputBufferSize, float *h_outputBuffer_left, float *h_outputBuffer_right, double* convolute_time = NULL, double* convolute_process_time = NULL);
 
     void setEmitterPosInOptix(glm::vec3 pos);
 
