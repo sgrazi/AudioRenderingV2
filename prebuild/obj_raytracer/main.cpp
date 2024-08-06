@@ -32,7 +32,7 @@
 #include "CircularBuffer.h"
 #include "Utils.h"
 
-//using namespace std;
+using namespace std;
 #define INPUT_SAMPLE_RATE 44100			// default input sample rate
 #define INPUT_BUFFER_LENGTH 4096		// default buffer length
 std::mutex audio_critical_section;
