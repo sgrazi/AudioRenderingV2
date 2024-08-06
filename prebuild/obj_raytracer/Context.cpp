@@ -52,12 +52,12 @@ bool Context::loadContext(cJSON *config)
 			write_output_to_file_on_render = cJSON_IsTrue(cJSON_write_output_to_file_on_render);
 
 		const cJSON *cJSON_re_render_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_distance_threshold");
-		if (cJSON_IsBool(cJSON_re_render_distance_threshold))
-			re_render_distance_threshold = cJSON_IsTrue(cJSON_re_render_distance_threshold);
+		if (cJSON_IsNumber(cJSON_re_render_distance_threshold))
+			re_render_distance_threshold = round(cJSON_re_render_distance_threshold->valuedouble);
 
 		const cJSON *cJSON_re_render_angle_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_angle_threshold");
-		if (cJSON_IsBool(cJSON_re_render_angle_threshold))
-			re_render_angle_threshold = cJSON_IsTrue(cJSON_re_render_angle_threshold);
+		if (cJSON_IsNumber(cJSON_re_render_angle_threshold))
+			re_render_angle_threshold = round(cJSON_re_render_angle_threshold->valuedouble);
 	}
 	// scene_parameters
 	const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
@@ -179,8 +179,8 @@ bool Context::loadContext(cJSON *config)
 	context->set_rays_per_dimension(rays);
 	// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
 	context->set_initial_emitter_pos(initial_emitter_pos);
-	std::vector<Mesh> *transmitterVector = new std::vector<Mesh>;
-	context->set_transmitter(transmitterVector);
+	std::vector<Mesh> * speaker_vector = new std::vector<Mesh>;
+	context->set_speaker(speaker_vector);
 	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
 
@@ -397,14 +397,14 @@ Camera *Context::get_camera()
 	return instance->camera;
 }
 
-void Context::set_transmitter(std::vector<Mesh> *transmitterVector)
+void Context::set_speaker(std::vector<Mesh> *speaker_vector)
 {
-	instance->transmitterVector = transmitterVector;
+	instance->speaker_vector = speaker_vector;
 }
 
-std::vector<Mesh> *Context::get_transmitter()
+std::vector<Mesh> *Context::get_speaker()
 {
-	return instance->transmitterVector;
+	return instance->speaker_vector;
 }
 
 void Context::set_base_power(float base_power)

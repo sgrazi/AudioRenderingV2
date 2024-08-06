@@ -27,7 +27,7 @@
 	"pathtracer_parameters": {
 		"base_power": 31.62,
 		"rays": {
-			"x": 1000,
+			"x": 100,
 			"y": 100,
 			"z": 100
 		},
