@@ -72,7 +72,7 @@ int audioHandler(void *outputBuffer, void *inputBuffer, unsigned int nBufferFram
 	unsigned int i;
 	double *buffer = (double *)outputBuffer;
 	if (status)
-		std::cout << "Stream underflow detected!" << std::endl;
+		cout << "Stream underflow detected!" << endl;
 	// Write interleaved audio data.
 	AudioInfo *audioInfo = (AudioInfo *)userData;
 	float volume = Context::get_volume();
@@ -100,7 +100,7 @@ int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBuf
 						 double streamTime, RtAudioStreamStatus status, void *data)
 {
 	if (status)
-		std::cout << "Stream over/underflow detected." << std::endl;
+		cout << "Stream over/underflow detected." << endl;
 	Context *context = Context::getInstance();
 	audioCallbackData *renderData = (audioCallbackData *)data;
 	AudioRenderer *renderer = Context::get_audio_renderer();
@@ -126,7 +126,7 @@ int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBuf
 		circular_buffer.clear();
 	}
 	else {
-		std::cout << "Buffer is still being processed" << std::endl;
+		cout << "Buffer is still being processed" << endl;
 		for (int i = 0; i < nBufferFrames * 2; i++)
 			*buffer++ = 0;
 	}
@@ -138,7 +138,7 @@ int audioPlay(RtAudio *dac)
 {
 	if (dac->getDeviceCount() < 1)
 	{
-		std::cout << "\nNo audio devices found!\n";
+		cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
 	RtAudio::StreamParameters parameters;
@@ -167,7 +167,7 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 
 	if (dac->getDeviceCount() < 1)
 	{
-		std::cout << "\nNo audio devices found!\n";
+		cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
 
@@ -219,8 +219,8 @@ void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 	}
 	catch (const std::exception &e)
 	{
-		std::cout << "Found an error in audio thread" << std::endl;
-		std::cout << e.what() << std::endl;
+		cout << "Found an error in audio thread" << endl;
+		cout << e.what() << endl;
 	}
 }
 
@@ -273,7 +273,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		else
 			volume = 0.0f;
 		Context::set_volume(volume);
-		std::cout << "Volume set to " << volume << std::endl;
+		cout << "Volume set to " << volume << endl;
 	}
 	if (key == GLFW_KEY_E)
 	{
@@ -284,7 +284,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
 		setSpeakerInScene(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
-		std::cout << "Speaker moved to: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << std::endl;
+		cout << "Speaker moved to: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
@@ -312,7 +312,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		}
 
 		Context::set_last_render_position(camera_central_position);
-		std::cout << "Manual render finished" << std::endl;
+		cout << "Manual render finished" << endl;
 	}
 	if (key == GLFW_KEY_P)
 	{
@@ -339,7 +339,7 @@ void screen(std::mutex *output_buffer_mutex)
 	GLFWwindow *window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
 	if (window == NULL)
 	{
-		std::cout << "Failed to create GLFW window" << std::endl;
+		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
 		throw new std::exception("Unexpected error while trying to create window");
 	}
@@ -381,7 +381,7 @@ void screen(std::mutex *output_buffer_mutex)
 	}
 	else
 	{ // error
-		std::cout << "Found an error in screen thread" << std::endl;
+		cout << "Found an error in screen thread" << endl;
 		throw new std::exception("Error occured while trying load scene mesh");
 	}
 
@@ -565,20 +565,20 @@ void experimentation_mode() {
 
 	for (int round_number = 0; round_number < 100; round_number++)
 	{
-		std::cout << "Starting round: " << round_number << std::endl;
+		cout << "Starting round: " << round_number << endl;
 		auto start_round_time = std::chrono::high_resolution_clock::now();
 		
 		double* render_time = new double;
 		*render_time = 0;
-		renderer->set_write_ir_to_file_flag(true);
+		renderer->set_write_ir_to_file_flag(false);
 		renderer->render(render_time);
 		
 		auto end_render_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> render_duration = end_render_time - start_round_time;
-		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << std::endl;
+		cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
 
 		auto start_convolute_time = std::chrono::high_resolution_clock::now();
-		renderer->set_write_output_to_file_flag(true);
+		renderer->set_write_output_to_file_flag(false);
 
 		double* convolute_time = new double;
 		double* convolute_process_time = new double;
@@ -588,10 +588,10 @@ void experimentation_mode() {
 		
 		auto end_round_time = std::chrono::high_resolution_clock::now();
 		std::chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
-		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << std::endl;
+		cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;
 
 		std::chrono::duration<double> full_duration = end_round_time - start_round_time;
-		std::cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << std::endl;
+		cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << endl;
 
 		render_times.push_back(*render_time);
 		convolute_times.push_back(*convolute_time);
@@ -609,16 +609,16 @@ void experimentation_mode() {
 	Experimentation::results();
 
 	// Return execution times
-	std::cout << "Execution Times:" << std::endl;
+	cout << "Execution Times:" << endl;
 
-	std::cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0) / render_times.size() << " ms" << std::endl;
-	std::cout << "\tMedian render time: " << median(render_times) << " ms" << std::endl;
+	cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size() << " ms" << endl;
+	cout << "\tMedian render time: " << median(render_times) << " ms" << endl;
 
-	std::cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0) / convolute_times.size() << " ms" << std::endl;
-	std::cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << std::endl;
+	cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0.0) / convolute_times.size() << " ms" << endl;
+	cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << endl;
 
-	std::cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0) / convolute_process_times.size() << " ms" << std::endl;
-	std::cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << std::endl;
+	cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0.0) / convolute_process_times.size() << " ms" << endl;
+	cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << endl;
 
 	render_times.clear();
 	convolute_times.clear();
@@ -632,8 +632,8 @@ int main(int argc, char **argv)
 	{
 		if (argc < 2)
 		{
-			std::cerr << "Insufficient parameters" << std::endl;
-			std::cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << std::endl;
+			cerr << "Insufficient parameters" << endl;
+			cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << endl;
 			return 1;
 		}
 
@@ -670,7 +670,7 @@ int main(int argc, char **argv)
 	}
 	catch (const std::exception &e)
 	{
-		std::cerr << "Exception caught: " << e.what() << std::endl;
+		cerr << "Exception caught: " << e.what() << endl;
 		return 1;
 	}
 

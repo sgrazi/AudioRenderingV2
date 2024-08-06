@@ -52,12 +52,12 @@ bool Context::loadContext(cJSON *config)
 			write_output_to_file_on_render = cJSON_IsTrue(cJSON_write_output_to_file_on_render);
 
 		const cJSON *cJSON_re_render_distance_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_distance_threshold");
-		if (cJSON_IsBool(cJSON_re_render_distance_threshold))
-			re_render_distance_threshold = cJSON_IsTrue(cJSON_re_render_distance_threshold);
+		if (cJSON_IsNumber(cJSON_re_render_distance_threshold))
+			re_render_distance_threshold = round(cJSON_re_render_distance_threshold->valuedouble);
 
 		const cJSON *cJSON_re_render_angle_threshold = cJSON_GetObjectItem(cJSON_renderer_parameters, "re_render_angle_threshold");
-		if (cJSON_IsBool(cJSON_re_render_angle_threshold))
-			re_render_angle_threshold = cJSON_IsTrue(cJSON_re_render_angle_threshold);
+		if (cJSON_IsNumber(cJSON_re_render_angle_threshold))
+			re_render_angle_threshold = round(cJSON_re_render_angle_threshold->valuedouble);
 	}
 	// scene_parameters
 	const cJSON *cJSON_scene_parameters = cJSON_GetObjectItem(config, "scene_parameters");
