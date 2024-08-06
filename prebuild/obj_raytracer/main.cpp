@@ -31,6 +31,7 @@
 #include "cJSON.h"
 #include "HalfSphere.h"
 #include "CircularBuffer.h"
+#include "Utils.h"
 
 using namespace std;
 #define SAMPLE_TYPE double
@@ -60,34 +61,6 @@ struct AudioInfo
 	AudioFile<float> *audio;
 	float *volumen;
 };
-
-float distanceP2P(gdt::vec3f p1, gdt::vec3f p2)
-{
-	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
-}
-
-double median(vector<double> values)
-{
-	size_t size = values.size();
-
-	if (size == 0)
-	{
-		return 0;
-	}
-	else
-	{
-		sort(values.begin(), values.end());
-		if (size % 2 == 0)
-		{
-			return (values[size / 2 - 1] + values[size / 2]) / 2;
-		}
-		else
-		{
-			return values[size / 2];
-		}
-	}
-}
-
 
 void full_render(bool testing, std::mutex *output_buffer_mutex)
 {
