@@ -179,8 +179,8 @@ bool Context::loadContext(cJSON *config)
 	context->set_rays_per_dimension(rays);
 	// Pos para escuchar por el izquierdo context->set_initial_emitter_pos(glm::vec3(-2.5, 10, -10));
 	context->set_initial_emitter_pos(initial_emitter_pos);
-	std::vector<Mesh> *transmitterVector = new std::vector<Mesh>;
-	context->set_transmitter(transmitterVector);
+	std::vector<Mesh> * speakerVector = new std::vector<Mesh>;
+	context->set_speaker(speakerVector);
 	Camera *camera = new Camera(width, height, initial_receiver_pos);
 	context->set_camera(camera);
 
@@ -397,14 +397,14 @@ Camera *Context::get_camera()
 	return instance->camera;
 }
 
-void Context::set_transmitter(std::vector<Mesh> *transmitterVector)
+void Context::set_speaker(std::vector<Mesh> *speakerVector)
 {
-	instance->transmitterVector = transmitterVector;
+	instance->speakerVector = speakerVector;
 }
 
-std::vector<Mesh> *Context::get_transmitter()
+std::vector<Mesh> *Context::get_speaker()
 {
-	return instance->transmitterVector;
+	return instance->speakerVector;
 }
 
 void Context::set_base_power(float base_power)

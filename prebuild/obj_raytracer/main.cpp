@@ -34,33 +34,9 @@
 #include "Utils.h"
 
 using namespace std;
-#define SAMPLE_TYPE double
-#define inputSampleRate 44100 // inventando un sample rate de 44.1khz
-#define inputBufferLen 4096		// inventado too
+#define inputSampleRate 44100 // default input sample rate
+#define inputBufferLen 4096		// default buffer length
 std::mutex audio_critical_section;
-
-struct audioPaths
-{
-	void *ptr;
-	int size;
-};
-
-struct audioCallbackData
-{
-	int bufferFrames;
-	int pos;
-	int samplesRecordBufferSize;
-	CircularBuffer<SAMPLE_TYPE> *samplesRecordBuffer;
-	audioPaths *paths;
-	float volume;
-	std::mutex* inputBufferMutex;
-};
-
-struct AudioInfo
-{
-	AudioFile<float> *audio;
-	float *volumen;
-};
 
 void full_render(bool testing, std::mutex *output_buffer_mutex)
 {
@@ -91,7 +67,7 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 	Context::set_is_rendering(false);
 };
 
-int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+int audioHandler(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 				double streamTime, RtAudioStreamStatus status, void *userData)
 {
 	unsigned int i;
@@ -109,7 +85,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
 			break;
-		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
 		if (i % 2 == 0)
 		{
 			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100 * volume;
@@ -122,10 +97,7 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
-// nBufferFrames es inputBufferLen
-// len(inputBuffer) es inputBufferLen
-// len(outputBuffer) es inputBufferLen * 2
-int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 						 double streamTime, RtAudioStreamStatus status, void *data)
 {
 	if (status)
@@ -172,20 +144,18 @@ int audioPlay(RtAudio *dac)
 	}
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = dac->getDefaultOutputDevice();
-	parameters.nChannels = 2;		 // tiene que matchear con los channels del audio
-	parameters.firstChannel = 0; // Default audio output
-
-	// TODO -> check number of channels.
+	parameters.nChannels = 2;	// TODO: Grab the device output channel count
+	parameters.firstChannel = 0; // Default to the first audio output device
 
 	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
-	unsigned int bufferFrames = 256; // 256 sample frames
+	unsigned int bufferFrames = 256; // Default to 256 frame buffer, this is the smallest value properly supported
 
 	AudioInfo *audioInfo = new AudioInfo;
 	audioInfo->audio = audio;
 
-	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &saw, (void *)audioInfo);
+	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &audioHandler, (void *)audioInfo);
 	checkError = dac->startStream();
 
 	return 0;
@@ -230,7 +200,7 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 	audioData->volume = 30.0f;
 	audioData->inputBufferMutex = inputBufferMutex;
 
-	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData);
+	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &audioHandlerWithMic, (void *)audioData);
 
 	checkError = dac->startStream();
 }
@@ -254,12 +224,12 @@ void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 	}
 }
 
-void setTransmitter(glm::vec3 posTransmitter)
+void setSpeakerInScene(glm::vec3 posSpeaker)
 {
-	std::string transmitterPath = "../../assets/models/sphere.obj";
+	std::string speakerPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
-	bool load_res = loader.LoadFile(transmitterPath);
-	vector<Mesh> *transmitterVector = Context::get_transmitter();
+	bool load_res = loader.LoadFile(speakerPath);
+	vector<Mesh> *speakerVector = Context::get_speaker();
 
 	if (load_res)
 	{
@@ -271,7 +241,7 @@ void setTransmitter(glm::vec3 posTransmitter)
 			for (int j = 0; j < mesh.Vertices.size(); j++)
 			{
 				Vertex vertex;
-				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X + posTransmitter.x, mesh.Vertices.at(j).Position.Y + posTransmitter.y, mesh.Vertices.at(j).Position.Z + posTransmitter.z);
+				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X + posSpeaker.x, mesh.Vertices.at(j).Position.Y + posSpeaker.y, mesh.Vertices.at(j).Position.Z + posSpeaker.z);
 				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
 				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
 				vertices.push_back(vertex);
@@ -280,14 +250,14 @@ void setTransmitter(glm::vec3 posTransmitter)
 			{
 				indices.push_back(mesh.Indices.at(j));
 			}
-			Mesh transmitter(vertices, indices);
-			transmitterVector->push_back(transmitter);
+			Mesh speaker(vertices, indices);
+			speakerVector->push_back(speaker);
 		}
 	}
 	else
-	{ // error
-		cout << "Failed to transmitter OBJ" << endl;
-		throw new exception("B");
+	{ 
+		// error
+		throw new exception("Failed to place speaker in scene");
 	}
 }
 
@@ -303,16 +273,16 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		else
 			volume = 0.0f;
 		Context::set_volume(volume);
-		cout << "Volumen seteado a " << volume << endl;
+		cout << "Voluem set to " << volume << endl;
 	}
 	if (key == GLFW_KEY_E)
 	{
 		Camera *camera = Context::get_camera();
-		vector<Mesh> *transmitterVector = Context::get_transmitter();
+		vector<Mesh> *speakerVector = Context::get_speaker();
 		AudioRenderer *renderer = Context::get_audio_renderer();
-		transmitterVector->pop_back();
+		speakerVector->pop_back();
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
-		setTransmitter(cameraPosition);
+		setSpeakerInScene(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
 		cout << "Emisor colocado en: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
@@ -383,7 +353,7 @@ void screen(std::mutex *output_buffer_mutex)
 	// Load obj && initialize Loader
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(scene_file_path);
-	setTransmitter(Context::get_initial_emitter_pos());
+	setSpeakerInScene(Context::get_initial_emitter_pos());
 	vector<Mesh> lights;
 	vector<Mesh> objects;
 	if (load_res)
@@ -530,8 +500,8 @@ void screen(std::mutex *output_buffer_mutex)
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
 
-		vector<Mesh> *transmitterVector = Context::get_transmitter();
-		transmitterVector->back().Draw(shaderProgram, camera);
+		vector<Mesh> *speakerVector = Context::get_speaker();
+		speakerVector->back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -723,7 +693,7 @@ int main(int argc, char **argv)
 		string configJsonPath = argv[1];
 		bool mainFlag = true;
 		if (argc > 2)
-			mainFlag = argv[2] == "true";
+			mainFlag = std::string(argv[2]) == "true";
 
 		// Read config file
 		ifstream file(configJsonPath);
