@@ -27,18 +27,17 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
 #include "Context.h"
-#include "Experimentation.h"
 #include "cJSON.h"
 #include "HalfSphere.h"
 #include "CircularBuffer.h"
 #include "Utils.h"
 
-using namespace std;
+//using namespace std;
 #define inputSampleRate 44100 // default input sample rate
 #define inputBufferLen 4096		// default buffer length
 std::mutex audio_critical_section;
 
-void full_render(bool testing, std::mutex *output_buffer_mutex)
+void full_render(bool isLive, std::mutex *output_buffer_mutex)
 {
 	AudioRenderer *renderer = Context::get_audio_renderer();
 	OptixModel *scene = Context::get_optix_model();
@@ -46,7 +45,7 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 	Camera camera = *Context::get_camera();
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	if (!testing) {
+	if (!isLive) {
 		AudioFile<float>* audio = Context::get_audio_file();
 		size_t len_of_audio = audio->samples[0].size();
 		size_t size_of_audio = sizeof(float) * len_of_audio;
@@ -127,7 +126,7 @@ int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBuf
 		circular_buffer.clear();
 	}
 	else {
-		printf("buffer ocupado\n");
+		std::cout << "Buffer is still being processed" << std::endl;
 		for (int i = 0; i < nBufferFrames * 2; i++)
 			*buffer++ = 0;
 	}
@@ -220,7 +219,8 @@ void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 	}
 	catch (const std::exception &e)
 	{
-		cout << e.what() << endl;
+		std::cout << "Found an error in audio thread" << std::endl;
+		std::cout << e.what() << std::endl;
 	}
 }
 
@@ -229,15 +229,15 @@ void setSpeakerInScene(glm::vec3 posSpeaker)
 	std::string speakerPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(speakerPath);
-	vector<Mesh> *speakerVector = Context::get_speaker();
+	std::vector<Mesh> *speakerVector = Context::get_speaker();
 
 	if (load_res)
 	{
 		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
 		{
 			objl::Mesh mesh = loader.LoadedMeshes.at(i);
-			vector<Vertex> vertices;
-			vector<unsigned int> indices;
+			std::vector<Vertex> vertices;
+			std::vector<unsigned int> indices;
 			for (int j = 0; j < mesh.Vertices.size(); j++)
 			{
 				Vertex vertex;
@@ -257,7 +257,7 @@ void setSpeakerInScene(glm::vec3 posSpeaker)
 	else
 	{ 
 		// error
-		throw new exception("Failed to place speaker in scene");
+		throw new std::exception("Error occured while trying load speaker mesh");
 	}
 }
 
@@ -273,18 +273,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		else
 			volume = 0.0f;
 		Context::set_volume(volume);
-		cout << "Voluem set to " << volume << endl;
+		std::cout << "Volume set to " << volume << std::endl;
 	}
 	if (key == GLFW_KEY_E)
 	{
 		Camera *camera = Context::get_camera();
-		vector<Mesh> *speakerVector = Context::get_speaker();
+		std::vector<Mesh> *speakerVector = Context::get_speaker();
 		AudioRenderer *renderer = Context::get_audio_renderer();
 		speakerVector->pop_back();
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
 		setSpeakerInScene(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
-		cout << "Emisor colocado en: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
+		std::cout << "Speaker moved to: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << std::endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
@@ -312,7 +312,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		}
 
 		Context::set_last_render_position(camera_central_position);
-		cout << "Rendereado" << endl;
+		std::cout << "Manual render finished" << std::endl;
 	}
 	if (key == GLFW_KEY_P)
 	{
@@ -334,14 +334,14 @@ void screen(std::mutex *output_buffer_mutex)
 	// Get context
 	unsigned int width = Context::get_scene_width();
 	unsigned int height = Context::get_scene_height();
-	string scene_file_path = Context::get_scene_file_path();
+	std::string scene_file_path = Context::get_scene_file_path();
 
 	GLFWwindow *window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
 	if (window == NULL)
 	{
-		cout << "Failed to create GLFW window" << endl;
+		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
-		throw new exception("A");
+		throw new std::exception("Unexpected error while trying to create window");
 	}
 	glfwMakeContextCurrent(window);
 
@@ -354,15 +354,15 @@ void screen(std::mutex *output_buffer_mutex)
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(scene_file_path);
 	setSpeakerInScene(Context::get_initial_emitter_pos());
-	vector<Mesh> lights;
-	vector<Mesh> objects;
+	std::vector<Mesh> lights;
+	std::vector<Mesh> objects;
 	if (load_res)
 	{
 		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
 		{
 			objl::Mesh mesh = loader.LoadedMeshes.at(i);
-			vector<Vertex> vertices;
-			vector<unsigned int> indices;
+			std::vector<Vertex> vertices;
+			std::vector<unsigned int> indices;
 			for (int j = 0; j < mesh.Vertices.size(); j++)
 			{
 				Vertex vertex;
@@ -381,14 +381,14 @@ void screen(std::mutex *output_buffer_mutex)
 	}
 	else
 	{ // error
-		cout << "Failed to load OBJ" << endl;
-		throw new exception("B");
+		std::cout << "Found an error in screen thread" << std::endl;
+		throw new std::exception("Error occured while trying load scene mesh");
 	}
 
 	Shader shaderProgram("../../assets/shaders/default.vert", "../../assets/shaders/default.frag");
 
-	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = glm::vec3(100, 1000, 300);
+	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Default light color
+	glm::vec3 lightPos = glm::vec3(100, 1000, 300); // Default light position
 
 	shaderProgram.Activate();
 	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
@@ -451,8 +451,8 @@ void screen(std::mutex *output_buffer_mutex)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// change window title
-		string cameraPosition = "X: " + to_string(camera.Position.x) + " Y:" + to_string(camera.Position.y) + " Z: " + to_string(camera.Position.z);
-		string newTitle("Audiorendering V2 - " + cameraPosition);
+		std::string cameraPosition = "X: " + std::to_string(camera.Position.x) + " Y:" + std::to_string(camera.Position.y) + " Z: " + std::to_string(camera.Position.z);
+		std::string newTitle("Audiorendering V2 - " + cameraPosition);
 		glfwSetWindowTitle(window, newTitle.c_str());
 
 		camera.Inputs(window);
@@ -493,14 +493,14 @@ void screen(std::mutex *output_buffer_mutex)
 			timer_set = false;
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
+			std::thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
 			rendering_thread.detach();
 		}
 
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
 
-		vector<Mesh> *speakerVector = Context::get_speaker();
+		std::vector<Mesh> *speakerVector = Context::get_speaker();
 		speakerVector->back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
@@ -515,8 +515,8 @@ void screen(std::mutex *output_buffer_mutex)
 void main_workflow() {
 	std::mutex* buffer_mutex = new std::mutex();
 	RtAudio* dac = new RtAudio();
-	thread screen1(screen, buffer_mutex);
-	thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
+	std::thread screen1(screen, buffer_mutex);
+	std::thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
 
 	screen1.join();
 	audio1.detach();
@@ -525,59 +525,6 @@ void main_workflow() {
 	if (dac->isStreamOpen())
 		dac->closeStream();
 	delete dac;
-}
-
-void process_file(const std::string& filePath) {
-	// Open the file
-	std::ifstream file(filePath);
-	if (!file.is_open()) {
-		std::cerr << "Failed to open file: " << filePath << std::endl;
-		return;
-	}
-
-	string fileName = filePath;
-	size_t pos = filePath.find_last_of("/\\");
-	if (pos != std::string::npos) {
-		fileName = filePath.substr(pos + 1);
-	}
-
-
-	FileData fileData;
-	fileData.name = fileName;
-
-	std::string line;
-	double max = 0;
-	while (std::getline(file, line)) {
-		double value = std::atof(line.c_str());
-		if (max < value) max = value;
-	}
-
-	fileData.maximum_value = max;
-
-	Experimentation::add_file_data(fileData);
-
-	file.close();
-}
-
-void process_files_with_prefix(const std::string& directoryPath, const std::string& prefix) {
-	std::string searchPath = directoryPath + "\\" + prefix + "*";
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile(searchPath.c_str(), &findFileData);
-
-	if (hFind == INVALID_HANDLE_VALUE) {
-		std::cerr << "Could not open directory: " << directoryPath << std::endl;
-		return;
-	}
-
-	do {
-		std::string fileName = findFileData.cFileName;
-		if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			std::string filePath = directoryPath + "\\" + fileName;
-			process_file(filePath);
-		}
-	} while (FindNextFile(hFind, &findFileData) != 0);
-
-	FindClose(hFind);
 }
 
 // El modo experimentacion permite hacer 100 veces el path tracing y obtener estadisticas de la ejecución
@@ -618,7 +565,7 @@ void experimentation_mode() {
 
 	for (int round_number = 0; round_number < 100; round_number++)
 	{
-		cout << "Starting round: " << round_number << endl;
+		std::cout << "Starting round: " << round_number << std::endl;
 		auto start_round_time = std::chrono::high_resolution_clock::now();
 		
 		double* render_time = new double;
@@ -627,8 +574,8 @@ void experimentation_mode() {
 		renderer->render(render_time);
 		
 		auto end_render_time = std::chrono::high_resolution_clock::now();
-		chrono::duration<double> render_duration = end_render_time - start_round_time;
-		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
+		std::chrono::duration<double> render_duration = end_render_time - start_round_time;
+		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << std::endl;
 
 		auto start_convolute_time = std::chrono::high_resolution_clock::now();
 		renderer->set_write_output_to_file_flag(true);
@@ -639,12 +586,12 @@ void experimentation_mode() {
 		*convolute_process_time = 0;
 		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, convolute_time, convolute_process_time);
 		
-		auto end_round_time = chrono::high_resolution_clock::now();
-		chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
-		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;
+		auto end_round_time = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
+		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << std::endl;
 
-		chrono::duration<double> full_duration = end_round_time - start_round_time;
-		std::cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << endl;
+		std::chrono::duration<double> full_duration = end_round_time - start_round_time;
+		std::cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << std::endl;
 
 		render_times.push_back(*render_time);
 		convolute_times.push_back(*convolute_time);
@@ -662,16 +609,16 @@ void experimentation_mode() {
 	Experimentation::results();
 
 	// Return execution times
-	cout << "Execution Times:" << endl;
+	std::cout << "Execution Times:" << std::endl;
 
-	cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0) / render_times.size() << " ms" << endl;
-	cout << "\tMedian render time: " << median(render_times) << " ms" << endl;
+	std::cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0) / render_times.size() << " ms" << std::endl;
+	std::cout << "\tMedian render time: " << median(render_times) << " ms" << std::endl;
 
-	cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0) / convolute_times.size() << " ms" << endl;
-	cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << endl;
+	std::cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0) / convolute_times.size() << " ms" << std::endl;
+	std::cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << std::endl;
 
-	cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0) / convolute_process_times.size() << " ms" << endl;
-	cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << endl;
+	std::cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0) / convolute_process_times.size() << " ms" << std::endl;
+	std::cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << std::endl;
 
 	render_times.clear();
 	convolute_times.clear();
@@ -685,24 +632,24 @@ int main(int argc, char **argv)
 	{
 		if (argc < 2)
 		{
-			cerr << "Insufficient parameters" << endl;
-			cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << endl;
+			std::cerr << "Insufficient parameters" << std::endl;
+			std::cerr << "Usage" << argv[0] << " <config_path> [experimental_flag]" << std::endl;
 			return 1;
 		}
 
-		string configJsonPath = argv[1];
-		bool mainFlag = true;
+		std::string config_json_path = argv[1];
+		bool main_flag = true;
 		if (argc > 2)
-			mainFlag = std::string(argv[2]) == "true";
+			main_flag = std::string(argv[2]) == "true";
 
 		// Read config file
-		ifstream file(configJsonPath);
+		std::ifstream file(config_json_path);
 		if (!file)
-			throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
+			throw std::runtime_error("Error: Unable to open the file: " + config_json_path);
 
-		ostringstream ss;
+		std::ostringstream ss;
 		ss << file.rdbuf(); // reading data
-		string stringConfig = ss.str();
+		std::string stringConfig = ss.str();
 		if (stringConfig.empty())
 			throw std::runtime_error("Error: File is empty or read operation failed");
 
@@ -716,14 +663,14 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		if (mainFlag)
+		if (main_flag)
 			main_workflow();
 		else
 			experimentation_mode();
 	}
-	catch (const exception &e)
+	catch (const std::exception &e)
 	{
-		cerr << "Exception caught: " << e.what() << endl;
+		std::cerr << "Exception caught: " << e.what() << std::endl;
 		return 1;
 	}
 

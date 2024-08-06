@@ -9,6 +9,7 @@
 #include "gdt/math/AffineSpace.h"
 #include "AudioFile.h"
 #include "CircularBuffer.h"
+#include "Experimentation.h"
 
 struct audioPaths
 {
@@ -38,4 +39,8 @@ glm::vec3 gdt2glm(gdt::vec3f vector);
 float distanceP2P(gdt::vec3f p1, gdt::vec3f p2);
 
 double median(std::vector<double> values);
+
+void process_files_with_prefix(const std::string& directoryPath, const std::string& prefix);
+
+void process_file(const std::string& filePath);
 #endif
