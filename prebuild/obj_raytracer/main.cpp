@@ -33,8 +33,8 @@
 #include "Utils.h"
 
 //using namespace std;
-#define inputSampleRate 44100 // default input sample rate
-#define inputBufferLen 4096		// default buffer length
+#define INPUT_SAMPLE_RATE 44100			// default input sample rate
+#define INPUT_BUFFER_LENGTH 4096		// default buffer length
 std::mutex audio_critical_section;
 
 void full_render(bool isLive, std::mutex *output_buffer_mutex)
@@ -109,7 +109,7 @@ int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBuf
 	double *ibuffer = (double *)inputBuffer;
 
 	if (!Context::get_is_rendering()) {
-		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
+		renderer->convoluteLiveInput(ibuffer, INPUT_BUFFER_LENGTH * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
 
 		float volume = Context::get_volume();
 		std::vector<double> circular_buffer = renderData->samplesRecordBuffer->get_and_reset(nBufferFrames * 2);
@@ -171,8 +171,8 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 		exit(0);
 	}
 
-	unsigned int bufferFrames = inputBufferLen, input_channels = 1, output_channels = 2;
-	unsigned int sampleRate = inputSampleRate;
+	unsigned int bufferFrames = INPUT_BUFFER_LENGTH, input_channels = 1, output_channels = 2;
+	unsigned int sampleRate = INPUT_SAMPLE_RATE;
 
 	RtAudio::StreamParameters inputParameters;
 	inputParameters.deviceId = dac->getDefaultInputDevice();
@@ -189,10 +189,10 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 
 	// Create audioData struct on the heap
 	audioCallbackData *audioData = new audioCallbackData;
-	audioData->bufferFrames = inputBufferLen;
+	audioData->bufferFrames = INPUT_BUFFER_LENGTH;
 	audioData->samplesRecordBufferSize = sampleRate * input_channels;
 	// circular buffer must be longer than IR
-	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * Context::get_ir_length_in_seconds());
+	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(INPUT_SAMPLE_RATE * Context::get_ir_length_in_seconds());
 	audioData->paths = new audioPaths();
 	audioData->paths->ptr = NULL;
 	audioData->paths->size = 0;
@@ -229,7 +229,7 @@ void setSpeakerInScene(glm::vec3 posSpeaker)
 	std::string speakerPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(speakerPath);
-	std::vector<Mesh> *speakerVector = Context::get_speaker();
+	std::vector<Mesh> * speaker_vector = Context::get_speaker();
 
 	if (load_res)
 	{
@@ -251,7 +251,7 @@ void setSpeakerInScene(glm::vec3 posSpeaker)
 				indices.push_back(mesh.Indices.at(j));
 			}
 			Mesh speaker(vertices, indices);
-			speakerVector->push_back(speaker);
+			speaker_vector->push_back(speaker);
 		}
 	}
 	else
@@ -278,9 +278,9 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_E)
 	{
 		Camera *camera = Context::get_camera();
-		std::vector<Mesh> *speakerVector = Context::get_speaker();
+		std::vector<Mesh> * speaker_vector = Context::get_speaker();
 		AudioRenderer *renderer = Context::get_audio_renderer();
-		speakerVector->pop_back();
+		speaker_vector->pop_back();
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
 		setSpeakerInScene(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
@@ -500,8 +500,8 @@ void screen(std::mutex *output_buffer_mutex)
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
 
-		std::vector<Mesh> *speakerVector = Context::get_speaker();
-		speakerVector->back().Draw(shaderProgram, camera);
+		std::vector<Mesh> * speaker_vector = Context::get_speaker();
+		speaker_vector->back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

@@ -41,7 +41,7 @@ private:
 
 	uint32_t sample_rate;
 	Sphere *sphere;
-	std::vector<Mesh> * speakerVector;
+	std::vector<Mesh> * speaker_vector;
 	OptixModel *scene;
 	AudioRenderer *renderer;
 	Camera *camera;
@@ -140,7 +140,7 @@ public:
 	static void set_camera(Camera *camera);
 	static Camera *get_camera();
 
-	static void set_speaker(std::vector<Mesh> * speakerVector);
+	static void set_speaker(std::vector<Mesh> * speaker_vector);
 	static std::vector<Mesh> *get_speaker();
 
 	static void set_is_rendering(bool is_rendering);
