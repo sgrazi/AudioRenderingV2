@@ -625,6 +625,98 @@ void experimentation_mode() {
 	convolute_process_times.clear();
 }
 
+std::vector<float> normalizeToRangeMinusOneToOne(std::vector<float> vec) {
+	if (vec.empty()) {
+		return vec;  // Return empty vector if input is empty
+	}
+
+	// Find the min and max values in the vector
+	auto minIt = std::min_element(vec.begin(), vec.end());
+	auto maxIt = std::max_element(vec.begin(), vec.end());
+
+	float minVal = *minIt;
+	float maxVal = *maxIt;
+
+	// Check if all elements are the same
+	if (minVal == maxVal) {
+		throw std::runtime_error("Cannot normalize: all elements in the vector are the same.");
+	}
+
+	// Normalize the vector to the range [-1, 1]
+	for (float& value : vec) {
+		value = 2 * ((value - minVal) / (maxVal - minVal)) - 1;
+	}
+
+	return vec;
+}
+
+void export_audio(std::string export_path) {
+	OptixModel* scene = Context::get_optix_model();
+	Sphere sphere = *Context::get_sphere();
+	Camera camera = *Context::get_camera();
+	AudioFile<float>* audio = Context::get_audio_file();
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float* outputBuffer_left = Context::get_output_buffer_left();
+	float* outputBuffer_right = Context::get_output_buffer_right();
+
+	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z), camera.globalAngle);
+
+	uint32_t sample_rate = Context::get_sample_rate();
+
+	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
+
+	AudioRenderer* renderer = Context::get_audio_renderer();
+	renderer->setMonoOutput(Context::get_is_mono());
+	renderer->setBasePower(Context::get_base_power());
+	renderer->setThresholds(Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
+	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
+
+	Context::set_output_buffer_len(size_of_audio);
+
+	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+	renderer->set_write_ir_to_file_flag(false);
+	renderer->set_write_output_to_file_flag(false);
+	renderer->render();
+	renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
+
+	AudioFile<float> export_audio_file = AudioFile<float>();
+
+	// float* to vector<float>
+	std::vector<float> buffer_left;
+	buffer_left.reserve(len_of_audio);
+	std::vector<float> buffer_right;
+	buffer_right.reserve(len_of_audio);
+
+	buffer_left.insert(buffer_left.end(), outputBuffer_left, outputBuffer_left + len_of_audio);
+	buffer_right.insert(buffer_right.end(), outputBuffer_right, outputBuffer_right + len_of_audio);
+
+	double max_aaaa = outputBuffer_left[0];
+	for (int i = 0; i < len_of_audio; i++) {
+		if (max_aaaa < outputBuffer_left[i]) {
+			max_aaaa = outputBuffer_left[i];
+		}
+	}
+
+	double max = *std::max_element(buffer_left.begin(), buffer_left.end());
+	double max_original = *std::max_element(audio->samples[0].begin(), audio->samples[0].end());
+
+	buffer_left = normalizeToRangeMinusOneToOne(buffer_left);
+	buffer_right = normalizeToRangeMinusOneToOne(buffer_right);
+
+	std::vector<std::vector<float>> audio_file_buffers;
+	audio_file_buffers.push_back(buffer_left);
+	audio_file_buffers.push_back(buffer_right);
+
+	export_audio_file.setAudioBuffer(audio_file_buffers);
+	export_audio_file.setSampleRate(audio->getSampleRate());
+	export_audio_file.setBitDepth(audio->getBitDepth());
+	export_audio_file.save(export_path);
+	//audio->save(export_path);
+}
+
 int main(int argc, char **argv)
 {
 
@@ -638,9 +730,13 @@ int main(int argc, char **argv)
 		}
 
 		std::string config_json_path = argv[1];
-		bool main_flag = true;
+		std::string mode = "main";
 		if (argc > 2)
-			main_flag = std::string(argv[2]) == "true";
+			mode = std::string(argv[2]);
+		std::string export_path = "Result.wav";
+		if (mode == "export" && argc > 3) {
+			export_path = std::string(argv[3]);
+		}
 
 		// Read config file
 		std::ifstream file(config_json_path);
@@ -663,8 +759,12 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		if (main_flag)
+		if (mode == "main") {
 			main_workflow();
+		}
+		else if (mode == "export") {
+			export_audio(export_path);
+		}
 		else
 			experimentation_mode();
 	}
