@@ -4,12 +4,12 @@
 		"ir_length_in_seconds": 2,
 		"width": 1366,
 		"height": 768,
-		"write_first_ir_to_file": true,
+		"write_first_ir_to_file": false,
 		"write_first_output_to_file": false,
 		"re_render_distance_threshold": 2
 	},
 	"scene_parameters": {
-		"mono": true,
+		"mono": false,
 		"audio_file_path": "../../assets/sound_samples/experimento_entrada_16KHz.wav",
 		"scene_file_path": "../../assets/models/3D_U.obj",
 		"materials_file_path": "",
@@ -25,9 +25,9 @@
 		}
 	},
 	"pathtracer_parameters": {
-		"base_power": 31.62,
+		"base_power": 3.62,
 		"rays": {
-			"x": 1000,
+			"x": 100,
 			"y": 100,
 			"z": 100
 		},

@@ -27,69 +27,17 @@
 #include "OptixModel.h"
 #include "AudioRenderer.h"
 #include "Context.h"
-#include "Experimentation.h"
 #include "cJSON.h"
 #include "HalfSphere.h"
 #include "CircularBuffer.h"
+#include "Utils.h"
 
 using namespace std;
-#define SAMPLE_TYPE double
-#define inputSampleRate 44100 // inventando un sample rate de 44.1khz
-#define inputBufferLen 4096		// inventado too
+#define INPUT_SAMPLE_RATE 44100			// default input sample rate
+#define INPUT_BUFFER_LENGTH 4096		// default buffer length
 std::mutex audio_critical_section;
 
-struct audioPaths
-{
-	void *ptr;
-	int size;
-};
-
-struct audioCallbackData
-{
-	int bufferFrames;
-	int pos;
-	int samplesRecordBufferSize;
-	CircularBuffer<SAMPLE_TYPE> *samplesRecordBuffer;
-	audioPaths *paths;
-	float volume;
-	std::mutex* inputBufferMutex;
-};
-
-struct AudioInfo
-{
-	AudioFile<float> *audio;
-	float *volumen;
-};
-
-float distanceP2P(gdt::vec3f p1, gdt::vec3f p2)
-{
-	return std::sqrt(std::pow((p2.x - p1.x), 2) + std::pow((p2.y - p1.y), 2) + std::pow((p2.z - p1.z), 2));
-}
-
-double median(vector<double> values)
-{
-	size_t size = values.size();
-
-	if (size == 0)
-	{
-		return 0;
-	}
-	else
-	{
-		sort(values.begin(), values.end());
-		if (size % 2 == 0)
-		{
-			return (values[size / 2 - 1] + values[size / 2]) / 2;
-		}
-		else
-		{
-			return values[size / 2];
-		}
-	}
-}
-
-
-void full_render(bool testing, std::mutex *output_buffer_mutex)
+void full_render(bool isLive, std::mutex *output_buffer_mutex)
 {
 	AudioRenderer *renderer = Context::get_audio_renderer();
 	OptixModel *scene = Context::get_optix_model();
@@ -97,7 +45,7 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 	Camera camera = *Context::get_camera();
 	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
 
-	if (!testing) {
+	if (!isLive) {
 		AudioFile<float>* audio = Context::get_audio_file();
 		size_t len_of_audio = audio->samples[0].size();
 		size_t size_of_audio = sizeof(float) * len_of_audio;
@@ -118,13 +66,13 @@ void full_render(bool testing, std::mutex *output_buffer_mutex)
 	Context::set_is_rendering(false);
 };
 
-int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+int audioHandler(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 				double streamTime, RtAudioStreamStatus status, void *userData)
 {
 	unsigned int i;
 	double *buffer = (double *)outputBuffer;
 	if (status)
-		std::cout << "Stream underflow detected!" << std::endl;
+		cout << "Stream underflow detected!" << endl;
 	// Write interleaved audio data.
 	AudioInfo *audioInfo = (AudioInfo *)userData;
 	float volume = Context::get_volume();
@@ -136,7 +84,6 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	{
 		if (i + nextStream >= context->get_output_buffer_len())
 			break;
-		// *buffer++ = (double)audioInfo->audio->samples.at(0).at(i + nextStream) * volume;
 		if (i % 2 == 0)
 		{
 			*buffer++ = outputBufferConvolute_left[i + nextStream] * 100 * volume;
@@ -149,14 +96,11 @@ int saw(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	return 0;
 }
 
-// nBufferFrames es inputBufferLen
-// len(inputBuffer) es inputBufferLen
-// len(outputBuffer) es inputBufferLen * 2
-int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
+int audioHandlerWithMic(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 						 double streamTime, RtAudioStreamStatus status, void *data)
 {
 	if (status)
-		std::cout << "Stream over/underflow detected." << std::endl;
+		cout << "Stream over/underflow detected." << endl;
 	Context *context = Context::getInstance();
 	audioCallbackData *renderData = (audioCallbackData *)data;
 	AudioRenderer *renderer = Context::get_audio_renderer();
@@ -165,7 +109,7 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 	double *ibuffer = (double *)inputBuffer;
 
 	if (!Context::get_is_rendering()) {
-		renderer->convoluteLiveInput(ibuffer, inputBufferLen * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
+		renderer->convoluteLiveInput(ibuffer, INPUT_BUFFER_LENGTH * sizeof(SAMPLE_TYPE), renderData->samplesRecordBuffer);
 
 		float volume = Context::get_volume();
 		std::vector<double> circular_buffer = renderData->samplesRecordBuffer->get_and_reset(nBufferFrames * 2);
@@ -182,7 +126,7 @@ int sawMicro(void *outputBuffer, void *inputBuffer, unsigned int nBufferFrames,
 		circular_buffer.clear();
 	}
 	else {
-		printf("buffer ocupado\n");
+		cout << "Buffer is still being processed" << endl;
 		for (int i = 0; i < nBufferFrames * 2; i++)
 			*buffer++ = 0;
 	}
@@ -194,25 +138,23 @@ int audioPlay(RtAudio *dac)
 {
 	if (dac->getDeviceCount() < 1)
 	{
-		std::cout << "\nNo audio devices found!\n";
+		cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
 	RtAudio::StreamParameters parameters;
 	parameters.deviceId = dac->getDefaultOutputDevice();
-	parameters.nChannels = 2;		 // tiene que matchear con los channels del audio
-	parameters.firstChannel = 0; // Default audio output
-
-	// TODO -> check number of channels.
+	parameters.nChannels = 2;	// TODO: Grab the device output channel count
+	parameters.firstChannel = 0; // Default to the first audio output device
 
 	AudioFile<float> *audio = Context::get_audio_file();
 
 	unsigned int sampleRate = audio->getSampleRate() / parameters.nChannels;
-	unsigned int bufferFrames = 256; // 256 sample frames
+	unsigned int bufferFrames = 256; // Default to 256 frame buffer, this is the smallest value properly supported
 
 	AudioInfo *audioInfo = new AudioInfo;
 	audioInfo->audio = audio;
 
-	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &saw, (void *)audioInfo);
+	RtAudioErrorType checkError = dac->openStream(&parameters, NULL, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &audioHandler, (void *)audioInfo);
 	checkError = dac->startStream();
 
 	return 0;
@@ -225,12 +167,12 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 
 	if (dac->getDeviceCount() < 1)
 	{
-		std::cout << "\nNo audio devices found!\n";
+		cout << "\nNo audio devices found!\n";
 		exit(0);
 	}
 
-	unsigned int bufferFrames = inputBufferLen, input_channels = 1, output_channels = 2;
-	unsigned int sampleRate = inputSampleRate;
+	unsigned int bufferFrames = INPUT_BUFFER_LENGTH, input_channels = 1, output_channels = 2;
+	unsigned int sampleRate = INPUT_SAMPLE_RATE;
 
 	RtAudio::StreamParameters inputParameters;
 	inputParameters.deviceId = dac->getDefaultInputDevice();
@@ -247,17 +189,17 @@ void audioMicPlay(RtAudio* dac, std::mutex* inputBufferMutex)
 
 	// Create audioData struct on the heap
 	audioCallbackData *audioData = new audioCallbackData;
-	audioData->bufferFrames = inputBufferLen;
+	audioData->bufferFrames = INPUT_BUFFER_LENGTH;
 	audioData->samplesRecordBufferSize = sampleRate * input_channels;
 	// circular buffer must be longer than IR
-	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(inputSampleRate * Context::get_ir_length_in_seconds());
+	audioData->samplesRecordBuffer = new CircularBuffer<SAMPLE_TYPE>(INPUT_SAMPLE_RATE * Context::get_ir_length_in_seconds());
 	audioData->paths = new audioPaths();
 	audioData->paths->ptr = NULL;
 	audioData->paths->size = 0;
 	audioData->volume = 30.0f;
 	audioData->inputBufferMutex = inputBufferMutex;
 
-	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &sawMicro, (void *)audioData);
+	RtAudioErrorType checkError = dac->openStream(&outputParameters, &inputParameters, RTAUDIO_FLOAT64, sampleRate, &bufferFrames, &audioHandlerWithMic, (void *)audioData);
 
 	checkError = dac->startStream();
 }
@@ -277,28 +219,29 @@ void audio(RtAudio *dac, bool isMic, std::mutex* inputBufferMutex)
 	}
 	catch (const std::exception &e)
 	{
+		cout << "Found an error in audio thread" << endl;
 		cout << e.what() << endl;
 	}
 }
 
-void setTransmitter(glm::vec3 posTransmitter)
+void setSpeakerInScene(glm::vec3 posSpeaker)
 {
-	std::string transmitterPath = "../../assets/models/sphere.obj";
+	std::string speakerPath = "../../assets/models/sphere.obj";
 	objl::Loader loader;
-	bool load_res = loader.LoadFile(transmitterPath);
-	vector<Mesh> *transmitterVector = Context::get_transmitter();
+	bool load_res = loader.LoadFile(speakerPath);
+	std::vector<Mesh> * speaker_vector = Context::get_speaker();
 
 	if (load_res)
 	{
 		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
 		{
 			objl::Mesh mesh = loader.LoadedMeshes.at(i);
-			vector<Vertex> vertices;
-			vector<unsigned int> indices;
+			std::vector<Vertex> vertices;
+			std::vector<unsigned int> indices;
 			for (int j = 0; j < mesh.Vertices.size(); j++)
 			{
 				Vertex vertex;
-				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X + posTransmitter.x, mesh.Vertices.at(j).Position.Y + posTransmitter.y, mesh.Vertices.at(j).Position.Z + posTransmitter.z);
+				vertex.position = glm::vec3(mesh.Vertices.at(j).Position.X + posSpeaker.x, mesh.Vertices.at(j).Position.Y + posSpeaker.y, mesh.Vertices.at(j).Position.Z + posSpeaker.z);
 				vertex.normal = glm::vec3(mesh.Vertices.at(j).Normal.X, mesh.Vertices.at(j).Normal.Y, mesh.Vertices.at(j).Normal.Z);
 				vertex.color = glm::vec3(mesh.MeshMaterial.Kd.X, mesh.MeshMaterial.Kd.Y, mesh.MeshMaterial.Kd.Z);
 				vertices.push_back(vertex);
@@ -307,14 +250,14 @@ void setTransmitter(glm::vec3 posTransmitter)
 			{
 				indices.push_back(mesh.Indices.at(j));
 			}
-			Mesh transmitter(vertices, indices);
-			transmitterVector->push_back(transmitter);
+			Mesh speaker(vertices, indices);
+			speaker_vector->push_back(speaker);
 		}
 	}
 	else
-	{ // error
-		cout << "Failed to transmitter OBJ" << endl;
-		throw new exception("B");
+	{ 
+		// error
+		throw new std::exception("Error occured while trying load speaker mesh");
 	}
 }
 
@@ -330,18 +273,18 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		else
 			volume = 0.0f;
 		Context::set_volume(volume);
-		cout << "Volumen seteado a " << volume << endl;
+		cout << "Volume set to " << volume << endl;
 	}
 	if (key == GLFW_KEY_E)
 	{
 		Camera *camera = Context::get_camera();
-		vector<Mesh> *transmitterVector = Context::get_transmitter();
+		std::vector<Mesh> * speaker_vector = Context::get_speaker();
 		AudioRenderer *renderer = Context::get_audio_renderer();
-		transmitterVector->pop_back();
+		speaker_vector->pop_back();
 		glm::vec3 cameraPosition = glm::vec3(camera->Position.x, camera->Position.y, camera->Position.z);
-		setTransmitter(cameraPosition);
+		setSpeakerInScene(cameraPosition);
 		renderer->setEmitterPosInOptix(cameraPosition);
-		cout << "Emisor colocado en: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
+		cout << "Speaker moved to: " << camera->Position.x << ", " << camera->Position.y << ", " << camera->Position.z << endl;
 	}
 	if (key == GLFW_KEY_R)
 	{
@@ -369,7 +312,7 @@ void key_callback(GLFWwindow *window, int key, int scancode, int action, int mod
 		}
 
 		Context::set_last_render_position(camera_central_position);
-		cout << "Rendereado" << endl;
+		cout << "Manual render finished" << endl;
 	}
 	if (key == GLFW_KEY_P)
 	{
@@ -391,14 +334,14 @@ void screen(std::mutex *output_buffer_mutex)
 	// Get context
 	unsigned int width = Context::get_scene_width();
 	unsigned int height = Context::get_scene_height();
-	string scene_file_path = Context::get_scene_file_path();
+	std::string scene_file_path = Context::get_scene_file_path();
 
 	GLFWwindow *window = glfwCreateWindow(width, height, "Audiorendering V2", NULL, NULL);
 	if (window == NULL)
 	{
 		cout << "Failed to create GLFW window" << endl;
 		glfwTerminate();
-		throw new exception("A");
+		throw new std::exception("Unexpected error while trying to create window");
 	}
 	glfwMakeContextCurrent(window);
 
@@ -410,16 +353,16 @@ void screen(std::mutex *output_buffer_mutex)
 	// Load obj && initialize Loader
 	objl::Loader loader;
 	bool load_res = loader.LoadFile(scene_file_path);
-	setTransmitter(Context::get_initial_emitter_pos());
-	vector<Mesh> lights;
-	vector<Mesh> objects;
+	setSpeakerInScene(Context::get_initial_emitter_pos());
+	std::vector<Mesh> lights;
+	std::vector<Mesh> objects;
 	if (load_res)
 	{
 		for (int i = 0; i < loader.LoadedMeshes.size(); i++)
 		{
 			objl::Mesh mesh = loader.LoadedMeshes.at(i);
-			vector<Vertex> vertices;
-			vector<unsigned int> indices;
+			std::vector<Vertex> vertices;
+			std::vector<unsigned int> indices;
 			for (int j = 0; j < mesh.Vertices.size(); j++)
 			{
 				Vertex vertex;
@@ -438,14 +381,14 @@ void screen(std::mutex *output_buffer_mutex)
 	}
 	else
 	{ // error
-		cout << "Failed to load OBJ" << endl;
-		throw new exception("B");
+		cout << "Found an error in screen thread" << endl;
+		throw new std::exception("Error occured while trying load scene mesh");
 	}
 
 	Shader shaderProgram("../../assets/shaders/default.vert", "../../assets/shaders/default.frag");
 
-	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f);
-	glm::vec3 lightPos = glm::vec3(100, 1000, 300);
+	glm::vec4 lightColor = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f); // Default light color
+	glm::vec3 lightPos = glm::vec3(100, 1000, 300); // Default light position
 
 	shaderProgram.Activate();
 	glUniform4f(glGetUniformLocation(shaderProgram.ID, "lightColor"), lightColor.x, lightColor.y, lightColor.z, lightColor.w);
@@ -508,8 +451,8 @@ void screen(std::mutex *output_buffer_mutex)
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// change window title
-		string cameraPosition = "X: " + to_string(camera.Position.x) + " Y:" + to_string(camera.Position.y) + " Z: " + to_string(camera.Position.z);
-		string newTitle("Audiorendering V2 - " + cameraPosition);
+		std::string cameraPosition = "X: " + std::to_string(camera.Position.x) + " Y:" + std::to_string(camera.Position.y) + " Z: " + std::to_string(camera.Position.z);
+		std::string newTitle("Audiorendering V2 - " + cameraPosition);
 		glfwSetWindowTitle(window, newTitle.c_str());
 
 		camera.Inputs(window);
@@ -550,15 +493,15 @@ void screen(std::mutex *output_buffer_mutex)
 			timer_set = false;
 			last_angle = camera.globalAngle;
 			last_render_position = camera_central_point;
-			thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
+			std::thread rendering_thread(full_render, Context::get_live_flag(), output_buffer_mutex);
 			rendering_thread.detach();
 		}
 
 		for (int i = 0; i < objects.size(); i++)
 			objects.at(i).Draw(shaderProgram, camera);
 
-		vector<Mesh> *transmitterVector = Context::get_transmitter();
-		transmitterVector->back().Draw(shaderProgram, camera);
+		std::vector<Mesh> * speaker_vector = Context::get_speaker();
+		speaker_vector->back().Draw(shaderProgram, camera);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -572,8 +515,8 @@ void screen(std::mutex *output_buffer_mutex)
 void main_workflow() {
 	std::mutex* buffer_mutex = new std::mutex();
 	RtAudio* dac = new RtAudio();
-	thread screen1(screen, buffer_mutex);
-	thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
+	std::thread screen1(screen, buffer_mutex);
+	std::thread audio1(audio, dac, Context::get_live_flag(), buffer_mutex);
 
 	screen1.join();
 	audio1.detach();
@@ -582,59 +525,6 @@ void main_workflow() {
 	if (dac->isStreamOpen())
 		dac->closeStream();
 	delete dac;
-}
-
-void process_file(const std::string& filePath) {
-	// Open the file
-	std::ifstream file(filePath);
-	if (!file.is_open()) {
-		std::cerr << "Failed to open file: " << filePath << std::endl;
-		return;
-	}
-
-	string fileName = filePath;
-	size_t pos = filePath.find_last_of("/\\");
-	if (pos != std::string::npos) {
-		fileName = filePath.substr(pos + 1);
-	}
-
-
-	FileData fileData;
-	fileData.name = fileName;
-
-	std::string line;
-	double max = 0;
-	while (std::getline(file, line)) {
-		double value = std::atof(line.c_str());
-		if (max < value) max = value;
-	}
-
-	fileData.maximum_value = max;
-
-	Experimentation::add_file_data(fileData);
-
-	file.close();
-}
-
-void process_files_with_prefix(const std::string& directoryPath, const std::string& prefix) {
-	std::string searchPath = directoryPath + "\\" + prefix + "*";
-	WIN32_FIND_DATA findFileData;
-	HANDLE hFind = FindFirstFile(searchPath.c_str(), &findFileData);
-
-	if (hFind == INVALID_HANDLE_VALUE) {
-		std::cerr << "Could not open directory: " << directoryPath << std::endl;
-		return;
-	}
-
-	do {
-		std::string fileName = findFileData.cFileName;
-		if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-			std::string filePath = directoryPath + "\\" + fileName;
-			process_file(filePath);
-		}
-	} while (FindNextFile(hFind, &findFileData) != 0);
-
-	FindClose(hFind);
 }
 
 // El modo experimentacion permite hacer 100 veces el path tracing y obtener estadisticas de la ejecución
@@ -680,15 +570,15 @@ void experimentation_mode() {
 		
 		double* render_time = new double;
 		*render_time = 0;
-		renderer->set_write_ir_to_file_flag(true);
+		renderer->set_write_ir_to_file_flag(false);
 		renderer->render(render_time);
 		
 		auto end_render_time = std::chrono::high_resolution_clock::now();
-		chrono::duration<double> render_duration = end_render_time - start_round_time;
-		std::cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
+		std::chrono::duration<double> render_duration = end_render_time - start_round_time;
+		cout << "Render time: " << render_duration.count() * 1000 << " ms" << endl;
 
 		auto start_convolute_time = std::chrono::high_resolution_clock::now();
-		renderer->set_write_output_to_file_flag(true);
+		renderer->set_write_output_to_file_flag(false);
 
 		double* convolute_time = new double;
 		double* convolute_process_time = new double;
@@ -696,12 +586,12 @@ void experimentation_mode() {
 		*convolute_process_time = 0;
 		renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right, convolute_time, convolute_process_time);
 		
-		auto end_round_time = chrono::high_resolution_clock::now();
-		chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
-		std::cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;
+		auto end_round_time = std::chrono::high_resolution_clock::now();
+		std::chrono::duration<double> convolute_duration = end_round_time - start_convolute_time;
+		cout << "Convolute time: " << convolute_duration.count() * 1000 << " ms" << endl;
 
-		chrono::duration<double> full_duration = end_round_time - start_round_time;
-		std::cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << endl;
+		std::chrono::duration<double> full_duration = end_round_time - start_round_time;
+		cout << "Round " << round_number << ": took " << full_duration.count() * 1000 << " ms" << endl;
 
 		render_times.push_back(*render_time);
 		convolute_times.push_back(*convolute_time);
@@ -721,18 +611,110 @@ void experimentation_mode() {
 	// Return execution times
 	cout << "Execution Times:" << endl;
 
-	cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0) / render_times.size() << " ms" << endl;
+	cout << "\tAverage render time: " << std::accumulate(render_times.begin(), render_times.end(), 0.0) / render_times.size() << " ms" << endl;
 	cout << "\tMedian render time: " << median(render_times) << " ms" << endl;
 
-	cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0) / convolute_times.size() << " ms" << endl;
+	cout << "\tAverage convolute time: " << std::accumulate(convolute_times.begin(), convolute_times.end(), 0.0) / convolute_times.size() << " ms" << endl;
 	cout << "\tMedian convolute time: " << median(convolute_times) << " ms" << endl;
 
-	cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0) / convolute_process_times.size() << " ms" << endl;
+	cout << "\tAverage convolute process time: " << std::accumulate(convolute_process_times.begin(), convolute_process_times.end(), 0.0) / convolute_process_times.size() << " ms" << endl;
 	cout << "\tMedian convolute process time: " << median(convolute_process_times) << " ms" << endl;
 
 	render_times.clear();
 	convolute_times.clear();
 	convolute_process_times.clear();
+}
+
+std::vector<float> normalizeToRangeMinusOneToOne(std::vector<float> vec) {
+	if (vec.empty()) {
+		return vec;  // Return empty vector if input is empty
+	}
+
+	// Find the min and max values in the vector
+	auto minIt = std::min_element(vec.begin(), vec.end());
+	auto maxIt = std::max_element(vec.begin(), vec.end());
+
+	float minVal = *minIt;
+	float maxVal = *maxIt;
+
+	// Check if all elements are the same
+	if (minVal == maxVal) {
+		throw std::runtime_error("Cannot normalize: all elements in the vector are the same.");
+	}
+
+	// Normalize the vector to the range [-1, 1]
+	for (float& value : vec) {
+		value = 2 * ((value - minVal) / (maxVal - minVal)) - 1;
+	}
+
+	return vec;
+}
+
+void export_audio(std::string export_path) {
+	OptixModel* scene = Context::get_optix_model();
+	Sphere sphere = *Context::get_sphere();
+	Camera camera = *Context::get_camera();
+	AudioFile<float>* audio = Context::get_audio_file();
+	size_t len_of_audio = audio->samples[0].size();
+	size_t size_of_audio = sizeof(float) * len_of_audio;
+	float* outputBuffer_left = Context::get_output_buffer_left();
+	float* outputBuffer_right = Context::get_output_buffer_right();
+
+	placeReceiver(sphere, scene, gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z), camera.globalAngle);
+
+	uint32_t sample_rate = Context::get_sample_rate();
+
+	unsigned int ir_length_in_seconds = Context::get_ir_length_in_seconds();
+
+	AudioRenderer* renderer = Context::get_audio_renderer();
+	renderer->setMonoOutput(Context::get_is_mono());
+	renderer->setBasePower(Context::get_base_power());
+	renderer->setThresholds(Context::get_ray_energy_threshold(), Context::get_ray_max_bounces());
+	renderer->setEmitterPosInOptix(Context::get_initial_emitter_pos());
+	renderer->setSphereCenterInOptix(Context::get_camera()->Position);
+
+	Context::set_output_buffer_len(size_of_audio);
+
+	gdt::vec3f camera_central_point = gdt::vec3f(camera.Position.x, camera.Position.y, camera.Position.z);
+
+	renderer->set_write_ir_to_file_flag(false);
+	renderer->set_write_output_to_file_flag(false);
+	renderer->render();
+	renderer->convoluteAudioFile(audio->samples[0].data(), size_of_audio, outputBuffer_left, outputBuffer_right);
+
+	AudioFile<float> export_audio_file = AudioFile<float>();
+
+	// float* to vector<float>
+	std::vector<float> buffer_left;
+	buffer_left.reserve(len_of_audio);
+	std::vector<float> buffer_right;
+	buffer_right.reserve(len_of_audio);
+
+	buffer_left.insert(buffer_left.end(), outputBuffer_left, outputBuffer_left + len_of_audio);
+	buffer_right.insert(buffer_right.end(), outputBuffer_right, outputBuffer_right + len_of_audio);
+
+	double max_aaaa = outputBuffer_left[0];
+	for (int i = 0; i < len_of_audio; i++) {
+		if (max_aaaa < outputBuffer_left[i]) {
+			max_aaaa = outputBuffer_left[i];
+		}
+	}
+
+	double max = *std::max_element(buffer_left.begin(), buffer_left.end());
+	double max_original = *std::max_element(audio->samples[0].begin(), audio->samples[0].end());
+
+	buffer_left = normalizeToRangeMinusOneToOne(buffer_left);
+	buffer_right = normalizeToRangeMinusOneToOne(buffer_right);
+
+	std::vector<std::vector<float>> audio_file_buffers;
+	audio_file_buffers.push_back(buffer_left);
+	audio_file_buffers.push_back(buffer_right);
+
+	export_audio_file.setAudioBuffer(audio_file_buffers);
+	export_audio_file.setSampleRate(audio->getSampleRate());
+	export_audio_file.setBitDepth(audio->getBitDepth());
+	export_audio_file.save(export_path);
+	//audio->save(export_path);
 }
 
 int main(int argc, char **argv)
@@ -747,19 +729,23 @@ int main(int argc, char **argv)
 			return 1;
 		}
 
-		string configJsonPath = argv[1];
-		bool mainFlag = true;
+		std::string config_json_path = argv[1];
+		std::string mode = "main";
 		if (argc > 2)
-			mainFlag = argv[2] == "true";
+			mode = std::string(argv[2]);
+		std::string export_path = "Result.wav";
+		if (mode == "export" && argc > 3) {
+			export_path = std::string(argv[3]);
+		}
 
 		// Read config file
-		ifstream file(configJsonPath);
+		std::ifstream file(config_json_path);
 		if (!file)
-			throw std::runtime_error("Error: Unable to open the file: " + configJsonPath);
+			throw std::runtime_error("Error: Unable to open the file: " + config_json_path);
 
-		ostringstream ss;
+		std::ostringstream ss;
 		ss << file.rdbuf(); // reading data
-		string stringConfig = ss.str();
+		std::string stringConfig = ss.str();
 		if (stringConfig.empty())
 			throw std::runtime_error("Error: File is empty or read operation failed");
 
@@ -773,12 +759,16 @@ int main(int argc, char **argv)
 
 		cJSON_Delete(config);
 
-		if (mainFlag)
+		if (mode == "main") {
 			main_workflow();
+		}
+		else if (mode == "export") {
+			export_audio(export_path);
+		}
 		else
 			experimentation_mode();
 	}
-	catch (const exception &e)
+	catch (const std::exception &e)
 	{
 		cerr << "Exception caught: " << e.what() << endl;
 		return 1;
