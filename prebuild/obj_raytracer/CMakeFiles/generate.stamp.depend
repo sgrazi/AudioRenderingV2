@@ -1,0 +1,8 @@
+# CMake generation dependency list for this directory.
+../obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.cmake.pre-gen
+../obj_raytracer/CMakeFiles/cuda_compile_ptx_1.dir/cuda_compile_ptx_1_generated_devicePrograms.cu.ptx.depend
+../obj_raytracer/CMakeLists.txt
+../../../../../Downloads/cmake-3.26.4-windows-x86_64/share/cmake-3.26/Modules/FindCUDA/run_nvcc.cmake
+../../../../../Downloads/cmake-3.26.4-windows-x86_64/share/cmake-3.26/Modules/FindOpenGL.cmake
+../../../../../Downloads/cmake-3.26.4-windows-x86_64/share/cmake-3.26/Modules/FindPackageHandleStandardArgs.cmake
+../../../../../Downloads/cmake-3.26.4-windows-x86_64/share/cmake-3.26/Modules/FindPackageMessage.cmake
